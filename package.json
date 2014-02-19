@@ -1,0 +1,32 @@
+{
+  "name": "asNEAT",
+  "version": "0.0.1",
+  "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidlukerice/asNEAT.git"
+  },
+  "keywords": [
+    "NEAT",
+    "Evolution",
+    "Web",
+    "Audio",
+    "API"
+  ],
+  "author": "David Luke Rice",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/davidlukerice/asNEAT/issues"
+  },
+  "homepage": "https://github.com/davidlukerice/asNEAT",
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.6.3",
+    "grunt-contrib-nodeunit": "~0.2.0",
+    "grunt-contrib-uglify": "~0.2.2"
+  }
+}
