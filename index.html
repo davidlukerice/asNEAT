@@ -2,14 +2,24 @@
 <html>
   <head>
     <title>asNEAT Demo</title>
+    <script src="./lib/vendor/lodash.min.js"></script>
     <script src="./lib/asNEAT.js"></script>
   </head>
   <body>
-
+    <button id='playButton'>play</button>
+    
     <script type="text/javascript">
       !function() {
-        var node = new asNEAT.Node();
-        node.play();
+        window.onload = function() {
+          
+          var network = new asNEAT.Network();
+
+          var playButton = document.getElementById('playButton');
+          playButton.onclick = function() {
+            network.play();            
+          }
+        };
+
       }();
     </script>
 
