@@ -1,15 +1,41 @@
 
-this['asNEAT'] = this['asNEAT'] || {};
-
-!function(global) {
+(function(global) {
   "use strict";
 
-  var baseNS = 'asNEAT',
-    ns = global[baseNS];
+  var ns = (global.asNEAT = global.asNEAT || {});
 
   window.AudioContext = window.AudioContext ||
     window.webkitAudioContext;
-  var context = new AudioContext();
+  ns.context = new AudioContext();
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  // TODO: Different kinds of connections?
+  var Connection = function(inNode, outNode, weight) {
+    this.inNode = inNode;
+    this.outNode = outNode;
+    this.weight = weight || 0.5;
+    this.gainNode = null;
+  };
+  Connection.prototype.connect = function() {
+    // The gainNode is what carries the connection's 
+    // weight attribute
+    this.gainNode = ns.context.createGain();
+    this.gainNode.gain.value = this.weight;
+    this.inNode.node.connect(this.gainNode);
+    this.gainNode.connect(this.outNode.node);
+  };
+
+  ns.Connection = Connection;
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
 
   var Network = function(nodes, connections) {
     
@@ -19,11 +45,11 @@ this['asNEAT'] = this['asNEAT'] || {};
     this.connections = connections || [];
 
     if (!nodes) {
-      this.nodes.push(new OscillatorNode());
-      this.nodes.push(new OutNode());
+      this.nodes.push(new ns.OscillatorNode());
+      this.nodes.push(new ns.OutNode());
     }
     if (!connections) {
-      this.connections.push(new Connection(
+      this.connections.push(new ns.Connection(
         this.nodes[0], this.nodes[1], 0.1
       ));
     }
@@ -44,21 +70,14 @@ this['asNEAT'] = this['asNEAT'] || {};
     this.nodes[0].play();
   };
 
-  // TODO: Different kinds of connections?
-  var Connection = function(inNode, outNode, weight) {
-    this.inNode = inNode;
-    this.outNode = outNode;
-    this.weight = weight || 0.5;
-    this.gainNode = null;
-  };
-  Connection.prototype.connect = function() {
-    // The gainNode is what carries the connection's 
-    // weight attribute
-    this.gainNode = context.createGain();
-    this.gainNode.gain.value = this.weight;
-    this.inNode.node.connect(this.gainNode);
-    this.gainNode.connect(this.outNode.node);
-  };
+  ns.Network = Network;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
 
   var OscillatorNode = function(type, frequency) {
     this.type = type || 0;
@@ -66,7 +85,7 @@ this['asNEAT'] = this['asNEAT'] || {};
   };
   // Refreshes the cached node to be played again
   OscillatorNode.prototype.refresh = function() {
-    var node = context.createOscillator();
+    var node = ns.context.createOscillator();
     node.type = this.type;
     node.frequency.value = this.frequency;
     // cache the current node?
@@ -78,20 +97,25 @@ this['asNEAT'] = this['asNEAT'] || {};
     setTimeout(function() {
       node.stop(0);
     }, 500);
-  }
+  };
+
+  ns.OscillatorNode = OscillatorNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
 
   var OutNode = function() {
-    this.node = context.destination;
+    this.node = ns.context.destination;
   };
   OutNode.prototype.refresh = function() {
   };
 
-  ns.Network = Network;
-  ns.Connection = Connection;
-  ns.Node = Node;
-;
+  ns.OutNode = OutNode;
 
-}(this);;/**
+})(this);;/**
  * @license
  * Lo-Dash 2.4.1 (Custom Build) lodash.com/license | Underscore.js 1.5.2 underscorejs.org/LICENSE
  * Build: `lodash modern -o ./dist/lodash.js`
