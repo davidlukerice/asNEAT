@@ -21,7 +21,8 @@
     "bower_components",
     "vendor",
     "test",
-    "tests"
+    "tests",
+    "src"
   ],
   "dependencies": [
     
