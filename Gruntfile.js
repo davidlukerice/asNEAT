@@ -8,7 +8,7 @@ module.exports = function(grunt) {
         separator: ';'
       },
       dist: {
-        src: ['lib/**/*.js'],
+        src: ['src/**/*.js'],
         dest: 'dist/<%= pkg.name %>.js'
       }
     },
@@ -26,7 +26,11 @@ module.exports = function(grunt) {
       files: ['test/**/*.html']
     },
     jshint: {
-      files: ['gruntfile.js', 'src/**/*.js', 'test/test/*.js'],
+      files: [
+        'gruntfile.js',
+        'src/**/*.js',
+        '!src/vendor/*.js',
+        'test/test/*.js'],
       options: {
         globals: {
           jQuery: true,
@@ -36,8 +40,22 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      files: ['<%= jshint.files %>'],
-      tasks: ['jshint', 'qunit']
+      lint: {
+        files: ['<%= jshint.files %>'],
+        tasks: ['jshint', 'qunit']        
+      },
+      dist: {
+        files: ['src/**/*.js'],
+        tasks: ['concat', 'qunit', 'uglify']
+      }
+    },
+    concurrent: {
+      options: {
+        logConcurrentOutput: true
+      },
+      watches: {
+        tasks: ["watch:dist"]
+      }
     }
   });
 
@@ -47,9 +65,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
-
+  grunt.loadNpmTasks('grunt-concurrent');
 
   // task(s).
   grunt.registerTask('test', ['jshint', 'qunit']);
-  grunt.registerTask('default', ['jshint', 'concat', 'qunit', 'uglify']);
+  grunt.registerTask('dist', ['jshint', 'concat', 'qunit', 'uglify']);
+  grunt.registerTask('watchLint', ['watch:lint']);
+  grunt.registerTask('watchDist', ['test', 'dist', 'concurrent:watches']);
+  grunt.registerTask('default', ['watchDist']);
 };
