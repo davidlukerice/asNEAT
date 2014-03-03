@@ -10,8 +10,11 @@
     this.outNode = outNode;
     this.weight = weight || 0.5;
     this.gainNode = null;
+    this.enabled = true;
   };
   Connection.prototype.connect = function() {
+    if (!this.enabled) return;
+
     // The gainNode is what carries the connection's 
     // weight attribute
     this.gainNode = ns.context.createGain();
@@ -19,6 +22,16 @@
     this.inNode.node.connect(this.gainNode);
     this.gainNode.connect(this.outNode.node);
   };
+
+  Connection.prototype.disable = function() {
+    this.enabled = false;
+  };
+
+  Connection.prototype.toString = function() {
+    return (this.enabled? "" : "*") +
+            "connection("+this.weight+")("+
+            this.inNode.id+" --> "+this.outNode.id+")";
+  }
 
   ns.Connection = Connection;
 })(this);

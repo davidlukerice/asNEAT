@@ -1,0 +1,8 @@
+Current:
+- basic mutations
+
+Planned:
+- NEAT
+
+Future:
+- Use es6-module-transpiler so I dont have to '!' node.js

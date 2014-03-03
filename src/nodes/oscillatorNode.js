@@ -4,11 +4,15 @@
 
   var ns = (global.asNEAT = global.asNEAT || {});
 
-
   var OscillatorNode = function(type, frequency) {
+    ns.Node.call(this);
+
     this.type = type || 0;
     this.frequency = frequency || 1000;
   };
+
+  OscillatorNode.prototype = new ns.Node();
+
   // Refreshes the cached node to be played again
   OscillatorNode.prototype.refresh = function() {
     var node = ns.context.createOscillator();
@@ -23,6 +27,10 @@
     setTimeout(function() {
       node.stop(0);
     }, 500);
+  };
+
+  OscillatorNode.prototype.toString = function() {
+    return this.id+": OscillatorNode("+this.type+","+this.frequency+")";
   };
 
   ns.OscillatorNode = OscillatorNode;

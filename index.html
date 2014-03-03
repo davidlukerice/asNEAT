@@ -2,23 +2,39 @@
 <html>
   <head>
     <title>asNEAT Demo</title>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="./dist/asNEAT.js"></script>
   </head>
   <body>
-    <button id='playButton'>play</button>
     
+    <h2>Controls</h2>
+    <button class='play'>play</button>
+    <button class="mutate">Mutate</button>
+    
+    <br>
+    <br>
+    <h2>Current Instrument</h2>
+    <div class="currentNetwork">
+    </div>
     <script type="text/javascript">
       !function() {
-        window.onload = function() {
+        $(function() {
           
           var network = new asNEAT.Network();
+          updateDisplay();
 
-          var playButton = document.getElementById('playButton');
-          playButton.onclick = function() {
-            network.play();            
+          $('button.play').click(function() {
+            network.play();
+          });
+          $('button.mutate').click(function() {
+            network.mutate();
+            updateDisplay();
+          });
+
+          function updateDisplay() {
+            $('.currentNetwork').html(network.toString());
           }
-        };
-
+        });
       }();
     </script>
 
