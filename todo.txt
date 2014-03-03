@@ -2,7 +2,16 @@ Current:
 - basic mutations
 
 Planned:
-- NEAT
+- NEAT crossover
+- Nodes:
+  * delay
+  * Other oscillators
+  * panner node
+  * convolver
+  * dynamics compressor
+  * more filters
+  * wave shaper node?
+- MIDI ctrls? or is that more UI specific?
 
 Future:
 - Use es6-module-transpiler so I dont have to '!' node.js

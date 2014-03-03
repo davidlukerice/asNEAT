@@ -20,8 +20,11 @@
     this.outNode = outNode;
     this.weight = weight || 0.5;
     this.gainNode = null;
+    this.enabled = true;
   };
   Connection.prototype.connect = function() {
+    if (!this.enabled) return;
+
     // The gainNode is what carries the connection's 
     // weight attribute
     this.gainNode = ns.context.createGain();
@@ -29,6 +32,16 @@
     this.inNode.node.connect(this.gainNode);
     this.gainNode.connect(this.outNode.node);
   };
+
+  Connection.prototype.disable = function() {
+    this.enabled = false;
+  };
+
+  Connection.prototype.toString = function() {
+    return (this.enabled? "" : "*") +
+            "connection("+this.weight+")("+
+            this.inNode.id+" --> "+this.outNode.id+")";
+  }
 
   ns.Connection = Connection;
 })(this);;
@@ -69,6 +82,50 @@
     // play the oscillators
     this.nodes[0].play();
   };
+  Network.prototype.mutate = function() {
+    // TODO: Randomly select mutation?
+    this.splitMutation();
+
+    // TODO: Add Connection
+    // TODO: Mutate a weight
+    // TODO: Mutate a node
+    // TODO: Other mutations?
+  };
+
+  /*
+    Randomly select a connection to split in two
+  */
+  Network.prototype.splitMutation = function() {
+    // Randomly select a connection
+    var connections = this.connections,
+        len = connections.length,
+        randomIndex = ns.Utils.randomIndexIn(0, len),
+        conn = connections[randomIndex];
+
+    // TODO: Create a random new node
+    // TODO: Random weight? or just stick with 0.5?
+    var newNode = new ns.FilterNode(),
+        toConnection = new ns.Connection(conn.inNode, newNode),
+        fromConnection = new ns.Connection(newNode, conn.outNode);
+    conn.disable();
+    this.nodes.push(newNode);
+    this.connections.push(toConnection);
+    this.connections.push(fromConnection);
+  };
+
+  Network.prototype.toString = function() {
+    var str = "Nodes:<br>";
+    _.forEach(this.nodes, function(ele) {
+      str+=ele.toString()+"<br>";
+    });
+
+    str += "<br>Connections:<br>";
+    _.forEach(this.connections, function(ele) {
+      str+=ele.toString()+"<br>";
+    });
+
+    return str;
+  };
 
   ns.Network = Network;
 
@@ -78,11 +135,74 @@
 
   var ns = (global.asNEAT = global.asNEAT || {});
 
+  var Node = function() {
+    this.id = Node.getNextId();
+  };
+  Node.prototype.refresh = function() {
+  };
+  Node.prototype.toString = function() {
+    return "Node";
+  };
+  
+  Node.id=0;
+  Node.getNextId = function() {
+    return Node.id++;
+  }
+  ns.Node = Node;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var FilterNode = function(parameters) {
+    ns.Node.call(this);
+    _.defaults(this, parameters, this.defaultOptions);
+  };
+
+  FilterNode.prototype = new ns.Node();
+  FilterNode.prototype.defaultOptions = {
+    type: 0,
+    frequency: 500,
+    detune: 0,
+    q: 1,
+    gain: 0
+  };
+  // Refreshes the cached node to be played again
+  FilterNode.prototype.refresh = function() {
+    var node = ns.context.createBiquadFilter();
+    node.type = this.type;
+    node.frequency.value = this.frequency;
+    node.detune.value = this.detune;
+    node.Q.value = this.q;
+    node.gain.value = this.gain;
+
+    // cache the current node?
+    this.node = node;
+  };
+
+  FilterNode.prototype.toString = function() {
+    return this.id+": FilterNode("+this.type+","+this.frequency+")";
+  };
+
+  ns.FilterNode = FilterNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
 
   var OscillatorNode = function(type, frequency) {
+    ns.Node.call(this);
+
     this.type = type || 0;
     this.frequency = frequency || 1000;
   };
+
+  OscillatorNode.prototype = new ns.Node();
+
   // Refreshes the cached node to be played again
   OscillatorNode.prototype.refresh = function() {
     var node = ns.context.createOscillator();
@@ -99,6 +219,10 @@
     }, 500);
   };
 
+  OscillatorNode.prototype.toString = function() {
+    return this.id+": OscillatorNode("+this.type+","+this.frequency+")";
+  };
+
   ns.OscillatorNode = OscillatorNode;
 
 })(this);;
@@ -108,13 +232,82 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var OutNode = function() {
+    ns.Node.call(this);
     this.node = ns.context.destination;
   };
+
+  OutNode.prototype = new ns.Node();
   OutNode.prototype.refresh = function() {
+  };
+  OutNode.prototype.toString = function() {
+    return this.id+": OutNode";
   };
 
   ns.OutNode = OutNode;
 
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var Utils = {};
+
+  Utils.IS_DEBUG = false;
+
+  Utils.log = function(msg) {
+    if (Utils.IS_DEBUG)
+      console.log(msg)
+  };
+
+  Utils.error = function(msg) {
+    throw msg;
+  };
+
+  Utils.randomIn = function(min,max) {
+    return Math.random()*(max-min) + min;
+  };
+
+  Utils.randomIndexIn = function(min, max) {
+    return Math.floor(Utils.randomIn(min, max));
+  };
+
+  Utils.randomChance = function() {
+    return Math.random();
+  };
+
+  Utils.randomBool = function() {
+    return !!Math.round(Math.random());
+  };
+
+  /**
+   * Clamps the given number to the min or max
+   * @param x 
+   * @param min
+   * @param max
+   * @return A number in [min, max]
+   **/
+  Utils.clamp = function(x, min, max) {
+    if (x > max)
+      return max;
+    if (x < min)
+      return min;
+    return x;
+  };
+
+  //+ Jonas Raoni Soares Silva
+  //@ http://jsfromhell.com/array/shuffle [rev. #1]
+  Utils.shuffle = function(v) {
+    for(var j, x, i = v.length; 
+      i;
+      j = parseInt(Math.random() * i),
+        x = v[--i],
+        v[i] = v[j],
+        v[j] = x);
+    return v;
+  };
+
+  ns.Utils = Utils;
 })(this);;/**
  * @license
  * Lo-Dash 2.4.1 (Custom Build) lodash.com/license | Underscore.js 1.5.2 underscorejs.org/LICENSE
