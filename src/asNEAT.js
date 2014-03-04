@@ -9,12 +9,13 @@
   ns.context = new AudioContext();
 
   // All the registered usable nodes
+  // TODO: Give weights for selection in mutation?
   ns.nodes = [
     // TODO: Should oscillator be somewhere else?
     //'OscillatorNode',
     'FilterNode',
+    'DelayNode'
 
-    //delay
     //panner node
     //convolver
     //dynamics compressor

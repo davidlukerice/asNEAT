@@ -1,16 +1,19 @@
 Current:
-- basic mutations
-  * split connection
+- Nodes:
+  * delay
 
 Planned:
 - NEAT
   * Mutations
-    - split connection
+    - split connection (weight which nodes are picked?)
     - add oscillator (what to connect to? LFO for fm?)
+      * FM: http://chromium.googlecode.com/svn/trunk/samples/audio/oscillator-fm2.html
     - mutate connection weight
     - mutate node parameter
     - other
   * crossovers
+- Connections:
+  * change various gain parameters? liek linearRampToValue...
 - Nodes:
   * delay
   * oscillators
@@ -20,7 +23,10 @@ Planned:
   * dynamics compressor
   * filters
     - more random parameters
-  * wave shaper node?
+  * wave shaper node (like distortion)
+  * splitters? to allow left/right delays, &c...
+  * Various Ramps to make each node change over time?
+
 - MIDI ctrls? or is that more UI specific? (aka in genSynth)
 
 Future:
