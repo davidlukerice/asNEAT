@@ -1,6 +1,6 @@
-// Note: Yes the ! in the name is intentional. It makes sure the concat puts node before
-// any of its children. I know its bad but that should be fixed whenever I add in the es6
-// transpiler.
+// Note: Yes the ! in the name is intentional. It makes sure the concat puts node
+// before any of its children. I know its bad but that should be fixed whenever
+// I add in the es6 transpiler.
 
 (function(global) {
   "use strict";
@@ -10,8 +10,10 @@
   var Node = function() {
     this.id = Node.getNextId();
   };
-  Node.prototype.refresh = function() {
-  };
+  
+  // Refreshes any web audio context nodes
+  Node.prototype.refresh = function() {};
+  
   Node.prototype.toString = function() {
     return "Node";
   };
@@ -20,7 +22,9 @@
   Node.getNextId = function() {
     return Node.id++;
   };
-  
+  // Creates a random node
+  Node.random = function() {return null;};
+
   ns.Node = Node;
 
 })(this);

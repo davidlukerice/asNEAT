@@ -1,19 +1,28 @@
 Current:
 - basic mutations
+  * split connection
 
 Planned:
 - NEAT
   * Mutations
+    - split connection
+    - add oscillator (what to connect to? LFO for fm?)
+    - mutate connection weight
+    - mutate node parameter
+    - other
   * crossovers
 - Nodes:
   * delay
-  * Other oscillators
+  * oscillators
+    - random types
   * panner node
   * convolver
   * dynamics compressor
-  * more filters
+  * filters
+    - more random parameters
   * wave shaper node?
-- MIDI ctrls? or is that more UI specific?
+- MIDI ctrls? or is that more UI specific? (aka in genSynth)
 
 Future:
+- Have tmp files correctly linked to in debugger so we don't have to sort out a large asNEAT file
 - Use es6-module-transpiler so I dont have to '!' node.js

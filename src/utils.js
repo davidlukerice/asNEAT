@@ -6,21 +6,28 @@
 
   var Utils = {};
 
-  Utils.IS_DEBUG = false;
+  Utils.IS_DEBUG = true;
 
   Utils.log = function(msg) {
-    if (Utils.IS_DEBUG)
-      console.log(msg);
+    if (!Utils.IS_DEBUG) return;
+    
+    console.log(msg);
+    if ($)
+      $('.log').prepend('<div>'+msg+'</div>');
   };
 
   Utils.error = function(msg) {
     throw msg;
   };
 
-  Utils.randomIn = function(min,max) {
+  Utils.randomIn = function(min, max) {
     return Math.random()*(max-min) + min;
   };
 
+  /*
+    @param min
+    @param max up to but not including (aka, an array's length)
+   */
   Utils.randomIndexIn = function(min, max) {
     return Math.floor(Utils.randomIn(min, max));
   };

@@ -9,26 +9,52 @@
     
     <h2>Controls</h2>
     <button class='play'>play</button>
-    <button class="mutate">Mutate</button>
+    <button class="randomMutate" disabled>Random Mutate</button>
+    <button class="splitMutate">split Mutate</button>
+    <button class="addOscillatorMutate" disabled>add Oscillator Mutate</button>
+    <button class="weightMutate" disabled>weight Mutate</button>
+    <button class="parameterMutate" disabled>parameter Mutate</button>
     
     <br>
     <br>
     <h2>Current Instrument</h2>
     <div class="currentNetwork">
     </div>
+
+    <br>
+    <br>
+    <h2>Log</h2>
+    <div class="log">
+    </div>
+
     <script type="text/javascript">
       !function() {
         $(function() {
-          
-          var network = new asNEAT.Network();
+          var ns = asNEAT,
+              log = ns.Utils.log,
+              network = new ns.Network();
+
           updateDisplay();
 
           $('button.play').click(function() {
             network.play();
           });
-          $('button.mutate').click(function() {
-            network.mutate();
+          $('button.splitMutate').click(function() {
+            network.splitMutation();
             updateDisplay();
+          });
+
+          $('button.randomMutate').click(function() {
+            log('todo: randomMutate');
+          });
+          $('button.addOscillatorMutate').click(function() {
+            log('todo: addOscillatorMutate');
+          });
+          $('button.weightMutate').click(function() {
+            log('todo: weightMutate');
+          });
+          $('button.parameterMutate').click(function() {
+            log('todo: parameterMutate');
           });
 
           function updateDisplay() {

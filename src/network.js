@@ -12,7 +12,7 @@
     this.connections = connections || [];
 
     if (!nodes) {
-      this.nodes.push(new ns.OscillatorNode());
+      this.nodes.push(ns.OscillatorNode.random());
       this.nodes.push(new ns.OutNode());
     }
     if (!connections) {
@@ -43,8 +43,9 @@
     this.splitMutation();
 
     // TODO: Add Connection
+    // TODO: Add oscillator ( part of new connection?)
     // TODO: Mutate a weight
-    // TODO: Mutate a node
+    // TODO: Mutate a node parameter
     // TODO: Other mutations?
   };
 
@@ -54,16 +55,20 @@
   Network.prototype.splitMutation = function() {
     // Randomly select a connection
     var connections = this.getEnabledConnections(),
-        len = connections.length,
-        randomIndex = ns.Utils.randomIndexIn(0, len),
-        conn = connections[randomIndex];
+        connsLen = connections.length,
+        randomI = ns.Utils.randomIndexIn(0, connsLen),
+        conn = connections[randomI],
+        nodes = ns.nodes,
+        nodesLen = nodes.length,
+        nodesI = ns.Utils.randomIndexIn(0, nodesLen),
+        nodeType = nodes[nodesI];
 
     // TODO: Create a random new node
 
     // The first new connection matches the same weight
     // as the old one and the new connection after the 
     // split node is 1.0
-    var newNode = new ns.FilterNode(),
+    var newNode = ns[nodeType].random(),
         toConnection = new ns.Connection({
           inNode: conn.inNode,
           outNode: newNode,
