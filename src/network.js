@@ -16,9 +16,11 @@
       this.nodes.push(new ns.OutNode());
     }
     if (!connections) {
-      this.connections.push(new ns.Connection(
-        this.nodes[0], this.nodes[1], 0.1
-      ));
+      this.connections.push(new ns.Connection({
+        inNode: this.nodes[0],
+        outNode: this.nodes[1],
+        weight: 0.1
+      }));
     }
   };
   Network.prototype.play = function() {
@@ -51,20 +53,36 @@
   */
   Network.prototype.splitMutation = function() {
     // Randomly select a connection
-    var connections = this.connections,
+    var connections = this.getEnabledConnections(),
         len = connections.length,
         randomIndex = ns.Utils.randomIndexIn(0, len),
         conn = connections[randomIndex];
 
     // TODO: Create a random new node
-    // TODO: Random weight? or just stick with 0.5?
+
+    // The first new connection matches the same weight
+    // as the old one and the new connection after the 
+    // split node is 1.0
     var newNode = new ns.FilterNode(),
-        toConnection = new ns.Connection(conn.inNode, newNode),
-        fromConnection = new ns.Connection(newNode, conn.outNode);
+        toConnection = new ns.Connection({
+          inNode: conn.inNode,
+          outNode: newNode,
+          weight: conn.weight
+        }),
+        fromConnection = new ns.Connection({
+          inNode: newNode,
+          outNode: conn.outNode
+        });
+
     conn.disable();
     this.nodes.push(newNode);
     this.connections.push(toConnection);
     this.connections.push(fromConnection);
+  };
+
+  Network.prototype.getEnabledConnections = function() {
+    // TODO: Cache if a performance issue
+    return _.filter(this.connections, 'enabled');
   };
 
   Network.prototype.toString = function() {

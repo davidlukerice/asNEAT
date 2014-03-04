@@ -4,14 +4,18 @@
 
   var ns = (global.asNEAT = global.asNEAT || {});
 
-  var OscillatorNode = function(type, frequency) {
+  var OscillatorNode = function(parameters) {
     ns.Node.call(this);
-
-    this.type = type || 0;
-    this.frequency = frequency || 1000;
+    _.defaults(this, parameters, this.defaultOptions);
   };
 
   OscillatorNode.prototype = new ns.Node();
+
+  OscillatorNode.prototype.defaultOptions = {
+    type: 0,
+    frequency: 1000,
+    detune: 0
+  };
 
   // Refreshes the cached node to be played again
   OscillatorNode.prototype.refresh = function() {

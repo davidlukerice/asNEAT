@@ -5,12 +5,16 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   // TODO: Different kinds of connections?
-  var Connection = function(inNode, outNode, weight) {
-    this.inNode = inNode;
-    this.outNode = outNode;
-    this.weight = weight || 0.5;
-    this.gainNode = null;
-    this.enabled = true;
+  var Connection = function(parameters) {
+    _.defaults(this, parameters, this.defaultOptions);
+  };
+
+  Connection.prototype.defaultOptions = {
+    inNode: null,
+    outNode: null,
+    weight: 1.0,
+    gainNode: null,
+    enabled: true
   };
   Connection.prototype.connect = function() {
     if (!this.enabled) return;
@@ -31,7 +35,7 @@
     return (this.enabled? "" : "*") +
             "connection("+this.weight+")("+
             this.inNode.id+" --> "+this.outNode.id+")";
-  }
+  };
 
   ns.Connection = Connection;
 })(this);

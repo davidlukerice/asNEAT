@@ -10,7 +10,7 @@
 
   Utils.log = function(msg) {
     if (Utils.IS_DEBUG)
-      console.log(msg)
+      console.log(msg);
   };
 
   Utils.error = function(msg) {

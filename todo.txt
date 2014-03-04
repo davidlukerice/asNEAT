@@ -2,7 +2,9 @@ Current:
 - basic mutations
 
 Planned:
-- NEAT crossover
+- NEAT
+  * Mutations
+  * crossovers
 - Nodes:
   * delay
   * Other oscillators

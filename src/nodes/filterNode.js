@@ -15,7 +15,7 @@
     frequency: 500,
     detune: 0,
     q: 1,
-    gain: 0
+    gain: 1
   };
   // Refreshes the cached node to be played again
   FilterNode.prototype.refresh = function() {
