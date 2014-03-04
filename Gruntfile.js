@@ -54,7 +54,7 @@ module.exports = function(grunt) {
         logConcurrentOutput: true
       },
       watches: {
-        tasks: ["watch:dist"]
+        tasks: ["watch:lint", "watch:dist"]
       }
     }
   });
