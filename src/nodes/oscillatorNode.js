@@ -34,7 +34,7 @@
   };
 
   OscillatorNode.prototype.toString = function() {
-    return this.id+": OscillatorNode("+this.type+","+this.frequency+")";
+    return this.id+": OscillatorNode("+this.type+","+this.frequency.toFixed(2)+")";
   };
 
 

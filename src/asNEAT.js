@@ -18,6 +18,8 @@
     
     //'PannerNode'
     
+    'CompressorNode'
+
     //convolver
     //dynamics compressor
     //wave shaper node?

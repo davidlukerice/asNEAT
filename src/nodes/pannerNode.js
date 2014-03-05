@@ -29,12 +29,11 @@
   };
 
   PannerNode.prototype.toString = function() {
-    return this.id+": PannerNode("+this.x+
-      ", "+this.y+", "+this.z+")";
+    return this.id+": PannerNode("+this.x.toFixed(2)+
+      ", "+this.y.toFixed(2)+", "+this.z.toFixed(2)+")";
   };
 
   PannerNode.random = function() {
-    // TODO: Tweak possible delays to that of typical delay pedals?
     var x = ns.Utils.randomIn(-5.0, 5.0),
         y = ns.Utils.randomIn(-5.0, 5.0),
         z = ns.Utils.randomIn(-5.0, 5.0);

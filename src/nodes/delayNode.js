@@ -24,7 +24,7 @@
   };
 
   DelayNode.prototype.toString = function() {
-    return this.id+": DelayNode("+this.delayTime+")";
+    return this.id+": DelayNode("+this.delayTime.toFixed(2)+")";
   };
 
   DelayNode.random = function() {

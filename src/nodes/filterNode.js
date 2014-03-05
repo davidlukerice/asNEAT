@@ -31,7 +31,7 @@
   };
 
   FilterNode.prototype.toString = function() {
-    return this.id+": FilterNode("+this.type+","+this.frequency+")";
+    return this.id+": FilterNode("+this.type+","+this.frequency.toFixed(2)+")";
   };
 
   FilterNode.TYPES = [
