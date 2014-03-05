@@ -8,6 +8,7 @@
   "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
   "main": "./lib/asNEAT.js",
   "keywords": [
+    "asNEAT",
     "Web",
     "Audio",
     "Genetic",
