@@ -12,27 +12,36 @@
   DelayNode.prototype = new ns.Node();
   DelayNode.prototype.defaultOptions = {
     // in seconds
-    delayTime: 0
+    delayTime: 0,
+
+    // [0,1], although >=1 is allowed... not advised
+    feedbackRatio: 0.2
   };
   // Refreshes the cached node to be played again
   DelayNode.prototype.refresh = function() {
-    var node = ns.context.createDelay();
-    node.delayTime = this.delayTime;
+    var delayNode = ns.context.createDelay();
+    delayNode.delayTime = this.delayTime;
 
-    // cache the current node?
-    this.node = node;
+    // add an additional gain node for 'delay' feedback
+    var gainNode = ns.context.createGain();
+    gainNode.gain.value = this.feedbackRatio;
+
+    delayNode.connect(gainNode);
+    gainNode.connect(delayNode);
+
+    this.node = delayNode;
   };
 
   DelayNode.prototype.toString = function() {
-    return this.id+": DelayNode("+this.delayTime.toFixed(2)+")";
+    return this.id+": DelayNode("+
+      this.delayTime.toFixed(2)+","+
+      this.feedbackRatio.toFixed(2)+")";
   };
 
   DelayNode.random = function() {
-    // TODO: Tweak possible delays to that of typical delay pedals?
-    var delayTime = ns.Utils.randomIn(0.0, 3.0);
-
     return new DelayNode({
-      delayTime: delayTime
+      delayTime: ns.Utils.randomIn(0.0, 3.0),
+      feedbackRatio: ns.Utils.randomIn(0, 0.6)
     });
   };
 
