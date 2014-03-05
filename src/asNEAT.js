@@ -14,9 +14,10 @@
     // TODO: Should oscillator be somewhere else?
     //'OscillatorNode',
     'FilterNode',
-    'DelayNode'
-
-    //panner node
+    'DelayNode',
+    
+    //'PannerNode'
+    
     //convolver
     //dynamics compressor
     //wave shaper node?
