@@ -1,6 +1,4 @@
 Current:
-- Nodes:
-  * Gain
 
 Planned:
 - NEAT

@@ -11,8 +11,7 @@
   // All the registered usable nodes
   // TODO: Give weights for selection in mutation?
   ns.nodes = [
-    //GainNode
-
+    'GainNode',
     'FilterNode',
     'DelayNode',
     
