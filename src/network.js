@@ -36,11 +36,19 @@
     });
 
     // play the oscillators
-    this.nodes[0].play();
+    // TODO: Better way to access just the oscillator nodes
+    _.forEach(this.nodes, function(node) {
+      if (node.play)
+        node.play();
+    });
   };
   Network.prototype.mutate = function() {
-    // TODO: Randomly select mutation?
-    this.splitMutation();
+    var mutations = [
+      {weight: 0.5, element: this.splitMutation},
+      {weight: 0.5, element: this.addOscillator}
+    ];
+    var mutation = ns.Utils.weightedSelection(mutations);
+    mutation();
 
     // TODO: Add Connection
     // TODO: Add oscillator ( part of new connection?)
@@ -83,6 +91,26 @@
     this.nodes.push(newNode);
     this.connections.push(toConnection);
     this.connections.push(fromConnection);
+  };
+
+  /*
+    Adds a single oscillator and connects it to a random input
+    in one of the current nodes
+   */
+  Network.prototype.addOscillator = function() {
+    var oscillator = ns.OscillatorNode.random();
+    
+    // TODO: will the out node always be [1]?
+    var connection = new ns.Connection({
+      inNode: oscillator,
+      outNode: this.nodes[1],
+      weight: 0.5
+    });
+
+    this.nodes.push(oscillator);
+    this.connections.push(connection);
+    // TODO: find new input to make a connection to
+    // TODO: For now, just connect it directly to the outNode
   };
 
   Network.prototype.getEnabledConnections = function() {

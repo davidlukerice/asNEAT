@@ -7,13 +7,13 @@
   // TODO: Different kinds of connections?
   var Connection = function(parameters) {
     _.defaults(this, parameters, this.defaultOptions);
+    this.gainNode = null;
   };
 
   Connection.prototype.defaultOptions = {
     inNode: null,
     outNode: null,
     weight: 1.0,
-    gainNode: null,
     enabled: true
   };
   Connection.prototype.connect = function() {

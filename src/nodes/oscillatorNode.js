@@ -48,7 +48,10 @@
   OscillatorNode.random = function() {
     var typeI = ns.Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
         // A0 to C8
-        freq = ns.Utils.randomIn(27.5, 4186.0);
+        A0 = 27.5,
+        C6 = 1046.5,
+        C8 = 4186.0,
+        freq = ns.Utils.randomIn(A0, C6);
 
     // From w3 spec
     // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).

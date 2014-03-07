@@ -9,9 +9,9 @@
     
     <h2>Controls</h2>
     <button class='play'>play</button>
-    <button class="randomMutate" disabled>Random Mutate</button>
+    <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
-    <button class="addOscillatorMutate" disabled>add Oscillator Mutate</button>
+    <button class="addOscillator">add Oscillator</button>
     <button class="weightMutate" disabled>weight Mutate</button>
     <button class="parameterMutate" disabled>parameter Mutate</button>
     
@@ -45,10 +45,12 @@
           });
 
           $('button.randomMutate').click(function() {
-            log('todo: randomMutate');
+            network.mutate();
+            updateDisplay();
           });
-          $('button.addOscillatorMutate').click(function() {
-            log('todo: addOscillatorMutate');
+          $('button.addOscillator').click(function() {
+            network.addOscillator();
+            updateDisplay();
           });
           $('button.weightMutate').click(function() {
             log('todo: weightMutate');

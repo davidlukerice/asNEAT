@@ -11,16 +11,16 @@
   // All the registered usable nodes
   // TODO: Give weights for selection in mutation?
   ns.nodes = [
-    // TODO: Should oscillator be somewhere else?
-    //'OscillatorNode',
+    //GainNode
+
     'FilterNode',
     'DelayNode',
     
-    //'PannerNode'
+    //'PannerNode' // Implemented, but doesn't do much without other mutations
     
     'CompressorNode'
 
-    //convolver
+    //convolver // Not worth it atm
     //wave shaper node?
   ];
 

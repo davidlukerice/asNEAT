@@ -67,5 +67,21 @@
     return v;
   };
 
+  /*
+    @param xs [{weight, element},...] with sum(weights)===1.0
+  */
+  Utils.weightedSelection = function(xs) {
+    var r = Math.random(),
+        sum = 0, element;
+    _.forEach(xs, function(x) {
+      sum+=x.weight;
+      if (r <= sum) {
+        element = x.element;
+        return false;
+      }
+    });
+    return element;
+  };
+
   ns.Utils = Utils;
 })(this);

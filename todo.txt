@@ -1,6 +1,6 @@
 Current:
 - Nodes:
-  * delay
+  * Gain
 
 Planned:
 - NEAT
@@ -16,8 +16,9 @@ Planned:
   * change various gain parameters? liek linearRampToValue...
 - Nodes:
   * delay
+    - make actually 'slap dellay ish'
   * oscillators
-    - random types
+    - connect to inputs other than the out node? (FM synthesis)
   * panner node
   * convolver
   * dynamics compressor
