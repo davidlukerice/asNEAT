@@ -20,7 +20,18 @@
     throw msg;
   };
 
+  Utils.random = function() {
+    return Math.random();
+  };
+
+  /*
+    @params (min, max) or ({min, max})
+  */
   Utils.randomIn = function(min, max) {
+    if (min.min) {
+      max = min.max;
+      min = min.min;
+    }
     return Math.random()*(max-min) + min;
   };
 
@@ -32,12 +43,27 @@
     return Math.floor(Utils.randomIn(min, max));
   };
 
-  Utils.randomChance = function() {
-    return Math.random();
+  /*
+    @param chance {number} [0,1]
+    @return If a random number was generated less than the chance
+  */
+  Utils.randomChance = function(chance) {
+    return Utils.random() <= chance;
   };
 
   Utils.randomBool = function() {
     return !!Math.round(Math.random());
+  };
+
+  /** 
+    @param xs {array} [x1, x2,...]
+    @return A random element in xs, undefined if xs is empty
+  */
+  Utils.randomElementIn = function(xs) {
+    if (xs.length===0) return;
+
+    var index = Utils.randomIndexIn(0, xs.length);
+    return xs[index];
   };
 
   /**

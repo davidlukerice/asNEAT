@@ -2,21 +2,17 @@
 (function(global) {
   "use strict";
 
-  var ns = (global.asNEAT = global.asNEAT || {});
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      log = ns.Utils.log;
 
   var Network = function(parameters) {
     _.defaults(this, parameters, this.defaultParameters);
 
-    // nodes in order of: input / output / hidden
-    // but is input nodes even a useful thing?
-    this.nodes = nodes || [];
-    this.connections = connections || [];
-
-    if (!nodes) {
+    if (this.nodes.length===0) {
       this.nodes.push(ns.OscillatorNode.random());
       this.nodes.push(new ns.OutNode());
     }
-    if (!connections) {
+    if (this.connections.length===0) {
       this.connections.push(new ns.Connection({
         inNode: this.nodes[0],
         outNode: this.nodes[1],
@@ -26,8 +22,8 @@
   };
 
   Network.prototype.defaultParameters = {
-    nodes: null,
-    connections: null,
+    nodes: [],
+    connections: [],
     connectionMutationRate:  0.1
   };
   Network.prototype.play = function() {
@@ -51,15 +47,15 @@
   };
   Network.prototype.mutate = function() {
     var mutations = [
-      {weight: 0.5, element: this.splitMutation},
-      {weight: 0.5, element: this.addOscillator}
+      {weight: 0.3, element: this.splitMutation},
+      {weight: 0.3, element: this.addOscillator},
+      {weight: 0.4, element: this.mutateConnectionWeights}
     ];
     var mutation = ns.Utils.weightedSelection(mutations);
-    mutation();
+    mutation.call(this);
 
     // TODO: Add Connection
     // TODO: Add oscillator ( part of new connection?)
-    // TODO: Mutate a weight
     // TODO: Mutate a node parameter
     // TODO: Other mutations?
   };
@@ -98,6 +94,8 @@
     this.nodes.push(newNode);
     this.connections.push(toConnection);
     this.connections.push(fromConnection);
+  
+    log('splitting conn '+conn.toString()+' with '+newNode.toString());
   };
 
   /*
@@ -118,6 +116,33 @@
     this.connections.push(connection);
     // TODO: find new input to make a connection to
     // TODO: For now, just connect it directly to the outNode
+
+    log('adding oscillator '+oscillator+toString());
+  };
+
+  /*
+    @param forceMutation {bool} (default: true) Makes at least one connection mutate
+  */
+  Network.prototype.mutateConnectionWeights = function(forceMutation) {
+    if (typeof(forceMutation)==='undefined')
+      forceMutation = true;
+
+    var mutationRate = this.connectionMutationRate,
+        anyMutations = false;
+    _.forEach(this.connections, function(conn) {
+      if (ns.Utils.random() <= mutationRate) {
+        conn.mutate();
+        anyMutations = true;
+      }
+    });
+
+    // If no connections were mutated and forcing a mutation
+    // mutate a random one
+    if (!anyMutations && forceMutation) {
+      log('forcing weight mutation');
+      var conn = ns.Utils.randomElementIn(this.connections);
+      conn.mutate();
+    }
   };
 
   Network.prototype.getEnabledConnections = function() {

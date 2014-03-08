@@ -12,7 +12,7 @@
     <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
     <button class="addOscillator">add Oscillator</button>
-    <button class="weightMutate" disabled>weight Mutate</button>
+    <button class="mutateWeight">Mutate Weights</button>
     <button class="parameterMutate" disabled>parameter Mutate</button>
     
     <br>
@@ -52,8 +52,9 @@
             network.addOscillator();
             updateDisplay();
           });
-          $('button.weightMutate').click(function() {
-            log('todo: weightMutate');
+          $('button.mutateWeight').click(function() {
+            network.mutateConnectionWeights();
+            updateDisplay();
           });
           $('button.parameterMutate').click(function() {
             log('todo: parameterMutate');
