@@ -6,11 +6,11 @@
 
   var PannerNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   PannerNode.prototype = new ns.Node();
-  PannerNode.prototype.defaultOptions = {
+  PannerNode.prototype.defaultParameters = {
     // position
     x: 0,
     y: 0,

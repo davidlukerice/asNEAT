@@ -6,11 +6,11 @@
 
   var CompressorNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   CompressorNode.prototype = new ns.Node();
-  CompressorNode.prototype.defaultOptions = {
+  CompressorNode.prototype.defaultParameters = {
     // The decibel value above which the compression will start taking effect.
     // Its default value is -24, with a nominal range of -100 to 0.
     threshold: 0,

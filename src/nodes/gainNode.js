@@ -6,11 +6,11 @@
 
   var GainNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   GainNode.prototype = new ns.Node();
-  GainNode.prototype.defaultOptions = {
+  GainNode.prototype.defaultParameters = {
     // Represents the amount of gain to apply. Its default value is 1
     // (no gain change). The nominal minValue is 0, but may be set
     // negative for phase inversion. The nominal maxValue is 1, but

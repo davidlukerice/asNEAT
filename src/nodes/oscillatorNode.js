@@ -6,12 +6,12 @@
 
   var OscillatorNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   OscillatorNode.prototype = new ns.Node();
 
-  OscillatorNode.prototype.defaultOptions = {
+  OscillatorNode.prototype.defaultParameters = {
     type: 0,
     frequency: 1000,
     detune: 0

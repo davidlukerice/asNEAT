@@ -6,11 +6,11 @@
 
   var FilterNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   FilterNode.prototype = new ns.Node();
-  FilterNode.prototype.defaultOptions = {
+  FilterNode.prototype.defaultParameters = {
     type: 0,
     frequency: 500,
     detune: 0,

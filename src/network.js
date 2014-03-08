@@ -4,8 +4,9 @@
 
   var ns = (global.asNEAT = global.asNEAT || {});
 
-  var Network = function(nodes, connections) {
-    
+  var Network = function(parameters) {
+    _.defaults(this, parameters, this.defaultParameters);
+
     // nodes in order of: input / output / hidden
     // but is input nodes even a useful thing?
     this.nodes = nodes || [];
@@ -22,6 +23,12 @@
         weight: 0.1
       }));
     }
+  };
+
+  Network.prototype.defaultParameters = {
+    nodes: null,
+    connections: null,
+    connectionMutationRate:  0.1
   };
   Network.prototype.play = function() {
     // refresh all the nodes since each can only play 

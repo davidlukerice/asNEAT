@@ -6,11 +6,11 @@
 
   var DelayNode = function(parameters) {
     ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
+    _.defaults(this, parameters, this.defaultParameters);
   };
 
   DelayNode.prototype = new ns.Node();
-  DelayNode.prototype.defaultOptions = {
+  DelayNode.prototype.defaultParameters = {
     // in seconds
     delayTime: 0,
 
