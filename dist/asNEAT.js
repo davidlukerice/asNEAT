@@ -1,314 +1,4 @@
-
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  window.AudioContext = window.AudioContext ||
-    window.webkitAudioContext;
-  ns.context = new AudioContext();
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  // TODO: Different kinds of connections?
-  var Connection = function(inNode, outNode, weight) {
-    this.inNode = inNode;
-    this.outNode = outNode;
-    this.weight = weight || 0.5;
-    this.gainNode = null;
-    this.enabled = true;
-  };
-  Connection.prototype.connect = function() {
-    if (!this.enabled) return;
-
-    // The gainNode is what carries the connection's 
-    // weight attribute
-    this.gainNode = ns.context.createGain();
-    this.gainNode.gain.value = this.weight;
-    this.inNode.node.connect(this.gainNode);
-    this.gainNode.connect(this.outNode.node);
-  };
-
-  Connection.prototype.disable = function() {
-    this.enabled = false;
-  };
-
-  Connection.prototype.toString = function() {
-    return (this.enabled? "" : "*") +
-            "connection("+this.weight+")("+
-            this.inNode.id+" --> "+this.outNode.id+")";
-  }
-
-  ns.Connection = Connection;
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var Network = function(nodes, connections) {
-    
-    // nodes in order of: input / output / hidden
-    // but is input nodes even a useful thing?
-    this.nodes = nodes || [];
-    this.connections = connections || [];
-
-    if (!nodes) {
-      this.nodes.push(new ns.OscillatorNode());
-      this.nodes.push(new ns.OutNode());
-    }
-    if (!connections) {
-      this.connections.push(new ns.Connection(
-        this.nodes[0], this.nodes[1], 0.1
-      ));
-    }
-  };
-  Network.prototype.play = function() {
-    // refresh all the nodes since each can only play 
-    // once (note: changing in the current webAudio draft)
-    _.forEach(this.nodes, function(node) {
-      node.refresh();
-    });
-
-    // setup all the connections
-    _.forEach(this.connections, function(connection) {
-      connection.connect();
-    });
-
-    // play the oscillators
-    this.nodes[0].play();
-  };
-  Network.prototype.mutate = function() {
-    // TODO: Randomly select mutation?
-    this.splitMutation();
-
-    // TODO: Add Connection
-    // TODO: Mutate a weight
-    // TODO: Mutate a node
-    // TODO: Other mutations?
-  };
-
-  /*
-    Randomly select a connection to split in two
-  */
-  Network.prototype.splitMutation = function() {
-    // Randomly select a connection
-    var connections = this.connections,
-        len = connections.length,
-        randomIndex = ns.Utils.randomIndexIn(0, len),
-        conn = connections[randomIndex];
-
-    // TODO: Create a random new node
-    // TODO: Random weight? or just stick with 0.5?
-    var newNode = new ns.FilterNode(),
-        toConnection = new ns.Connection(conn.inNode, newNode),
-        fromConnection = new ns.Connection(newNode, conn.outNode);
-    conn.disable();
-    this.nodes.push(newNode);
-    this.connections.push(toConnection);
-    this.connections.push(fromConnection);
-  };
-
-  Network.prototype.toString = function() {
-    var str = "Nodes:<br>";
-    _.forEach(this.nodes, function(ele) {
-      str+=ele.toString()+"<br>";
-    });
-
-    str += "<br>Connections:<br>";
-    _.forEach(this.connections, function(ele) {
-      str+=ele.toString()+"<br>";
-    });
-
-    return str;
-  };
-
-  ns.Network = Network;
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var Node = function() {
-    this.id = Node.getNextId();
-  };
-  Node.prototype.refresh = function() {
-  };
-  Node.prototype.toString = function() {
-    return "Node";
-  };
-  
-  Node.id=0;
-  Node.getNextId = function() {
-    return Node.id++;
-  }
-  ns.Node = Node;
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var FilterNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultOptions);
-  };
-
-  FilterNode.prototype = new ns.Node();
-  FilterNode.prototype.defaultOptions = {
-    type: 0,
-    frequency: 500,
-    detune: 0,
-    q: 1,
-    gain: 0
-  };
-  // Refreshes the cached node to be played again
-  FilterNode.prototype.refresh = function() {
-    var node = ns.context.createBiquadFilter();
-    node.type = this.type;
-    node.frequency.value = this.frequency;
-    node.detune.value = this.detune;
-    node.Q.value = this.q;
-    node.gain.value = this.gain;
-
-    // cache the current node?
-    this.node = node;
-  };
-
-  FilterNode.prototype.toString = function() {
-    return this.id+": FilterNode("+this.type+","+this.frequency+")";
-  };
-
-  ns.FilterNode = FilterNode;
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var OscillatorNode = function(type, frequency) {
-    ns.Node.call(this);
-
-    this.type = type || 0;
-    this.frequency = frequency || 1000;
-  };
-
-  OscillatorNode.prototype = new ns.Node();
-
-  // Refreshes the cached node to be played again
-  OscillatorNode.prototype.refresh = function() {
-    var node = ns.context.createOscillator();
-    node.type = this.type;
-    node.frequency.value = this.frequency;
-    // cache the current node?
-    this.node = node;
-  };
-  OscillatorNode.prototype.play = function() {
-    var node = this.node;
-    node.start(0);
-    setTimeout(function() {
-      node.stop(0);
-    }, 500);
-  };
-
-  OscillatorNode.prototype.toString = function() {
-    return this.id+": OscillatorNode("+this.type+","+this.frequency+")";
-  };
-
-  ns.OscillatorNode = OscillatorNode;
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var OutNode = function() {
-    ns.Node.call(this);
-    this.node = ns.context.destination;
-  };
-
-  OutNode.prototype = new ns.Node();
-  OutNode.prototype.refresh = function() {
-  };
-  OutNode.prototype.toString = function() {
-    return this.id+": OutNode";
-  };
-
-  ns.OutNode = OutNode;
-
-})(this);;
-(function(global) {
-  "use strict";
-
-  var ns = (global.asNEAT = global.asNEAT || {});
-
-  var Utils = {};
-
-  Utils.IS_DEBUG = false;
-
-  Utils.log = function(msg) {
-    if (Utils.IS_DEBUG)
-      console.log(msg)
-  };
-
-  Utils.error = function(msg) {
-    throw msg;
-  };
-
-  Utils.randomIn = function(min,max) {
-    return Math.random()*(max-min) + min;
-  };
-
-  Utils.randomIndexIn = function(min, max) {
-    return Math.floor(Utils.randomIn(min, max));
-  };
-
-  Utils.randomChance = function() {
-    return Math.random();
-  };
-
-  Utils.randomBool = function() {
-    return !!Math.round(Math.random());
-  };
-
-  /**
-   * Clamps the given number to the min or max
-   * @param x 
-   * @param min
-   * @param max
-   * @return A number in [min, max]
-   **/
-  Utils.clamp = function(x, min, max) {
-    if (x > max)
-      return max;
-    if (x < min)
-      return min;
-    return x;
-  };
-
-  //+ Jonas Raoni Soares Silva
-  //@ http://jsfromhell.com/array/shuffle [rev. #1]
-  Utils.shuffle = function(v) {
-    for(var j, x, i = v.length; 
-      i;
-      j = parseInt(Math.random() * i),
-        x = v[--i],
-        v[i] = v[j],
-        v[j] = x);
-    return v;
-  };
-
-  ns.Utils = Utils;
-})(this);;/**
+/**
  * @license
  * Lo-Dash 2.4.1 (Custom Build) lodash.com/license | Underscore.js 1.5.2 underscorejs.org/LICENSE
  * Build: `lodash modern -o ./dist/lodash.js`
@@ -363,4 +53,1044 @@ return l(o),l(i),n},J.min=function(n,t,e){var u=1/0,o=u;if(typeof t!="function"&
 },J.take=Bt,J.head=Bt,h(J,function(n,t){var e="sample"!==t;J.prototype[t]||(J.prototype[t]=function(t,r){var u=this.__chain__,o=n(this.__wrapped__,t,r);return u||null!=t&&(!r||e&&typeof t=="function")?new Q(o,u):o})}),J.VERSION="2.4.1",J.prototype.chain=function(){return this.__chain__=true,this},J.prototype.toString=function(){return oe(this.__wrapped__)},J.prototype.value=Qt,J.prototype.valueOf=Qt,St(["join","pop","shift"],function(n){var t=ae[n];J.prototype[n]=function(){var n=this.__chain__,e=t.apply(this.__wrapped__,arguments);
 return n?new Q(e,n):e}}),St(["push","reverse","sort","unshift"],function(n){var t=ae[n];J.prototype[n]=function(){return t.apply(this.__wrapped__,arguments),this}}),St(["concat","slice","splice"],function(n){var t=ae[n];J.prototype[n]=function(){return new Q(t.apply(this.__wrapped__,arguments),this.__chain__)}}),J}var v,h=[],g=[],y=0,m=+new Date+"",b=75,_=40,d=" \t\x0B\f\xa0\ufeff\n\r\u2028\u2029\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000",w=/\b__p\+='';/g,j=/\b(__p\+=)''\+/g,k=/(__e\(.*?\)|\b__t\))\+'';/g,x=/\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g,C=/\w*$/,O=/^\s*function[ \n\r\t]+\w/,N=/<%=([\s\S]+?)%>/g,I=RegExp("^["+d+"]*0+(?=.$)"),S=/($^)/,E=/\bthis\b/,R=/['\n\r\t\u2028\u2029\\]/g,A="Array Boolean Date Function Math Number Object RegExp String _ attachEvent clearTimeout isFinite isNaN parseInt setTimeout".split(" "),D="[object Arguments]",$="[object Array]",T="[object Boolean]",F="[object Date]",B="[object Function]",W="[object Number]",q="[object Object]",z="[object RegExp]",P="[object String]",K={};
 K[B]=false,K[D]=K[$]=K[T]=K[F]=K[W]=K[q]=K[z]=K[P]=true;var L={leading:false,maxWait:0,trailing:false},M={configurable:false,enumerable:false,value:null,writable:false},V={"boolean":false,"function":true,object:true,number:false,string:false,undefined:false},U={"\\":"\\","'":"'","\n":"n","\r":"r","\t":"t","\u2028":"u2028","\u2029":"u2029"},G=V[typeof window]&&window||this,H=V[typeof exports]&&exports&&!exports.nodeType&&exports,J=V[typeof module]&&module&&!module.nodeType&&module,Q=J&&J.exports===H&&H,X=V[typeof global]&&global;!X||X.global!==X&&X.window!==X||(G=X);
-var Y=s();typeof define=="function"&&typeof define.amd=="object"&&define.amd?(G._=Y, define(function(){return Y})):H&&J?Q?(J.exports=Y)._=Y:H._=Y:G._=Y}).call(this);
+var Y=s();typeof define=="function"&&typeof define.amd=="object"&&define.amd?(G._=Y, define(function(){return Y})):H&&J?Q?(J.exports=Y)._=Y:H._=Y:G._=Y}).call(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var Utils = {};
+
+  Utils.IS_DEBUG = true;
+
+  Utils.log = function(msg) {
+    if (!Utils.IS_DEBUG) return;
+    
+    console.log(msg);
+    if ($)
+      $('.log').prepend('<div>'+msg+'</div>');
+  };
+
+  Utils.error = function(msg) {
+    throw msg;
+  };
+
+  Utils.random = function() {
+    return Math.random();
+  };
+
+  /*
+    @params (min, max) or ({min, max})
+  */
+  Utils.randomIn = function(min, max) {
+    if (_.isObject(min)) {
+      max = min.max;
+      min = min.min;
+    }
+    return Math.random()*(max-min) + min;
+  };
+
+  /*
+    @params (min, max) or ({min, max})
+    @param min
+    @param max up to but not including (aka, an array's length for finding
+               an index)
+   */
+  Utils.randomIndexIn = function(min, max) {
+    if (_.isObject(min)) {
+      max = min.max;
+      min = min.min;
+    }
+    return Math.floor(Utils.randomIn(min, max));
+  };
+
+  /*
+    @param chance {number} [0,1]
+    @return If a random number was generated less than the chance
+  */
+  Utils.randomChance = function(chance) {
+    return Utils.random() <= chance;
+  };
+
+  Utils.randomBool = function() {
+    return !!Math.round(Math.random());
+  };
+
+  /** 
+    @param xs {array} [x1, x2,...]
+    @return A random element in xs, undefined if xs is empty
+  */
+  Utils.randomElementIn = function(xs) {
+    if (xs.length===0) return;
+
+    var index = Utils.randomIndexIn(0, xs.length);
+    return xs[index];
+  };
+
+  /**
+   * Clamps the given number to the min or max
+   * @param x 
+   * @param min
+   * @param max
+   * @return A number in [min, max]
+   **/
+  Utils.clamp = function(x, min, max) {
+    if (x > max)
+      return max;
+    if (x < min)
+      return min;
+    return x;
+  };
+
+  //+ Jonas Raoni Soares Silva
+  //@ http://jsfromhell.com/array/shuffle [rev. #1]
+  Utils.shuffle = function(v) {
+    for(var j, x, i = v.length; 
+      i;
+      j = parseInt(Math.random() * i),
+        x = v[--i],
+        v[i] = v[j],
+        v[j] = x);
+    return v;
+  };
+
+  /*
+    @param xs [{weight, element},...] with sum(weights)===1.0
+  */
+  Utils.weightedSelection = function(xs) {
+    var r = Math.random(),
+        sum = 0, element;
+    _.forEach(xs, function(x) {
+      sum+=x.weight;
+      if (r <= sum) {
+        element = x.element;
+        return false;
+      }
+    });
+    return element;
+  };
+
+  /*
+    Mutates the given
+    @param params
+   */
+  Utils.mutateParameter = function(params) {
+    _.defaults(params, {
+      obj: null,
+      parameter: 'param',
+      
+      // Chance of mutating only by an amount in mutation delta
+      // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.2, max: 0.2},
+      // note: the inverse is also possible (ex (-max, -min])
+      randomMutationRange: {min: 0.1, max: 1.5},
+      // true if only integers are allowed (ie for an index), otherwise
+      // uses floating point
+      discreteMutation: false
+    });
+
+    Utils.log('mutating('+params.parameter+') '+params.obj);
+
+    var delta, range, newParam;
+
+    // Only change the weight by a given delta
+    if (Utils.randomChance(params.mutationDeltaChance)) {
+      if (params.discreteMutation)
+        delta = Utils.randomIndexIn(params.mutationDelta);
+      else
+        delta = Utils.randomIn(params.mutationDelta);
+      Utils.log('mutating by delta '+delta.toFixed(3));
+      params.obj[params.parameter]+=delta;
+    }
+    // Use a new random weight in range
+    else {
+      range = params.randomMutationRange;
+      if (params.discreteMutation)
+        newParam = Utils.randomIndexIn(range);
+      else
+        newParam = Utils.randomIn(range);
+
+      // 50% chance of 
+      if (Utils.randomBool())
+        newParam*=-1;
+
+      Utils.log('mutating with new param '+newParam);
+      params.obj[params.parameter] = newParam;
+    }
+  };
+
+  ns.Utils = Utils;
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  window.AudioContext = window.AudioContext ||
+    window.webkitAudioContext;
+  ns.context = new AudioContext();
+
+  // All the registered usable nodes
+  // TODO: Give weights for selection in mutation?
+  ns.nodes = [
+    'GainNode',
+    'FilterNode',
+    'DelayNode',
+    
+    //'PannerNode' // Implemented, but doesn't do much without other mutations
+    
+    'CompressorNode'
+
+    //convolver // Not worth it atm
+    //wave shaper node? // like distortion? eq?
+  ];
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      log = ns.Utils.log;
+
+  // TODO: Different kinds of connections?
+  var Connection = function(parameters) {
+    _.defaults(this, parameters, this.defaultParameters);
+    this.gainNode = null;
+  };
+
+  Connection.prototype.defaultParameters = {
+    inNode: null,
+    outNode: null,
+    weight: 1.0,
+    enabled: true,
+
+    mutationDeltaChance: 0.8,
+    mutationDelta: {min: -0.2, max: 0.2},
+    randomMutationRange: {min: 0.1, max: 1.5},
+    discreteMutation: false
+  };
+  Connection.prototype.connect = function() {
+    if (!this.enabled) return;
+
+    // The gainNode is what carries the connection's 
+    // weight attribute
+    this.gainNode = ns.context.createGain();
+    this.gainNode.gain.value = this.weight;
+    this.inNode.node.connect(this.gainNode);
+    this.gainNode.connect(this.outNode.node);
+  };
+
+  Connection.prototype.disable = function() {
+    this.enabled = false;
+  };
+
+  Connection.prototype.mutate = function() {
+    ns.Utils.mutateParameter({
+      obj: this,
+      parameter: 'weight',
+      mutationDeltaChance: this.mutationDeltaChance,
+      mutationDelta: this.mutationDelta,
+      randomMutationRange: this.randomMutationRange
+    });
+  };
+
+  Connection.prototype.toString = function() {
+    return (this.enabled? "" : "*") +
+            "connection("+this.weight.toFixed(2)+")("+
+            this.inNode.id+" --> "+this.outNode.id+")";
+  };
+
+  ns.Connection = Connection;
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      log = ns.Utils.log;
+
+  var Network = function(parameters) {
+    _.defaults(this, parameters, this.defaultParameters);
+
+    if (this.nodes.length===0) {
+      this.nodes.push(ns.OscillatorNode.random());
+      this.nodes.push(new ns.OutNode());
+    }
+    if (this.connections.length===0) {
+      this.connections.push(new ns.Connection({
+        inNode: this.nodes[0],
+        outNode: this.nodes[1],
+        weight: 0.1
+      }));
+    }
+  };
+
+  Network.prototype.defaultParameters = {
+    nodes: [],
+    connections: [],
+    connectionMutationRate: 0.1,
+    nodeMutationRate: 0.1
+  };
+  Network.prototype.play = function() {
+    // refresh all the nodes since each can only play 
+    // once (note: changing in the current webAudio draft)
+    _.forEach(this.nodes, function(node) {
+      node.refresh();
+    });
+
+    // setup all the connections
+    _.forEach(this.connections, function(connection) {
+      connection.connect();
+    });
+
+    // play the oscillators
+    // TODO: Better way to access just the oscillator nodes
+    _.forEach(this.nodes, function(node) {
+      if (node.play)
+        node.play();
+    });
+  };
+  Network.prototype.mutate = function() {
+    var mutations = [
+      {weight: 0.25, element: this.splitMutation},
+      {weight: 0.25, element: this.addOscillator},
+      {weight: 0.25, element: this.mutateConnectionWeights},
+      {weight: 0.25, element: this.mutateNodeParameters}
+    ];
+    var mutation = ns.Utils.weightedSelection(mutations);
+    mutation.call(this);
+
+    // TODO: Other mutations?
+  };
+
+  /*
+    Randomly select a connection to split in two
+  */
+  Network.prototype.splitMutation = function() {
+    // Randomly select a connection
+    var connections = this.getEnabledConnections(),
+        connsLen = connections.length,
+        randomI = ns.Utils.randomIndexIn(0, connsLen),
+        conn = connections[randomI],
+        nodes = ns.nodes,
+        nodesLen = nodes.length,
+        nodesI = ns.Utils.randomIndexIn(0, nodesLen),
+        nodeType = nodes[nodesI];
+
+    // TODO: Create a random new node
+
+    // The first new connection matches the same weight
+    // as the old one and the new connection after the 
+    // split node is 1.0
+    var newNode = ns[nodeType].random(),
+        toConnection = new ns.Connection({
+          inNode: conn.inNode,
+          outNode: newNode,
+          weight: conn.weight
+        }),
+        fromConnection = new ns.Connection({
+          inNode: newNode,
+          outNode: conn.outNode
+        });
+
+    conn.disable();
+    this.nodes.push(newNode);
+    this.connections.push(toConnection);
+    this.connections.push(fromConnection);
+  
+    log('splitting conn '+conn.toString()+' with '+newNode.toString());
+  };
+
+  /*
+    Adds a single oscillator and connects it to a random input
+    in one of the current nodes
+   */
+  Network.prototype.addOscillator = function() {
+    var oscillator = ns.OscillatorNode.random();
+    
+    // TODO: will the out node always be [1]?
+    var connection = new ns.Connection({
+      inNode: oscillator,
+      outNode: this.nodes[1],
+      weight: 0.5
+    });
+
+    this.nodes.push(oscillator);
+    this.connections.push(connection);
+    // TODO: find new input to make a connection to
+    // TODO: For now, just connect it directly to the outNode
+
+    log('adding oscillator '+oscillator+toString());
+  };
+
+  /*
+    @param forceMutation {bool} (default: true) Makes at least one connection mutate
+  */
+  Network.prototype.mutateConnectionWeights = function(forceMutation) {
+    if (typeof(forceMutation)==='undefined') forceMutation = true;
+
+    var mutationRate = this.connectionMutationRate,
+        anyMutations = false;
+    _.forEach(this.connections, function(conn) {
+      if (ns.Utils.random() <= mutationRate) {
+        conn.mutate();
+        anyMutations = true;
+      }
+    });
+
+    // If no connections were mutated and forcing a mutation
+    // mutate a random one
+    if (!anyMutations && forceMutation) {
+      log('forcing weight mutation');
+      var conn = ns.Utils.randomElementIn(this.connections);
+      conn.mutate();
+    }
+  };
+
+  Network.prototype.mutateNodeParameters = function(forceMutation) {
+    if (typeof(forceMutation)==='undefined') forceMutation = true;
+
+    var mutationRate = this.nodeMutationRate,
+        anyMutations = false;
+    _.forEach(this.nodes, function(node) {
+      if (ns.Utils.random() <= mutationRate) {
+        node.mutate();
+        anyMutations = true;
+      }
+    });
+
+    // If no nodes were mutated and forcing a mutation
+    // mutate a random one
+    if (!anyMutations && forceMutation) {
+      log('forcing node mutation');
+      var node = ns.Utils.randomElementIn(this.nodes);
+      node.mutate();
+    }
+  };
+
+  Network.prototype.getEnabledConnections = function() {
+    // TODO: Cache if a performance issue
+    return _.filter(this.connections, 'enabled');
+  };
+
+  Network.prototype.toString = function() {
+    var str = "Nodes:<br>";
+    _.forEach(this.nodes, function(ele) {
+      str+=ele.toString()+"<br>";
+    });
+
+    str += "<br>Connections:<br>";
+    _.forEach(this.connections, function(ele) {
+      str+=ele.toString()+"<br>";
+    });
+
+    return str;
+  };
+
+  ns.Network = Network;
+
+})(this);;// Note: Yes the ! in the name is intentional. It makes sure the concat puts node
+// before any of its children. I know its bad but that should be fixed whenever
+// I add in the es6 transpiler.
+
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      log = ns.Utils.log;
+
+  var Node = function(parameters) {
+    _.defaults(this, parameters, this.defaultParameters);
+    this.id = Node.getNextId();
+  };
+  
+  Node.prototype.defaultParameters = {
+    //parameterMutationChance: 0.1,
+    //mutatableParameters: [
+    //  { see Utils.mutateParameter documentation
+    //    name,
+    //    mutationDeltaChance,
+    //    mutationDelta,
+    //    randomMutationRange,
+    //    discreteMutation
+    //  }
+    //]
+  }; 
+
+  // Refreshes any web audio context nodes
+  Node.prototype.refresh = function() {};
+  
+  Node.prototype.toString = function() {
+    return "Node";
+  };
+
+  /**
+    Mutates at least one parameter
+  */
+  Node.prototype.mutate = function() {
+    var self = this,
+        chance = this.parameterMutationChance,
+        parameters = this.mutatableParameters,
+        mutated = false;
+
+    if (!parameters || parameters.length===0) return;
+
+    _.forEach(this.mutatableParameters, function(param) {
+      if (!ns.Utils.randomChance(chance))
+        return true;
+      mutate(param);
+      mutated = true;
+    });
+
+    if (!mutated) {
+      var param = ns.Utils.randomElementIn(parameters);
+      mutate(param);
+    }
+
+    function mutate(param) {
+      ns.Utils.mutateParameter({
+        obj: self,
+        parameter: param.name,
+        mutationDeltaChance: param.mutationDeltaChance,
+        mutationDelta: param.mutationDelta,
+        randomMutationRange: param.randomMutationRange,
+        discreteMutation: param.discreteMutation
+      });
+    }
+  };
+  
+  Node.id=0;
+  Node.getNextId = function() {
+    return Node.id++;
+  };
+
+  // Creates a random node
+  Node.random = function() {return null;};
+
+  ns.Node = Node;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var CompressorNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  CompressorNode.prototype = new ns.Node();
+  CompressorNode.prototype.defaultParameters = {
+    // The decibel value above which the compression will start taking effect.
+    // Its default value is -24, with a nominal range of -100 to 0.
+    threshold: 0,
+
+    // A decibel value representing the range above the threshold where the curve
+    // smoothly transitions to the "ratio" portion. Its default value is 30, with
+    // a nominal range of 0 to 40.
+    knee: 0,
+
+    // The amount of dB change in input for a 1 dB change in output. Its default
+    // value is 12, with a nominal range of 1 to 20.
+    ratio: 0,
+
+    // A read-only decibel value for metering purposes, representing the current
+    // amount of gain reduction that the compressor is applying to the signal.
+    // If fed no signal the value will be 0 (no gain reduction). The nominal range
+    // is -20 to 0.
+    reduction: 0,
+
+    // The amount of time (in seconds) to reduce the gain by 10dB. Its default
+    // value is 0.003, with a nominal range of 0 to 1.
+    attack: 0,
+
+    // The amount of time (in seconds) to increase the gain by 10dB. Its default
+    // value is 0.250, with a nominal range of 0 to 1.
+    release: 0,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'threshold',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -50, max: 10}
+      },{
+        name: 'knee',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: 20, max: 40}
+      },{
+        name: 'ratio',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -1, max: 1},
+        // TODO: set global min?
+        randomMutationRange: {min: 8, max: 16}
+      },{
+        name: 'reduction',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -1, max: 1},
+        // TODO: set global min?
+        randomMutationRange: {min: -10, max: 0}
+      },{
+        name: 'attack',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.02, max: 0.02},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.1}
+      },{
+        name: 'release',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.1, max: 0.1},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.1}
+      }
+    ]
+  };
+  // Refreshes the cached node to be played again
+  CompressorNode.prototype.refresh = function() {
+    var node = ns.context.createDynamicsCompressor();
+    node.threshold.value = this.threshold;
+    node.knee.value = this.knee;
+    node.ratio.value = this.ratio;
+    node.reduction.value = this.reduction;
+    node.attack.value = this.attack;
+    node.release.value = this.release;
+
+    // cache the current node?
+    this.node = node;
+  };
+
+  CompressorNode.prototype.toString = function() {
+    return this.id+": CompressorNode("+
+      this.threshold.toFixed(2)+","+
+      this.knee.toFixed(2)+","+
+      this.ratio.toFixed(2)+","+
+      this.reduction.toFixed(2)+","+
+      this.attack.toFixed(2)+","+
+      this.release.toFixed(2)+")";
+  };
+
+  CompressorNode.random = function() {
+    var threshold = ns.Utils.randomIn(-50, 10),
+        knee = ns.Utils.randomIn(20, 40),
+        ratio = ns.Utils.randomIn(8, 16),
+        reduction = ns.Utils.randomIn(-10, 0),
+        attack = ns.Utils.randomIn(0, 0.1),
+        release = ns.Utils.randomIn(0, 0.1);
+
+    return new CompressorNode({
+      threshold: threshold,
+      knee: knee,
+      ratio: ratio,
+      reduction: reduction,
+      attack: attack,
+      release: release
+    });
+  };
+
+  ns.CompressorNode = CompressorNode;
+
+})(this);
+
+;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var DelayNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  DelayNode.prototype = new ns.Node();
+  DelayNode.prototype.defaultParameters = {
+    // in seconds
+    delayTime: 0,
+
+    // [0,1], although >=1 is allowed... not advised
+    feedbackRatio: 0.2,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'delayTime',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.5, max: 0.5},
+        randomMutationRange: {min: 0.0, max: 3.0}
+      },{
+        name: 'feedbackRatio',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.2, max: 0.2},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.6}
+      }
+    ]
+  };
+  // Refreshes the cached node to be played again
+  DelayNode.prototype.refresh = function() {
+    var delayNode = ns.context.createDelay();
+    delayNode.delayTime = this.delayTime;
+
+    // add an additional gain node for 'delay' feedback
+    var gainNode = ns.context.createGain();
+    gainNode.gain.value = this.feedbackRatio;
+
+    delayNode.connect(gainNode);
+    gainNode.connect(delayNode);
+
+    this.node = delayNode;
+  };
+
+  DelayNode.prototype.toString = function() {
+    return this.id+": DelayNode("+
+      this.delayTime.toFixed(2)+","+
+      this.feedbackRatio.toFixed(2)+")";
+  };
+
+  DelayNode.random = function() {
+    return new DelayNode({
+      delayTime: ns.Utils.randomIn(0.0, 3.0),
+      feedbackRatio: ns.Utils.randomIn(0, 0.6)
+    });
+  };
+
+  ns.DelayNode = DelayNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var FilterNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  FilterNode.prototype = new ns.Node();
+  FilterNode.prototype.defaultParameters = {
+    type: 0,
+    frequency: 500,
+    detune: 0,
+    q: 1,
+    gain: 1,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'type',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0,
+        randomMutationRange: {min: 0, max: 8},
+        discreteMutation: true
+      },{
+        name: 'frequency',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -500, max: 500},
+        // TODO: set global min?
+        randomMutationRange: {min: 27.5, max: 1046.5}
+      }
+      // todo: other parameters
+    ]
+  };
+  // Refreshes the cached node to be played again
+  FilterNode.prototype.refresh = function() {
+    var node = ns.context.createBiquadFilter();
+    node.type = this.type;
+    node.frequency.value = this.frequency;
+    node.detune.value = this.detune;
+    node.Q.value = this.q;
+    node.gain.value = this.gain;
+
+    // cache the current node?
+    this.node = node;
+  };
+
+  FilterNode.prototype.toString = function() {
+    return this.id+": FilterNode("+this.type+","+this.frequency.toFixed(2)+")";
+  };
+
+  FilterNode.TYPES = [
+    "lowpass",
+    "highpass",
+    "bandpass",
+    "lowshelf",
+    "highshelf",
+    "peaking",
+    "notch",
+    "allpass"
+  ];
+  FilterNode.random = function() {
+    var typeI = ns.Utils.randomIndexIn(0,FilterNode.TYPES.length),
+        // A0 to C8
+        freq = ns.Utils.randomIn(27.5, 1046.5);
+
+    // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
+    // Q - 1, with a nominal range of 0.0001 to 1000.
+    // gain - 0, with a nominal range of -40 to 40.
+
+    return new FilterNode({
+      type: FilterNode.TYPES[typeI],
+      frequency: freq,
+      // TODO: specefic ranges based on type
+      //detune: 0,
+      //q: 1,
+      //gain: 1
+    });
+  };
+
+  ns.FilterNode = FilterNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var GainNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  GainNode.prototype = new ns.Node();
+  GainNode.prototype.defaultParameters = {
+    // Represents the amount of gain to apply. Its default value is 1
+    // (no gain change). The nominal minValue is 0, but may be set
+    // negative for phase inversion. The nominal maxValue is 1, but
+    // higher values are allowed (no exception thrown).This parameter
+    // is a-rate
+    gain: 1,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'gain',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.2, max: 0.2},
+        // TODO: set global min?
+        randomMutationRange: {min: -1, max: 1}
+      }
+    ]
+  };
+  // Refreshes the cached node to be played again
+  GainNode.prototype.refresh = function() {
+    var node = ns.context.createGain();
+    node.gain.value = this.gain;
+    this.node = node;
+  };
+
+  GainNode.prototype.toString = function() {
+    return this.id+": GainNode("+
+      this.gain.toFixed(2)+")";
+  };
+
+  /*
+    @return a GainNode with a gain of [0.5, 1.5) || (-1.5, -5.1]
+  */
+  GainNode.random = function() {
+    var isInverse = ns.Utils.randomBool(),
+        gain = ns.Utils.randomIn(0.5, 1.5);
+    gain*= (isInverse? -1 : 1);
+
+    return new GainNode({
+      gain: gain
+    });
+  };
+
+  ns.GainNode = GainNode;
+
+})(this);
+
+;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      A0 = 27.5,
+      C6 = 1046.5,
+      C8 = 4186.0;
+
+  var OscillatorNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  OscillatorNode.prototype = new ns.Node();
+
+  OscillatorNode.prototype.defaultParameters = {
+    type: 0,
+    frequency: 1000,
+    detune: 0,
+    
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'type',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0,
+        randomMutationRange: {min: 0, max: 4},
+        discreteMutation: true
+      },{
+        name: 'frequency',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -500, max: 500},
+        // TODO: set global min?
+        randomMutationRange: {min: A0, max: C6}
+      }
+      // todo: detune?
+    ]
+  };
+
+  // Refreshes the cached node to be played again
+  OscillatorNode.prototype.refresh = function() {
+    var node = ns.context.createOscillator();
+    node.type = this.type;
+    node.frequency.value = this.frequency;
+    // cache the current node?
+    this.node = node;
+  };
+  OscillatorNode.prototype.play = function() {
+    var node = this.node;
+    node.start(0);
+    setTimeout(function() {
+      node.stop(0);
+    }, 500);
+  };
+
+  OscillatorNode.prototype.toString = function() {
+    return this.id+": OscillatorNode("+this.type+","+this.frequency.toFixed(2)+")";
+  };
+
+
+  OscillatorNode.TYPES = [
+    "sine",
+    "square",
+    "sawtooth",
+    "triangle"
+    //"custom"
+  ];
+  OscillatorNode.random = function() {
+    var typeI = ns.Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
+        freq = ns.Utils.randomIn(A0, C6);
+    // todo: only allow standard notes?
+
+    // From w3 spec
+    // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
+    // Q - 1, with a nominal range of 0.0001 to 1000.
+    // gain - 0, with a nominal range of -40 to 40.
+
+    return new OscillatorNode({
+      type: OscillatorNode.TYPES[typeI],
+      frequency: freq
+      //detune: 0
+    });
+  };
+
+  ns.OscillatorNode = OscillatorNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var OutNode = function() {
+    ns.Node.call(this);
+    this.node = ns.context.destination;
+  };
+
+  OutNode.prototype = new ns.Node();
+  OutNode.prototype.refresh = function() {
+  };
+  OutNode.prototype.toString = function() {
+    return this.id+": OutNode";
+  };
+
+  ns.OutNode = OutNode;
+
+})(this);;
+(function(global) {
+  "use strict";
+
+  var ns = (global.asNEAT = global.asNEAT || {});
+
+  var PannerNode = function(parameters) {
+    ns.Node.call(this, parameters);
+  };
+
+  PannerNode.prototype = new ns.Node();
+  PannerNode.prototype.defaultParameters = {
+    // position
+    x: 0,
+    y: 0,
+    z: 0,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'x',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      },{
+        name: 'y',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      },{
+        name: 'z',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      }
+    ]
+  };
+  // Refreshes the cached node to be played again
+  PannerNode.prototype.refresh = function() {
+    var node = ns.context.createPanner();
+    node.setPosition(this.x, this.y, this.z);
+    //node.setVelocity
+    //node.setOrientation
+    //other parameters: distance model, sound cone, &c...
+
+    // cache the current node?
+    this.node = node;
+  };
+
+  PannerNode.prototype.toString = function() {
+    return this.id+": PannerNode("+this.x.toFixed(2)+
+      ", "+this.y.toFixed(2)+", "+this.z.toFixed(2)+")";
+  };
+
+  PannerNode.random = function() {
+    var x = ns.Utils.randomIn(-5.0, 5.0),
+        y = ns.Utils.randomIn(-5.0, 5.0),
+        z = ns.Utils.randomIn(-5.0, 5.0);
+
+    return new PannerNode({
+      x:x,
+      y:y,
+      z:z
+    });
+  };
+
+  ns.PannerNode = PannerNode;
+
+})(this);
