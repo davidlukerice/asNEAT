@@ -37,7 +37,8 @@
 
   /*
     @param min
-    @param max up to but not including (aka, an array's length)
+    @param max up to but not including (aka, an array's length for finding
+               an index)
    */
   Utils.randomIndexIn = function(min, max) {
     return Math.floor(Utils.randomIn(min, max));
@@ -107,6 +108,56 @@
       }
     });
     return element;
+  };
+
+  /*
+    Mutates the given
+    @param params
+   */
+  Utils.mutateParameter = function(params) {
+    _.defaults(params, {
+      obj: null,
+      parameter: 'param',
+      
+      // Chance of mutating only by an amount in mutation delta
+      // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.2, max: 0.2},
+      // note: the inverse is also possible (ex (-max, -min])
+      randomMutationRange: {min: 0.1, max: 1.5},
+      // true if only integers are allowed (ie for an index), otherwise
+      // uses floating point
+      discreteMutation: false
+    });
+
+    Utils.log('mutating('+params.parameter+') '+params.obj);
+
+    var delta, range, newParam;
+
+    // Only change the weight by a given delta
+    if (Utils.randomChance(params.mutationDeltaChance)) {
+      if (p.discreteMutation)
+        delta = Utils.randomIndexIn(params.mutationDelta);
+      else
+        delta = Utils.randomIn(params.mutationDelta);
+      Utils.log('mutating by delta '+delta.toFixed(3));
+      params.obj[params.parameter]+=delta;
+    }
+    // Use a new random weight in range
+    else {
+      range = params.randomMutationRange;
+      if (p.discreteMutation)
+        newParam = Utils.randomIndexIn(range);
+      else
+        newParam = Utils.randomIn(range);
+
+      // 50% chance of 
+      if (Utils.randomBool())
+        newParam*=-1;
+
+      Utils.log('mutating with new param '+newParam);
+      params.obj[params.parameter] = newParam;
+    }
   };
 
   ns.Utils = Utils;

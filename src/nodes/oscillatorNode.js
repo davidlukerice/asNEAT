@@ -14,7 +14,18 @@
   OscillatorNode.prototype.defaultParameters = {
     type: 0,
     frequency: 1000,
-    detune: 0
+    detune: 0,
+    
+    parameterMutationChance: 0.1,
+    mutatableParamaters: [
+      {
+        name: 'type',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0,
+        randomMutationRange: {min: 0, max: 4},
+        discreteMutation: true
+      }
+    ]
   };
 
   // Refreshes the cached node to be played again

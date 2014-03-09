@@ -24,7 +24,8 @@
   Network.prototype.defaultParameters = {
     nodes: [],
     connections: [],
-    connectionMutationRate:  0.1
+    connectionMutationRate: 0.1,
+    nodeMutationRate: 0.1
   };
   Network.prototype.play = function() {
     // refresh all the nodes since each can only play 
@@ -47,16 +48,14 @@
   };
   Network.prototype.mutate = function() {
     var mutations = [
-      {weight: 0.3, element: this.splitMutation},
-      {weight: 0.3, element: this.addOscillator},
-      {weight: 0.4, element: this.mutateConnectionWeights}
+      {weight: 0.25, element: this.splitMutation},
+      {weight: 0.25, element: this.addOscillator},
+      {weight: 0.25, element: this.mutateConnectionWeights},
+      {weight: 0.25, element: this.mutateNodeParameters}
     ];
     var mutation = ns.Utils.weightedSelection(mutations);
     mutation.call(this);
 
-    // TODO: Add Connection
-    // TODO: Add oscillator ( part of new connection?)
-    // TODO: Mutate a node parameter
     // TODO: Other mutations?
   };
 
@@ -124,8 +123,7 @@
     @param forceMutation {bool} (default: true) Makes at least one connection mutate
   */
   Network.prototype.mutateConnectionWeights = function(forceMutation) {
-    if (typeof(forceMutation)==='undefined')
-      forceMutation = true;
+    if (typeof(forceMutation)==='undefined') forceMutation = true;
 
     var mutationRate = this.connectionMutationRate,
         anyMutations = false;
@@ -142,6 +140,27 @@
       log('forcing weight mutation');
       var conn = ns.Utils.randomElementIn(this.connections);
       conn.mutate();
+    }
+  };
+
+  Network.prototype.mutateNodeParameters = function(forceMutation) {
+    if (typeof(forceMutation)==='undefined') forceMutation = true;
+
+    var mutationRate = this.nodeMutationRate,
+        anyMutations = false;
+    _.forEach(this.nodes, function(node) {
+      if (ns.Utils.random() <= mutationRate) {
+        node.mutate();
+        anyMutations = true;
+      }
+    });
+
+    // If no nodes were mutated and forcing a mutation
+    // mutate a random one
+    if (!anyMutations && forceMutation) {
+      log('forcing node mutation');
+      var node = ns.Utils.randomElementIn(this.nodes);
+      node.mutate();
     }
   };
 

@@ -1,4 +1,6 @@
 Current:
+  - mutate node parameter
+    * Individual node mutations
 
 Planned:
 - NEAT
@@ -6,8 +8,6 @@ Planned:
     - split connection (weight which nodes are picked?)
     - add oscillator (what to connect to? LFO for fm?)
       * FM: http://chromium.googlecode.com/svn/trunk/samples/audio/oscillator-fm2.html
-    - mutate connection weight
-    - mutate node parameter
     - other
   * crossovers
 - Connections:

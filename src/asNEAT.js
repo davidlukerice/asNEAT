@@ -20,7 +20,7 @@
     'CompressorNode'
 
     //convolver // Not worth it atm
-    //wave shaper node?
+    //wave shaper node? // like distortion? eq?
   ];
 
 })(this);
