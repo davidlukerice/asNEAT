@@ -11,10 +11,11 @@
     <button class='play'>play</button>
     <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
-    <button class="addOscillator">add Oscillator</button>
+    <button class="addOscillator" disabled="">add Oscillator</button>
+    <button class="addConnection">Add Connection</button>
     <button class="mutateWeight">Mutate Weights</button>
     <button class="mutateNodeParameters">Mutate Node parameter</button>
-    
+
     <br>
     <br>
     <h2>Current Instrument</h2>
@@ -51,6 +52,9 @@
           $('button.addOscillator').click(function() {
             network.addOscillator();
             updateDisplay();
+          });
+          $('button.addConnection').click(function() {
+            log('todo: add Connection');
           });
           $('button.mutateWeight').click(function() {
             network.mutateConnectionWeights();

@@ -1,6 +1,6 @@
 Current:
-  - mutate node parameter
-    * Individual node mutations
+  - mutate: add connection
+
 
 Planned:
 - NEAT
