@@ -14,8 +14,8 @@
   };
   
   Node.prototype.defaultParameters = {
-    parameterMutationChance: 0.1,
-    mutatableParameters: [
+    //parameterMutationChance: 0.1,
+    //mutatableParameters: [
     //  { see Utils.mutateParameter documentation
     //    name,
     //    mutationDeltaChance,
@@ -23,8 +23,8 @@
     //    randomMutationRange,
     //    discreteMutation
     //  }
-    ]
-  };
+    //]
+  }; 
 
   // Refreshes any web audio context nodes
   Node.prototype.refresh = function() {};
@@ -42,7 +42,7 @@
         parameters = this.mutatableParameters,
         mutated = false;
 
-    if (parameters.length===0) return;
+    if (!parameters || parameters.length===0) return;
 
     _.forEach(this.mutatableParameters, function(param) {
       if (!ns.Utils.randomChance(chance))

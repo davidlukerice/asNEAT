@@ -2,11 +2,13 @@
 (function(global) {
   "use strict";
 
-  var ns = (global.asNEAT = global.asNEAT || {});
+  var ns = (global.asNEAT = global.asNEAT || {}),
+      A0 = 27.5,
+      C6 = 1046.5,
+      C8 = 4186.0;
 
   var OscillatorNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   OscillatorNode.prototype = new ns.Node();
@@ -17,14 +19,22 @@
     detune: 0,
     
     parameterMutationChance: 0.1,
-    mutatableParamaters: [
+    mutatableParameters: [
       {
         name: 'type',
         // doesn't make sense to change type by a delta
         mutationDeltaChance: 0,
         randomMutationRange: {min: 0, max: 4},
         discreteMutation: true
+      },{
+        name: 'frequency',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -500, max: 500},
+        // TODO: set global min?
+        randomMutationRange: {min: A0, max: C6}
       }
+      // todo: detune?
     ]
   };
 
@@ -58,11 +68,8 @@
   ];
   OscillatorNode.random = function() {
     var typeI = ns.Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-        // A0 to C8
-        A0 = 27.5,
-        C6 = 1046.5,
-        C8 = 4186.0,
         freq = ns.Utils.randomIn(A0, C6);
+    // todo: only allow standard notes?
 
     // From w3 spec
     // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).

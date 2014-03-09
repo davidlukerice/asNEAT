@@ -5,8 +5,7 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var CompressorNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   CompressorNode.prototype = new ns.Node();
@@ -36,7 +35,54 @@
 
     // The amount of time (in seconds) to increase the gain by 10dB. Its default
     // value is 0.250, with a nominal range of 0 to 1.
-    release: 0
+    release: 0,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'threshold',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -50, max: 10}
+      },{
+        name: 'knee',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: 20, max: 40}
+      },{
+        name: 'ratio',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -1, max: 1},
+        // TODO: set global min?
+        randomMutationRange: {min: 8, max: 16}
+      },{
+        name: 'reduction',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -1, max: 1},
+        // TODO: set global min?
+        randomMutationRange: {min: -10, max: 0}
+      },{
+        name: 'attack',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.02, max: 0.02},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.1}
+      },{
+        name: 'release',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.1, max: 0.1},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.1}
+      }
+    ]
   };
   // Refreshes the cached node to be played again
   CompressorNode.prototype.refresh = function() {

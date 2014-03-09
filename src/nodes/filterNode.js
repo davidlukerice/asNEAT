@@ -5,8 +5,7 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var FilterNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   FilterNode.prototype = new ns.Node();
@@ -15,7 +14,26 @@
     frequency: 500,
     detune: 0,
     q: 1,
-    gain: 1
+    gain: 1,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'type',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0,
+        randomMutationRange: {min: 0, max: 8},
+        discreteMutation: true
+      },{
+        name: 'frequency',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -500, max: 500},
+        // TODO: set global min?
+        randomMutationRange: {min: 27.5, max: 1046.5}
+      }
+      // todo: other parameters
+    ]
   };
   // Refreshes the cached node to be played again
   FilterNode.prototype.refresh = function() {
@@ -47,7 +65,7 @@
   FilterNode.random = function() {
     var typeI = ns.Utils.randomIndexIn(0,FilterNode.TYPES.length),
         // A0 to C8
-        freq = ns.Utils.randomIn(27.5, 4186.0);
+        freq = ns.Utils.randomIn(27.5, 1046.5);
 
     // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
     // Q - 1, with a nominal range of 0.0001 to 1000.

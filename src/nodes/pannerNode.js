@@ -5,8 +5,7 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var PannerNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   PannerNode.prototype = new ns.Node();
@@ -14,7 +13,33 @@
     // position
     x: 0,
     y: 0,
-    z: 0
+    z: 0,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'x',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      },{
+        name: 'y',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      },{
+        name: 'z',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -5, max: 5},
+        // TODO: set global min?
+        randomMutationRange: {min: -5, max: 5}
+      }
+    ]
   };
   // Refreshes the cached node to be played again
   PannerNode.prototype.refresh = function() {

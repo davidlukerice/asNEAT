@@ -5,8 +5,7 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var DelayNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   DelayNode.prototype = new ns.Node();
@@ -15,7 +14,25 @@
     delayTime: 0,
 
     // [0,1], although >=1 is allowed... not advised
-    feedbackRatio: 0.2
+    feedbackRatio: 0.2,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'delayTime',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.5, max: 0.5},
+        randomMutationRange: {min: 0.0, max: 3.0}
+      },{
+        name: 'feedbackRatio',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.2, max: 0.2},
+        // TODO: set global min?
+        randomMutationRange: {min: 0, max: 0.6}
+      }
+    ]
   };
   // Refreshes the cached node to be played again
   DelayNode.prototype.refresh = function() {

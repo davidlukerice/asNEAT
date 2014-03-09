@@ -5,8 +5,7 @@
   var ns = (global.asNEAT = global.asNEAT || {});
 
   var GainNode = function(parameters) {
-    ns.Node.call(this);
-    _.defaults(this, parameters, this.defaultParameters);
+    ns.Node.call(this, parameters);
   };
 
   GainNode.prototype = new ns.Node();
@@ -16,7 +15,19 @@
     // negative for phase inversion. The nominal maxValue is 1, but
     // higher values are allowed (no exception thrown).This parameter
     // is a-rate
-    gain: 0
+    gain: 1,
+
+    parameterMutationChance: 0.1,
+    mutatableParameters: [
+      {
+        name: 'gain',
+        // doesn't make sense to change type by a delta
+        mutationDeltaChance: 0.8,
+        mutationDelta: {min: -0.2, max: 0.2},
+        // TODO: set global min?
+        randomMutationRange: {min: -1, max: 1}
+      }
+    ]
   };
   // Refreshes the cached node to be played again
   GainNode.prototype.refresh = function() {

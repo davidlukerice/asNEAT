@@ -28,7 +28,7 @@
     @params (min, max) or ({min, max})
   */
   Utils.randomIn = function(min, max) {
-    if (min.min) {
+    if (_.isObject(min)) {
       max = min.max;
       min = min.min;
     }
@@ -36,11 +36,16 @@
   };
 
   /*
+    @params (min, max) or ({min, max})
     @param min
     @param max up to but not including (aka, an array's length for finding
                an index)
    */
   Utils.randomIndexIn = function(min, max) {
+    if (_.isObject(min)) {
+      max = min.max;
+      min = min.min;
+    }
     return Math.floor(Utils.randomIn(min, max));
   };
 
@@ -136,7 +141,7 @@
 
     // Only change the weight by a given delta
     if (Utils.randomChance(params.mutationDeltaChance)) {
-      if (p.discreteMutation)
+      if (params.discreteMutation)
         delta = Utils.randomIndexIn(params.mutationDelta);
       else
         delta = Utils.randomIn(params.mutationDelta);
@@ -146,7 +151,7 @@
     // Use a new random weight in range
     else {
       range = params.randomMutationRange;
-      if (p.discreteMutation)
+      if (params.discreteMutation)
         newParam = Utils.randomIndexIn(range);
       else
         newParam = Utils.randomIn(range);
