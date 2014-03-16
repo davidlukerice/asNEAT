@@ -165,5 +165,18 @@
     }
   };
 
+  /*
+    Generates a reversible unique number from two numbers
+  */
+  Utils.cantorPair = function(x, y) {
+    return ((x+y)*(x+y+1)) / 2 + y;
+  };
+  Utils.reverseCantorPair = function(z) {
+    var t = Math.floor((-1 + Math.sqrt(1+8*z))/2);
+    var x = t*(t+3)/2 - z;
+    var y = z - t*(t+1)/2;
+    return {x:x, y:y};
+  };
+
   ns.Utils = Utils;
 })(this);

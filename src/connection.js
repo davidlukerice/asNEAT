@@ -9,6 +9,7 @@
   var Connection = function(parameters) {
     _.defaults(this, parameters, this.defaultParameters);
     this.gainNode = null;
+    this.id = ns.Utils.cantorPair(this.inNode.id, this.outNode.id);
   };
 
   Connection.prototype.defaultParameters = {
