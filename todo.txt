@@ -3,6 +3,8 @@ Current:
 
 
 Planned:
+- Use es6-module-transpiler so I dont have to '!' node.js
+
 - NEAT
   * Mutations
     - split connection (weight which nodes are picked?)
@@ -30,4 +32,3 @@ Planned:
 
 Future:
 - Have tmp files correctly linked to in debugger so we don't have to sort out a large asNEAT file
-- Use es6-module-transpiler so I dont have to '!' node.js

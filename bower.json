@@ -6,7 +6,7 @@
     "David Rice <davidlukerice@gmail.com>"
   ],
   "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
-  "main": "./lib/asNEAT.js",
+  "main": "./src/asNEAT.js",
   "keywords": [
     "asNEAT",
     "Web",
@@ -26,6 +26,5 @@
     "src"
   ],
   "dependencies": [
-    
   ]
 }
