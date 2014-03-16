@@ -2,7 +2,7 @@
   "name": "asNEAT",
   "version": "0.3.0",
   "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
-  "main": "dist/asNEAT.min.js",
+  "main": "./dist/asNEAT.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
