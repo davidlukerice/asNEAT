@@ -18,6 +18,7 @@ Planned:
   * delay
     - make actually 'slap dellay ish'
     - Allow vanilla node as well (may create some interesting stereo delays?)
+      - Allow new type of loop mutation( mutate from delay node a gain loop node)
   * oscillators
     - connect to inputs other than the out node? (FM synthesis)
   * panner node
