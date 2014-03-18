@@ -3,7 +3,6 @@ Current:
 
 
 Planned:
-- Use es6-module-transpiler so I dont have to '!' node.js
 
 - NEAT
   * Mutations

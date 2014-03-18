@@ -1,58 +1,55 @@
 
-(function(global) {
-  "use strict";
+var Utils = require('asNEAT/utils')['default'],
+    log = Utils.log,
+    context = require('asNEAT/asNEAT')['default'].context;
 
-  var ns = (global.asNEAT = global.asNEAT || {}),
-      log = ns.Utils.log;
+// TODO: Different kinds of connections?
+var Connection = function(parameters) {
+  _.defaults(this, parameters, this.defaultParameters);
+  this.gainNode = null;
+  this.id = Utils.cantorPair(this.inNode.id, this.outNode.id);
+};
 
-  // TODO: Different kinds of connections?
-  var Connection = function(parameters) {
-    _.defaults(this, parameters, this.defaultParameters);
-    this.gainNode = null;
-    this.id = ns.Utils.cantorPair(this.inNode.id, this.outNode.id);
-  };
+Connection.prototype.defaultParameters = {
+  inNode: null,
+  outNode: null,
+  weight: 1.0,
+  enabled: true,
 
-  Connection.prototype.defaultParameters = {
-    inNode: null,
-    outNode: null,
-    weight: 1.0,
-    enabled: true,
+  mutationDeltaChance: 0.8,
+  mutationDelta: {min: -0.2, max: 0.2},
+  randomMutationRange: {min: 0.1, max: 1.5},
+  discreteMutation: false
+};
+Connection.prototype.connect = function() {
+  if (!this.enabled) return;
 
-    mutationDeltaChance: 0.8,
-    mutationDelta: {min: -0.2, max: 0.2},
-    randomMutationRange: {min: 0.1, max: 1.5},
-    discreteMutation: false
-  };
-  Connection.prototype.connect = function() {
-    if (!this.enabled) return;
+  // The gainNode is what carries the connection's 
+  // weight attribute
+  this.gainNode = context.createGain();
+  this.gainNode.gain.value = this.weight;
+  this.inNode.node.connect(this.gainNode);
+  this.gainNode.connect(this.outNode.node);
+};
 
-    // The gainNode is what carries the connection's 
-    // weight attribute
-    this.gainNode = ns.context.createGain();
-    this.gainNode.gain.value = this.weight;
-    this.inNode.node.connect(this.gainNode);
-    this.gainNode.connect(this.outNode.node);
-  };
+Connection.prototype.disable = function() {
+  this.enabled = false;
+};
 
-  Connection.prototype.disable = function() {
-    this.enabled = false;
-  };
+Connection.prototype.mutate = function() {
+  Utils.mutateParameter({
+    obj: this,
+    parameter: 'weight',
+    mutationDeltaChance: this.mutationDeltaChance,
+    mutationDelta: this.mutationDelta,
+    randomMutationRange: this.randomMutationRange
+  });
+};
 
-  Connection.prototype.mutate = function() {
-    ns.Utils.mutateParameter({
-      obj: this,
-      parameter: 'weight',
-      mutationDeltaChance: this.mutationDeltaChance,
-      mutationDelta: this.mutationDelta,
-      randomMutationRange: this.randomMutationRange
-    });
-  };
+Connection.prototype.toString = function() {
+  return (this.enabled? "" : "*") +
+          "connection("+this.weight.toFixed(2)+")("+
+          this.inNode.id+" --> "+this.outNode.id+")";
+};
 
-  Connection.prototype.toString = function() {
-    return (this.enabled? "" : "*") +
-            "connection("+this.weight.toFixed(2)+")("+
-            this.inNode.id+" --> "+this.outNode.id+")";
-  };
-
-  ns.Connection = Connection;
-})(this);
+export default Connection;

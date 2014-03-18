@@ -10,10 +10,13 @@
   "keywords": [
     "asNEAT",
     "Web",
+    "webaudio",
     "Audio",
     "Genetic",
     "Programming",
-    "Evolution"
+    "Evolution",
+    "NEAT",
+    "API"
   ],
   "license": "MIT",
   "ignore": [
@@ -25,5 +28,6 @@
     "src"
   ],
   "dependencies": {
+    "lodash": "~2.4.1"
   }
 }

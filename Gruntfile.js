@@ -1,30 +1,11 @@
 module.exports = function(grunt) {
 
+  var banner = '/* <%= pkg.name %> <%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n';
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    concat: {
-      options: {
-        separator: ';'
-      },
-      dist: {
-        src: ['src/vendor/*.js','src/*.js', 'src/nodes/*.js'],
-        dest: 'dist/<%= pkg.name %>.js'
-      }
-    },
-    uglify: {
-      options: {
-        banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
-      },
-      dist: {
-        files: {
-          'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
-        }
-      }
-    },
-    qunit: {
-      files: ['test/**/*.html']
-    },
+
     jshint: {
       files: [
         'gruntfile.js',
@@ -32,21 +13,71 @@ module.exports = function(grunt) {
         '!src/vendor/*.js',
         'test/test/*.js'],
       options: {
-        globals: {
-          jQuery: true,
-          console: true,
-          module: true
+        jshintrc: '.jshintrc'
+      }
+    },
+
+    clean: ['tmp'],
+
+    copy: {
+      main: {
+        files: [{
+          expand: true,
+          cwd:'src',
+          src: ['**/*.js'],
+          dest: 'tmp/javascript/'
+        }]
+      }
+    },
+
+    transpile: {
+      main: {
+        type: 'amd',
+        moduleName: function(path) {
+          return grunt.config.process('<%= pkg.moduleName %>/') + path;
+        },
+        files: [{
+          expand: true,
+          cwd: 'tmp/javascript/',
+          src: ['**/*.js'],
+          dest: 'tmp/transpiled/'
+        }]
+      }
+    },
+
+    concat: {
+      options: {
+        banner: banner
+      },
+      dist: {
+        src: ['tmp/transpiled/**/*.js'],
+        dest: 'dist/<%= pkg.name %>.js'
+      }
+    },
+
+    uglify: {
+      options: {
+        banner: banner
+      },
+      dist: {
+        files: {
+          'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
         }
       }
     },
+
+    qunit: {
+      files: ['test/**/*.html']
+    },
+    
     watch: {
       lint: {
         files: ['<%= jshint.files %>'],
         tasks: ['jshint', 'qunit']        
       },
-      dist: {
+      build: {
         files: ['src/**/*.js'],
-        tasks: ['concat', 'qunit', 'uglify']
+        tasks: ['clean', 'copy', 'transpile', 'concat', 'uglify']
       }
     },
     concurrent: {
@@ -54,7 +85,7 @@ module.exports = function(grunt) {
         logConcurrentOutput: true
       },
       watches: {
-        tasks: ["watch:lint", "watch:dist"]
+        tasks: ["watch:lint", "watch:build"]
       }
     }
   });
@@ -65,12 +96,14 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-concurrent');
+  grunt.loadNpmTasks('grunt-es6-module-transpiler');
 
-  // task(s).
+  // tasks
   grunt.registerTask('test', ['jshint', 'qunit']);
-  grunt.registerTask('dist', ['jshint', 'concat', 'qunit', 'uglify']);
-  grunt.registerTask('watchLint', ['watch:lint']);
-  grunt.registerTask('watchDist', ['test', 'dist', 'concurrent:watches']);
-  grunt.registerTask('default', ['watchDist']);
+  grunt.registerTask('build', ['clean', 'copy', 'transpile', 'concat', 'uglify']);
+  grunt.registerTask('watchBuild', ['test', 'build', 'concurrent:watches']);
+  grunt.registerTask('default', ['watchBuild']);
 };

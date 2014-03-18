@@ -3,6 +3,8 @@
   <head>
     <title>asNEAT Demo</title>
     <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="./vendor/lodash/dist/lodash.min.js"></script>
+    <script src="./vendor/loader.js"></script>
     <script src="./dist/asNEAT.js"></script>
   </head>
   <body>
@@ -31,9 +33,9 @@
     <script type="text/javascript">
       !function() {
         $(function() {
-          var ns = asNEAT,
-              log = ns.Utils.log,
-              network = new ns.Network();
+          var log = require('asNEAT/utils')['default'].log,
+              Network = require('asNEAT/network')['default'],
+              network = new Network();
 
           updateDisplay();
 
