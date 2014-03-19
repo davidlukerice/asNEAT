@@ -83,6 +83,21 @@ CompressorNode.prototype.defaultParameters = {
     }
   ]
 };
+
+CompressorNode.prototype.clone = function() {
+  return new CompressorNode({
+    id: this.id,
+    threshold: this.threshold,
+    knee: this.knee,
+    ratio: this.ratio,
+    reduction: this.reduction,
+    attack: this.attack,
+    release: this.release,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
 // Refreshes the cached node to be played again
 CompressorNode.prototype.refresh = function() {
   var node = context.createDynamicsCompressor();

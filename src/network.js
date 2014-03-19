@@ -28,6 +28,33 @@ Network.prototype.defaultParameters = {
   connectionMutationRate: 0.1,
   nodeMutationRate: 0.1
 };
+/*
+  Creates a deep clone of this network
+ */
+Network.prototype.clone = function() {
+
+  // Clone each node
+  var clonedNodes = [];
+  _.forEach(this.nodes, function(node) {
+    clonedNodes.push(node.clone());
+  });
+
+  // Clone each connection
+  var clonedConnections = [];
+  _.forEach(this.connections, function(connection) {
+    var clonedInNode = _.find(clonedNodes, {id: connection.inNode.id});
+    var clonedOutNode = _.find(clonedNodes, {id: connection.outNode.id});
+
+    clonedConnections.push(connection.clone(clonedInNode, clonedOutNode));
+  });
+
+  return new Network({
+    nodes: clonedNodes,
+    connections: clonedConnections,
+    connectionMutationRate: this.connectionMutationRate,
+    nodeMutationRate: this.nodeMutationRate
+  });
+};
 Network.prototype.play = function() {
   // refresh all the nodes since each can only play 
   // once (note: changing in the current webAudio draft)

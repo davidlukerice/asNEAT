@@ -3,7 +3,13 @@ var Utils = require('asNEAT/utils')['default'];
 
 var Node = function(parameters) {
   _.defaults(this, parameters, this.defaultParameters);
-  this.id = Node.getNextId();
+  
+  // todo: fix hack with better inheritance model
+  // Only generate a new id if one isn't given in the parameters
+  if (parameters && typeof parameters.id !== 'undefined')
+    this.id = parameters.id;
+  else
+    this.id = Node.getNextId();
 };
 
 Node.prototype.defaultParameters = {
@@ -19,11 +25,23 @@ Node.prototype.defaultParameters = {
   //]
 }; 
 
-// Refreshes any web audio context nodes
-Node.prototype.refresh = function() {};
+/**
+  Creates a cloned node
+  @return Node
+*/
+Node.prototype.clone = function() {
+  throw "clone not implemented";
+};
+
+/**
+  Refreshes any web audio context nodes
+*/
+Node.prototype.refresh = function() {
+  throw "refresh not implemented";
+};
 
 Node.prototype.toString = function() {
-  return "Node";
+  throw "toString not implemented";
 };
 
 /**
@@ -66,7 +84,12 @@ Node.getNextId = function() {
   return Node.id++;
 };
 
-// Creates a random node
-Node.random = function() {return null;};
+/**
+  Creates a random node
+  @return Node
+  */
+Node.random = function() {
+  throw "static random not implemented";
+};
 
 export default Node;

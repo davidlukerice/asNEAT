@@ -1,4 +1,4 @@
-/* asNEAT 0.4.0 2014-03-17 */
+/* asNEAT 0.4.0 2014-03-19 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -53,6 +53,25 @@ define("asNEAT/connection",
       mutationDelta: {min: -0.2, max: 0.2},
       randomMutationRange: {min: 0.1, max: 1.5},
       discreteMutation: false
+    };
+    
+    /**
+      @param clonedInNode {Node} (optional)
+      @param clonedOutNode {Node} (optional)
+    */
+    Connection.prototype.clone = function(clonedInNode, clonedOutNode) {
+      var inNode = clonedInNode || this.inNode.clone();
+      var outNode = clonedOutNode || this.outNode.clone();
+      return new Connection({
+        inNode: inNode,
+        outNode: outNode,
+        weight: this.weight,
+        enabled: this.enabled,
+        mutationDeltaChance: this.mutationDeltaChance,
+        mutationDelta: _.clone(this.mutationDelta),
+        randomMutationRange: _.clone(this.randomMutationRange),
+        discreteMutation: this.discreteMutation
+      });
     };
     Connection.prototype.connect = function() {
       if (!this.enabled) return;
@@ -120,6 +139,33 @@ define("asNEAT/network",
       connections: [],
       connectionMutationRate: 0.1,
       nodeMutationRate: 0.1
+    };
+    /*
+      Creates a deep clone of this network
+     */
+    Network.prototype.clone = function() {
+    
+      // Clone each node
+      var clonedNodes = [];
+      _.forEach(this.nodes, function(node) {
+        clonedNodes.push(node.clone());
+      });
+    
+      // Clone each connection
+      var clonedConnections = [];
+      _.forEach(this.connections, function(connection) {
+        var clonedInNode = _.find(clonedNodes, {id: connection.inNode.id});
+        var clonedOutNode = _.find(clonedNodes, {id: connection.outNode.id});
+    
+        clonedConnections.push(connection.clone(clonedInNode, clonedOutNode));
+      });
+    
+      return new Network({
+        nodes: clonedNodes,
+        connections: clonedConnections,
+        connectionMutationRate: this.connectionMutationRate,
+        nodeMutationRate: this.nodeMutationRate
+      });
     };
     Network.prototype.play = function() {
       // refresh all the nodes since each can only play 
@@ -368,6 +414,21 @@ define("asNEAT/nodes/compressorNode",
         }
       ]
     };
+    
+    CompressorNode.prototype.clone = function() {
+      return new CompressorNode({
+        id: this.id,
+        threshold: this.threshold,
+        knee: this.knee,
+        ratio: this.ratio,
+        reduction: this.reduction,
+        attack: this.attack,
+        release: this.release,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
     // Refreshes the cached node to be played again
     CompressorNode.prototype.refresh = function() {
       var node = context.createDynamicsCompressor();
@@ -451,6 +512,17 @@ define("asNEAT/nodes/delayNode",
         }
       ]
     };
+    
+    DelayNode.prototype.clone = function() {
+      return new DelayNode({
+        id: this.id,
+        delayTime: this.delayTime,
+        feedbackRatio: this.feedbackRatio,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
     // Refreshes the cached node to be played again
     DelayNode.prototype.refresh = function() {
       var delayNode = context.createDelay();
@@ -521,6 +593,20 @@ define("asNEAT/nodes/filterNode",
         // todo: other parameters
       ]
     };
+    
+    FilterNode.prototype.clone = function() {
+      return new FilterNode({
+        id: this.id,
+        type: this.type,
+        frequency: this.frequency,
+        detune: this.detune,
+        q: this.q,
+        gain: this.gain,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
     // Refreshes the cached node to be played again
     FilterNode.prototype.refresh = function() {
       var node = context.createBiquadFilter();
@@ -603,6 +689,17 @@ define("asNEAT/nodes/gainNode",
         }
       ]
     };
+    
+    GainNode.prototype.clone = function() {
+      return new GainNode({
+        id: this.id,
+        gain: this.gain,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
+    
     // Refreshes the cached node to be played again
     GainNode.prototype.refresh = function() {
       var node = context.createGain();
@@ -639,7 +736,13 @@ define("asNEAT/nodes/node",
     
     var Node = function(parameters) {
       _.defaults(this, parameters, this.defaultParameters);
-      this.id = Node.getNextId();
+      
+      // todo: fix hack with better inheritance model
+      // Only generate a new id if one isn't given in the parameters
+      if (parameters && typeof parameters.id !== 'undefined')
+        this.id = parameters.id;
+      else
+        this.id = Node.getNextId();
     };
     
     Node.prototype.defaultParameters = {
@@ -655,11 +758,23 @@ define("asNEAT/nodes/node",
       //]
     }; 
     
-    // Refreshes any web audio context nodes
-    Node.prototype.refresh = function() {};
+    /**
+      Creates a cloned node
+      @return Node
+    */
+    Node.prototype.clone = function() {
+      throw "clone not implemented";
+    };
+    
+    /**
+      Refreshes any web audio context nodes
+    */
+    Node.prototype.refresh = function() {
+      throw "refresh not implemented";
+    };
     
     Node.prototype.toString = function() {
-      return "Node";
+      throw "toString not implemented";
     };
     
     /**
@@ -702,8 +817,13 @@ define("asNEAT/nodes/node",
       return Node.id++;
     };
     
-    // Creates a random node
-    Node.random = function() {return null;};
+    /**
+      Creates a random node
+      @return Node
+      */
+    Node.random = function() {
+      throw "static random not implemented";
+    };
     
     __exports__["default"] = Node;
   });
@@ -748,6 +868,17 @@ define("asNEAT/nodes/oscillatorNode",
         }
         // todo: detune?
       ]
+    };
+    
+    OscillatorNode.prototype.clone = function() {
+      return new OscillatorNode({
+        id: this.id,
+        type: this.type,
+        frequency: this.frequency,
+        detune: this.detune,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
     };
     
     // Refreshes the cached node to be played again
@@ -805,12 +936,18 @@ define("asNEAT/nodes/outNode",
     var Node = require('asNEAT/nodes/node')['default'],
         context = require('asNEAT/asNEAT')['default'].context;
     
-    var OutNode = function() {
-      Node.call(this);
+    var OutNode = function(parameters) {
+      Node.call(this, parameters);
       this.node = context.destination;
     };
     
     OutNode.prototype = new Node();
+    OutNode.prototype.defaultParameters = {};
+    OutNode.prototype.clone = function() {
+      return new OutNode({
+        id: this.id
+      });
+    };
     OutNode.prototype.refresh = function() {
     };
     OutNode.prototype.toString = function() {
@@ -865,6 +1002,18 @@ define("asNEAT/nodes/pannerNode",
         }
       ]
     };
+    
+    PannerNode.prototype.clone = function() {
+      return new PannerNode({
+        id: this.id,
+        x: this.x,
+        y: this.y,
+        z: this.z,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
     // Refreshes the cached node to be played again
     PannerNode.prototype.refresh = function() {
       var node = context.createPanner();

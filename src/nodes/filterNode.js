@@ -34,6 +34,20 @@ FilterNode.prototype.defaultParameters = {
     // todo: other parameters
   ]
 };
+
+FilterNode.prototype.clone = function() {
+  return new FilterNode({
+    id: this.id,
+    type: this.type,
+    frequency: this.frequency,
+    detune: this.detune,
+    q: this.q,
+    gain: this.gain,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
 // Refreshes the cached node to be played again
 FilterNode.prototype.refresh = function() {
   var node = context.createBiquadFilter();

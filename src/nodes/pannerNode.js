@@ -40,6 +40,18 @@ PannerNode.prototype.defaultParameters = {
     }
   ]
 };
+
+PannerNode.prototype.clone = function() {
+  return new PannerNode({
+    id: this.id,
+    x: this.x,
+    y: this.y,
+    z: this.z,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
 // Refreshes the cached node to be played again
 PannerNode.prototype.refresh = function() {
   var node = context.createPanner();

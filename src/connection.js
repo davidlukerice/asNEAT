@@ -21,6 +21,25 @@ Connection.prototype.defaultParameters = {
   randomMutationRange: {min: 0.1, max: 1.5},
   discreteMutation: false
 };
+
+/**
+  @param clonedInNode {Node} (optional)
+  @param clonedOutNode {Node} (optional)
+*/
+Connection.prototype.clone = function(clonedInNode, clonedOutNode) {
+  var inNode = clonedInNode || this.inNode.clone();
+  var outNode = clonedOutNode || this.outNode.clone();
+  return new Connection({
+    inNode: inNode,
+    outNode: outNode,
+    weight: this.weight,
+    enabled: this.enabled,
+    mutationDeltaChance: this.mutationDeltaChance,
+    mutationDelta: _.clone(this.mutationDelta),
+    randomMutationRange: _.clone(this.randomMutationRange),
+    discreteMutation: this.discreteMutation
+  });
+};
 Connection.prototype.connect = function() {
   if (!this.enabled) return;
 

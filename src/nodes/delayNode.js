@@ -33,6 +33,17 @@ DelayNode.prototype.defaultParameters = {
     }
   ]
 };
+
+DelayNode.prototype.clone = function() {
+  return new DelayNode({
+    id: this.id,
+    delayTime: this.delayTime,
+    feedbackRatio: this.feedbackRatio,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
 // Refreshes the cached node to be played again
 DelayNode.prototype.refresh = function() {
   var delayNode = context.createDelay();

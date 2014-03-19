@@ -17,8 +17,10 @@
     <button class="addConnection" disabled>Add Connection</button>
     <button class="mutateWeight">Mutate Weights</button>
     <button class="mutateNodeParameters">Mutate Node parameter</button>
-
     <br>
+
+    <button class='playClone'>play Clone</button>
+
     <br>
     <h2>Current Instrument</h2>
     <div class="currentNetwork">
@@ -31,43 +33,52 @@
     </div>
 
     <script type="text/javascript">
+      // global so it can be reached from the cli
+      var network;
+      var clonedNetwork;
+
       !function() {
         $(function() {
           var log = require('asNEAT/utils')['default'].log,
-              Network = require('asNEAT/network')['default'],
-              network = new Network();
+              Network = require('asNEAT/network')['default'];
+          
+          network = new Network();
 
-          updateDisplay();
+          refresh();
 
           $('button.play').click(function() {
             network.play();
           });
+          $('button.playClone').click(function() {
+            clonedNetwork.play();
+          });
           $('button.splitMutate').click(function() {
             network.splitMutation();
-            updateDisplay();
+            refresh();
           });
 
           $('button.randomMutate').click(function() {
             network.mutate();
-            updateDisplay();
+            refresh();
           });
           $('button.addOscillator').click(function() {
             network.addOscillator();
-            updateDisplay();
+            refresh();
           });
           $('button.addConnection').click(function() {
             log('todo: add Connection');
           });
           $('button.mutateWeight').click(function() {
             network.mutateConnectionWeights();
-            updateDisplay();
+            refresh();
           });
           $('button.mutateNodeParameters').click(function() {
             network.mutateNodeParameters();
-            updateDisplay();
+            refresh();
           });
 
-          function updateDisplay() {
+          function refresh() {
+            clonedNetwork = network.clone();
             $('.currentNetwork').html(network.toString());
           }
         });

@@ -28,6 +28,17 @@ GainNode.prototype.defaultParameters = {
     }
   ]
 };
+
+GainNode.prototype.clone = function() {
+  return new GainNode({
+    id: this.id,
+    gain: this.gain,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
+
 // Refreshes the cached node to be played again
 GainNode.prototype.refresh = function() {
   var node = context.createGain();

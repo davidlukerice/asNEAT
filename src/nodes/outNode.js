@@ -2,12 +2,18 @@
 var Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context;
 
-var OutNode = function() {
-  Node.call(this);
+var OutNode = function(parameters) {
+  Node.call(this, parameters);
   this.node = context.destination;
 };
 
 OutNode.prototype = new Node();
+OutNode.prototype.defaultParameters = {};
+OutNode.prototype.clone = function() {
+  return new OutNode({
+    id: this.id
+  });
+};
 OutNode.prototype.refresh = function() {
 };
 OutNode.prototype.toString = function() {

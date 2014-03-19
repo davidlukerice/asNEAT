@@ -37,6 +37,17 @@ OscillatorNode.prototype.defaultParameters = {
   ]
 };
 
+OscillatorNode.prototype.clone = function() {
+  return new OscillatorNode({
+    id: this.id,
+    type: this.type,
+    frequency: this.frequency,
+    detune: this.detune,
+    parameterMutationChance: this.parameterMutationChance,
+    mutatableParameters: _.cloneDeep(this.mutatableParameters)
+  });
+};
+
 // Refreshes the cached node to be played again
 OscillatorNode.prototype.refresh = function() {
   var node = context.createOscillator();
