@@ -1,4 +1,4 @@
-/* asNEAT 0.4.0 2014-03-19 */
+/* asNEAT 0.0.4 2014-03-20 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -185,6 +185,8 @@ define("asNEAT/network",
         if (node.play)
           node.play();
       });
+    
+      return this;
     };
     Network.prototype.mutate = function() {
       var mutations = [
@@ -197,6 +199,8 @@ define("asNEAT/network",
       mutation.call(this);
     
       // TODO: Other mutations?
+    
+      return this;
     };
     
     /*
@@ -235,6 +239,8 @@ define("asNEAT/network",
       this.connections.push(fromConnection);
     
       log('splitting conn '+conn.toString()+' with '+newNode.toString());
+    
+      return this;
     };
     
     /*
@@ -257,6 +263,8 @@ define("asNEAT/network",
       // TODO: For now, just connect it directly to the outNode
     
       log('adding oscillator '+oscillator.toString());
+    
+      return this;
     };
     
     /*
@@ -281,6 +289,8 @@ define("asNEAT/network",
         var conn = Utils.randomElementIn(this.connections);
         conn.mutate();
       }
+    
+      return this;
     };
     
     Network.prototype.mutateNodeParameters = function(forceMutation) {
@@ -302,6 +312,8 @@ define("asNEAT/network",
         var node = Utils.randomElementIn(this.nodes);
         node.mutate();
       }
+    
+      return this;
     };
     
     Network.prototype.getEnabledConnections = function() {
