@@ -73,6 +73,8 @@ Network.prototype.play = function() {
     if (node.play)
       node.play();
   });
+
+  return this;
 };
 Network.prototype.mutate = function() {
   var mutations = [
@@ -85,6 +87,8 @@ Network.prototype.mutate = function() {
   mutation.call(this);
 
   // TODO: Other mutations?
+
+  return this;
 };
 
 /*
@@ -123,6 +127,8 @@ Network.prototype.splitMutation = function() {
   this.connections.push(fromConnection);
 
   log('splitting conn '+conn.toString()+' with '+newNode.toString());
+
+  return this;
 };
 
 /*
@@ -145,6 +151,8 @@ Network.prototype.addOscillator = function() {
   // TODO: For now, just connect it directly to the outNode
 
   log('adding oscillator '+oscillator.toString());
+
+  return this;
 };
 
 /*
@@ -169,6 +177,8 @@ Network.prototype.mutateConnectionWeights = function(forceMutation) {
     var conn = Utils.randomElementIn(this.connections);
     conn.mutate();
   }
+
+  return this;
 };
 
 Network.prototype.mutateNodeParameters = function(forceMutation) {
@@ -190,6 +200,8 @@ Network.prototype.mutateNodeParameters = function(forceMutation) {
     var node = Utils.randomElementIn(this.nodes);
     node.mutate();
   }
+
+  return this;
 };
 
 Network.prototype.getEnabledConnections = function() {

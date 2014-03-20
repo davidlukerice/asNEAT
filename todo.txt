@@ -3,6 +3,7 @@ Current:
 
 
 Planned:
+- Return 'this' for all node's/connection's functions?
 
 - NEAT
   * Mutations
