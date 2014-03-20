@@ -1,4 +1,6 @@
 Current:
+  - fix: sharing default parameter []s accross generated objects
+
   - mutate: add connection
 
 
