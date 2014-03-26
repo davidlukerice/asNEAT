@@ -1,4 +1,4 @@
-/* asNEAT 0.0.4 2014-03-20 */
+/* asNEAT 0.0.4 2014-03-25 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -7,7 +7,8 @@ define("asNEAT/asNEAT",
     var ns = {};
     
     window.AudioContext = window.AudioContext ||
-      window.webkitAudioContext;
+      window.webkitAudioContext ||
+      function() {this.supported = false;};
     ns.context = new window.AudioContext();
     
     // All the registered usable nodes
@@ -38,7 +39,7 @@ define("asNEAT/connection",
     
     // TODO: Different kinds of connections?
     var Connection = function(parameters) {
-      _.defaults(this, parameters, this.defaultParameters);
+      Utils.extend(this, this.defaultParameters, parameters);
       this.gainNode = null;
       this.id = Utils.cantorPair(this.inNode.id, this.outNode.id);
     };
@@ -119,7 +120,7 @@ define("asNEAT/network",
         log = Utils.log;
     
     var Network = function(parameters) {
-      _.defaults(this, parameters, this.defaultParameters);
+      Utils.extend(this, this.defaultParameters, parameters);
     
       if (this.nodes.length===0) {
         this.nodes.push(OscillatorNode.random());
@@ -350,7 +351,7 @@ define("asNEAT/nodes/compressorNode",
       Node.call(this, parameters);
     };
     
-    CompressorNode.prototype = new Node();
+    CompressorNode.prototype = Object.create(Node.prototype);
     CompressorNode.prototype.defaultParameters = {
       // The decibel value above which the compression will start taking effect.
       // Its default value is -24, with a nominal range of -100 to 0.
@@ -498,7 +499,7 @@ define("asNEAT/nodes/delayNode",
       Node.call(this, parameters);
     };
     
-    DelayNode.prototype = new Node();
+    DelayNode.prototype = Object.create(Node.prototype);
     DelayNode.prototype.defaultParameters = {
       // in seconds
       delayTime: 0,
@@ -578,7 +579,7 @@ define("asNEAT/nodes/filterNode",
       Node.call(this, parameters);
     };
     
-    FilterNode.prototype = new Node();
+    FilterNode.prototype = Object.create(Node.prototype);
     FilterNode.prototype.defaultParameters = {
       type: 0,
       frequency: 500,
@@ -680,7 +681,7 @@ define("asNEAT/nodes/gainNode",
       Node.call(this, parameters);
     };
     
-    GainNode.prototype = new Node();
+    GainNode.prototype = Object.create(Node.prototype);
     GainNode.prototype.defaultParameters = {
       // Represents the amount of gain to apply. Its default value is 1
       // (no gain change). The nominal minValue is 0, but may be set
@@ -747,8 +748,8 @@ define("asNEAT/nodes/node",
     var Utils = require('asNEAT/utils')['default'];
     
     var Node = function(parameters) {
-      _.defaults(this, parameters, this.defaultParameters);
-      
+      Utils.extend(this, this.defaultParameters, parameters);
+    
       // todo: fix hack with better inheritance model
       // Only generate a new id if one isn't given in the parameters
       if (parameters && typeof parameters.id !== 'undefined')
@@ -758,8 +759,8 @@ define("asNEAT/nodes/node",
     };
     
     Node.prototype.defaultParameters = {
-      //parameterMutationChance: 0.1,
-      //mutatableParameters: [
+      parameterMutationChance: 0.1,
+      mutatableParameters: [
       //  { see Utils.mutateParameter documentation
       //    name,
       //    mutationDeltaChance,
@@ -767,7 +768,7 @@ define("asNEAT/nodes/node",
       //    randomMutationRange,
       //    discreteMutation
       //  }
-      //]
+      ]
     }; 
     
     /**
@@ -855,7 +856,7 @@ define("asNEAT/nodes/oscillatorNode",
       Node.call(this, parameters);
     };
     
-    OscillatorNode.prototype = new Node();
+    OscillatorNode.prototype = Object.create(Node.prototype);
     
     OscillatorNode.prototype.defaultParameters = {
       type: 0,
@@ -953,7 +954,7 @@ define("asNEAT/nodes/outNode",
       this.node = context.destination;
     };
     
-    OutNode.prototype = new Node();
+    OutNode.prototype = Object.create(Node.prototype);
     OutNode.prototype.defaultParameters = {};
     OutNode.prototype.clone = function() {
       return new OutNode({
@@ -981,7 +982,7 @@ define("asNEAT/nodes/pannerNode",
       Node.call(this, parameters);
     };
     
-    PannerNode.prototype = new Node();
+    PannerNode.prototype = Object.create(Node.prototype);
     PannerNode.prototype.defaultParameters = {
       // position
       x: 0,
@@ -1234,6 +1235,16 @@ define("asNEAT/utils",
       var x = t*(t+3)/2 - z;
       var y = z - t*(t+1)/2;
       return {x:x, y:y};
+    };
+    
+    /**
+      extend function that clones the default parameters
+      @param arguments
+    */
+    Utils.extend = function(self, defaultParameters, parameters) {
+      // deep clone the defaultParameters so [] and {} aren't referenced by
+      // multiple objects
+      _.assign(self, _.cloneDeep(defaultParameters), parameters);
     };
     
     __exports__["default"] = Utils;
