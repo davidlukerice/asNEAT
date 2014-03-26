@@ -10,12 +10,10 @@ var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
 
   if (this.nodes.length===0) {
-    this.nodes = [];
     this.nodes.push(OscillatorNode.random());
     this.nodes.push(new OutNode());
   }
   if (this.connections.length===0) {
-    this.connections = [];
     this.connections.push(new Connection({
       inNode: this.nodes[0],
       outNode: this.nodes[1],

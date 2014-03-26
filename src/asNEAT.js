@@ -2,7 +2,8 @@
 var ns = {};
 
 window.AudioContext = window.AudioContext ||
-  window.webkitAudioContext;
+  window.webkitAudioContext ||
+  function() {this.supported = false;};
 ns.context = new window.AudioContext();
 
 // All the registered usable nodes
