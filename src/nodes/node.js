@@ -2,8 +2,8 @@
 var Utils = require('asNEAT/utils')['default'];
 
 var Node = function(parameters) {
-  _.defaults(this, parameters, this.defaultParameters);
-  
+  Utils.extend(this, this.defaultParameters, parameters);
+
   // todo: fix hack with better inheritance model
   // Only generate a new id if one isn't given in the parameters
   if (parameters && typeof parameters.id !== 'undefined')
@@ -13,8 +13,8 @@ var Node = function(parameters) {
 };
 
 Node.prototype.defaultParameters = {
-  //parameterMutationChance: 0.1,
-  //mutatableParameters: [
+  parameterMutationChance: 0.1,
+  mutatableParameters: [
   //  { see Utils.mutateParameter documentation
   //    name,
   //    mutationDeltaChance,
@@ -22,7 +22,7 @@ Node.prototype.defaultParameters = {
   //    randomMutationRange,
   //    discreteMutation
   //  }
-  //]
+  ]
 }; 
 
 /**

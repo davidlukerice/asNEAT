@@ -7,7 +7,7 @@ var OutNode = function(parameters) {
   this.node = context.destination;
 };
 
-OutNode.prototype = new Node();
+OutNode.prototype = Object.create(Node.prototype);
 OutNode.prototype.defaultParameters = {};
 OutNode.prototype.clone = function() {
   return new OutNode({

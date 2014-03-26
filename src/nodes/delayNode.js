@@ -7,7 +7,7 @@ var DelayNode = function(parameters) {
   Node.call(this, parameters);
 };
 
-DelayNode.prototype = new Node();
+DelayNode.prototype = Object.create(Node.prototype);
 DelayNode.prototype.defaultParameters = {
   // in seconds
   delayTime: 0,

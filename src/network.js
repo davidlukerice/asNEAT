@@ -7,7 +7,7 @@ var Utils = require('asNEAT/utils')['default'],
     log = Utils.log;
 
 var Network = function(parameters) {
-  _.defaults(this, parameters, this.defaultParameters);
+  Utils.extend(this, this.defaultParameters, parameters);
 
   if (this.nodes.length===0) {
     this.nodes = [];

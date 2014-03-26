@@ -10,7 +10,7 @@ var OscillatorNode = function(parameters) {
   Node.call(this, parameters);
 };
 
-OscillatorNode.prototype = new Node();
+OscillatorNode.prototype = Object.create(Node.prototype);
 
 OscillatorNode.prototype.defaultParameters = {
   type: 0,

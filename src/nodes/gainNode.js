@@ -7,7 +7,7 @@ var GainNode = function(parameters) {
   Node.call(this, parameters);
 };
 
-GainNode.prototype = new Node();
+GainNode.prototype = Object.create(Node.prototype);
 GainNode.prototype.defaultParameters = {
   // Represents the amount of gain to apply. Its default value is 1
   // (no gain change). The nominal minValue is 0, but may be set

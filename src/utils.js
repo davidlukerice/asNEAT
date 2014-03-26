@@ -173,4 +173,14 @@ Utils.reverseCantorPair = function(z) {
   return {x:x, y:y};
 };
 
+/**
+  extend function that clones the default parameters
+  @param arguments
+*/
+Utils.extend = function(self, defaultParameters, parameters) {
+  // deep clone the defaultParameters so [] and {} aren't referenced by
+  // multiple objects
+  _.assign(self, _.cloneDeep(defaultParameters), parameters);
+};
+
 export default Utils;

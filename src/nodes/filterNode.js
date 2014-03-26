@@ -7,7 +7,7 @@ var FilterNode = function(parameters) {
   Node.call(this, parameters);
 };
 
-FilterNode.prototype = new Node();
+FilterNode.prototype = Object.create(Node.prototype);
 FilterNode.prototype.defaultParameters = {
   type: 0,
   frequency: 500,

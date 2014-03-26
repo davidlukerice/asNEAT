@@ -5,7 +5,7 @@ var Utils = require('asNEAT/utils')['default'],
 
 // TODO: Different kinds of connections?
 var Connection = function(parameters) {
-  _.defaults(this, parameters, this.defaultParameters);
+  Utils.extend(this, this.defaultParameters, parameters);
   this.gainNode = null;
   this.id = Utils.cantorPair(this.inNode.id, this.outNode.id);
 };

@@ -7,7 +7,7 @@ var PannerNode = function(parameters) {
   Node.call(this, parameters);
 };
 
-PannerNode.prototype = new Node();
+PannerNode.prototype = Object.create(Node.prototype);
 PannerNode.prototype.defaultParameters = {
   // position
   x: 0,
