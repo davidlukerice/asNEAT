@@ -123,8 +123,10 @@ Utils.mutateParameter = function(params) {
     // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
     mutationDeltaChance: 0.8,
     mutationDelta: {min: -0.2, max: 0.2},
-    // note: the inverse is also possible (ex (-max, -min])
+    // note: the inverse is also possible (ex (-max, -min]) when
+    // allowInverse is true
     randomMutationRange: {min: 0.1, max: 1.5},
+    allowInverse: true,
     // true if only integers are allowed (ie for an index), otherwise
     // uses floating point
     discreteMutation: false
@@ -151,8 +153,8 @@ Utils.mutateParameter = function(params) {
     else
       newParam = Utils.randomIn(range);
 
-    // 50% chance of 
-    if (Utils.randomBool())
+    // 50% chance of negative
+    if (params.allowInverse && Utils.randomBool())
       newParam*=-1;
 
     Utils.log('mutating with new param '+newParam);

@@ -22,6 +22,7 @@ FilterNode.prototype.defaultParameters = {
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 8},
+      allowInverse: false,
       discreteMutation: true
     },{
       name: 'frequency',

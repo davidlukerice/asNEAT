@@ -53,8 +53,10 @@ Node.prototype.mutate = function() {
       parameters = this.mutatableParameters,
       mutated = false;
 
-  if (!parameters || parameters.length===0) return;
-
+  if (!parameters || parameters.length===0) {
+    Utils.log('no mutation parameters');
+    return;
+  }
   _.forEach(this.mutatableParameters, function(param) {
     if (!Utils.randomChance(chance))
       return true;
@@ -74,6 +76,7 @@ Node.prototype.mutate = function() {
       mutationDeltaChance: param.mutationDeltaChance,
       mutationDelta: param.mutationDelta,
       randomMutationRange: param.randomMutationRange,
+      allowInverse: param.allowInverse,
       discreteMutation: param.discreteMutation
     });
   }
