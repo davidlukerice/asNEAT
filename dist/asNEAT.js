@@ -594,6 +594,7 @@ define("asNEAT/nodes/filterNode",
           // doesn't make sense to change type by a delta
           mutationDeltaChance: 0,
           randomMutationRange: {min: 0, max: 8},
+          allowInverse: false,
           discreteMutation: true
         },{
           name: 'frequency',
@@ -799,8 +800,10 @@ define("asNEAT/nodes/node",
           parameters = this.mutatableParameters,
           mutated = false;
     
-      if (!parameters || parameters.length===0) return;
-    
+      if (!parameters || parameters.length===0) {
+        Utils.log('no mutation parameters');
+        return;
+      }
       _.forEach(this.mutatableParameters, function(param) {
         if (!Utils.randomChance(chance))
           return true;
@@ -820,6 +823,7 @@ define("asNEAT/nodes/node",
           mutationDeltaChance: param.mutationDeltaChance,
           mutationDelta: param.mutationDelta,
           randomMutationRange: param.randomMutationRange,
+          allowInverse: param.allowInverse,
           discreteMutation: param.discreteMutation
         });
       }
@@ -870,6 +874,7 @@ define("asNEAT/nodes/oscillatorNode",
           // doesn't make sense to change type by a delta
           mutationDeltaChance: 0,
           randomMutationRange: {min: 0, max: 4},
+          allowInverse: false,
           discreteMutation: true
         },{
           name: 'frequency',
@@ -1187,8 +1192,10 @@ define("asNEAT/utils",
         // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
         mutationDeltaChance: 0.8,
         mutationDelta: {min: -0.2, max: 0.2},
-        // note: the inverse is also possible (ex (-max, -min])
+        // note: the inverse is also possible (ex (-max, -min]) when
+        // allowInverse is true
         randomMutationRange: {min: 0.1, max: 1.5},
+        allowInverse: true,
         // true if only integers are allowed (ie for an index), otherwise
         // uses floating point
         discreteMutation: false
@@ -1215,8 +1222,8 @@ define("asNEAT/utils",
         else
           newParam = Utils.randomIn(range);
     
-        // 50% chance of 
-        if (Utils.randomBool())
+        // 50% chance of negative
+        if (params.allowInverse && Utils.randomBool())
           newParam*=-1;
     
         Utils.log('mutating with new param '+newParam);
