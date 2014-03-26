@@ -102,8 +102,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-es6-module-transpiler');
 
   // tasks
-  grunt.registerTask('test', ['jshint', 'qunit']);
+  grunt.registerTask('test', ['jshint', 'build', 'qunit']);
   grunt.registerTask('build', ['clean', 'copy', 'transpile', 'concat', 'uglify']);
-  grunt.registerTask('watchBuild', ['test', 'build', 'concurrent:watches']);
+  grunt.registerTask('watchBuild', ['jshint', 'build', 'qunit', 'concurrent:watches']);
   grunt.registerTask('default', ['watchBuild']);
 };
