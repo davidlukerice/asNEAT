@@ -222,10 +222,10 @@ Utils.frequencyForNote = function(note) {
 
   diff+= 12 * (octave-4);
 
-  return Utils.frequencyOfHalfStepsFromA4(diff);
+  return Utils.frequencyOfStepsFromRootNote(diff);
 };
 
-Utils.frequencyOfHalfStepsFromA4 = function(steps) {
+Utils.frequencyOfStepsFromRootNote = function(steps) {
   return A4 * Math.pow(TWELTH_ROOT, steps);
 };
 

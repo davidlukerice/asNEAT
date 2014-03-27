@@ -72,12 +72,12 @@ test("frequencyForNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyForNote('B4')), 493.88, 'B4');
   equal(Utils.roundTo2Places(Utils.frequencyForNote('C5')), 523.25, 'C5');
 });
-test("frequencyOfHalfStepsFromA4", function() {
-  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(-2)), 392.00, '-2');
-  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(-1)), 415.30, '-1');
-  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(0)), 440.00, '0');
-  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(1)), 466.16, '1');
-  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(2)), 493.88, '2');
+test("frequencyOfStepsFromRootNote", function() {
+  equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(-2)), 392.00, '-2');
+  equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(-1)), 415.30, '-1');
+  equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(0)), 440.00, '0');
+  equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(1)), 466.16, '1');
+  equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(2)), 493.88, '2');
 });
 
 module("Network Tests");

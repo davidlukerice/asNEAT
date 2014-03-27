@@ -1,5 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
+    NoteOscillatorNode = require('asNEAT/nodes/noteOscillatorNode')['default'],
     OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
     OutNode = require('asNEAT/nodes/outNode')['default'],
     Connection = require('asNEAT/connection')['default'],
@@ -10,7 +11,7 @@ var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
 
   if (this.nodes.length===0) {
-    this.nodes.push(OscillatorNode.random());
+    this.nodes.push(NoteOscillatorNode.random());
     this.nodes.push(new OutNode());
   }
   if (this.connections.length===0) {
@@ -136,7 +137,9 @@ Network.prototype.splitMutation = function() {
   in one of the current nodes
  */
 Network.prototype.addOscillator = function() {
-  var oscillator = OscillatorNode.random();
+  
+  // TODO: Pick whether an oscillator or a note oscillator
+  var oscillator = NoteOscillatorNode.random();
   
   // TODO: will the out node always be [1]?
   var connection = new Connection({
