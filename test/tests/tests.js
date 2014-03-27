@@ -49,6 +49,37 @@ test("extend", function() {
   notEqual(b.y, b2.y, 'default objects not equal');
 });
 
+test("roundTo2Places", function() {
+  equal(Utils.roundTo2Places(1), 1, 'identity');
+  equal(Utils.roundTo2Places(1.005), 1.01, 'round up');
+  equal(Utils.roundTo2Places(1.0049), 1.00, 'round down');
+});
+
+test("frequencyForNote", function() {
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('c3')), 130.81, 'c3');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('c4')), 261.63, 'c4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('C4')), 261.63, 'C4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('C4#')), 277.18, 'C4#');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('D4')), 293.66, 'D4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('E4b')), 311.13, 'E4b');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('E4')), 329.63, 'E4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('F4')), 349.23, 'F4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('F4#')), 369.99, 'F4#');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('G4')), 392.00, 'G4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('A4b')), 415.30, 'A4b');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('A4')), 440.00, 'A4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('B4b')), 466.16, 'B4b');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('B4')), 493.88, 'B4');
+  equal(Utils.roundTo2Places(Utils.frequencyForNote('C5')), 523.25, 'C5');
+});
+test("frequencyOfHalfStepsFromA4", function() {
+  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(-2)), 392.00, '-2');
+  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(-1)), 415.30, '-1');
+  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(0)), 440.00, '0');
+  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(1)), 466.16, '1');
+  equal(Utils.roundTo2Places(Utils.frequencyOfHalfStepsFromA4(2)), 493.88, '2');
+});
+
 module("Network Tests");
 var Network = require('asNEAT/network')['default'];
 

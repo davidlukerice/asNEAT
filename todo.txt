@@ -3,6 +3,9 @@ Current:
 
 
 Planned:
+
+- Make actually sound good...
+
 - Return 'this' for all node's/connection's functions?
 
 - NEAT

@@ -185,4 +185,38 @@ Utils.extend = function(self, defaultParameters, parameters) {
   _.assign(self, _.cloneDeep(defaultParameters), parameters);
 };
 
+Utils.roundTo2Places = function(num) {
+  return +(Math.round(num + "e+2")  + "e-2");
+};
+
+var TWELTH_ROOT = Math.pow(2,1/12);
+var A4 = 440;
+var DISTANCE_FROM_A = {
+  c:-9, d:-7, e:-5, f:-4, g:-2, a:0, b:2
+};
+/**
+  Gets the frequency based on an equal tempered scale
+  with A4 = 440
+  @param note (ex: 'c4', 'c4#', 'C4b')
+*/
+Utils.frequencyForNote = function(note) {
+  note = note.toLowerCase().split('');
+  var letter = note[0],
+      octave = parseInt(note[1], 10),
+      modifier = note[2],
+      diff = DISTANCE_FROM_A[letter];
+  if (modifier==='#')
+    ++diff;
+  else if (modifier==='b')
+    --diff;
+
+  diff+= 12 * (octave-4);
+
+  return Utils.frequencyOfHalfStepsFromA4(diff);
+};
+
+Utils.frequencyOfHalfStepsFromA4 = function(steps) {
+  return A4 * Math.pow(TWELTH_ROOT, steps);
+};
+
 export default Utils;
