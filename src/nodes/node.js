@@ -78,7 +78,7 @@ Node.prototype.mutate = function() {
       randomMutationRange: param.randomMutationRange,
       allowInverse: param.allowInverse,
       discreteMutation: param.discreteMutation
-    });
+    }, this);
   }
 };
 
