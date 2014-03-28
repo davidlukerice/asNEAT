@@ -1,4 +1,4 @@
-/* asNEAT 0.0.4 2014-03-25 */
+/* asNEAT 0.0.5 2014-03-27 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -113,6 +113,7 @@ define("asNEAT/network",
     "use strict";
     
     var Utils = require('asNEAT/utils')['default'],
+        NoteOscillatorNode = require('asNEAT/nodes/noteOscillatorNode')['default'],
         OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
         OutNode = require('asNEAT/nodes/outNode')['default'],
         Connection = require('asNEAT/connection')['default'],
@@ -123,7 +124,7 @@ define("asNEAT/network",
       Utils.extend(this, this.defaultParameters, parameters);
     
       if (this.nodes.length===0) {
-        this.nodes.push(OscillatorNode.random());
+        this.nodes.push(NoteOscillatorNode.random());
         this.nodes.push(new OutNode());
       }
       if (this.connections.length===0) {
@@ -249,7 +250,9 @@ define("asNEAT/network",
       in one of the current nodes
      */
     Network.prototype.addOscillator = function() {
-      var oscillator = OscillatorNode.random();
+      
+      // TODO: Pick whether an oscillator or a note oscillator
+      var oscillator = NoteOscillatorNode.random();
       
       // TODO: will the out node always be [1]?
       var connection = new Connection({
@@ -825,7 +828,7 @@ define("asNEAT/nodes/node",
           randomMutationRange: param.randomMutationRange,
           allowInverse: param.allowInverse,
           discreteMutation: param.discreteMutation
-        });
+        }, this);
       }
     };
     
@@ -843,6 +846,107 @@ define("asNEAT/nodes/node",
     };
     
     __exports__["default"] = Node;
+  });
+define("asNEAT/nodes/noteOscillatorNode", 
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    
+    var Utils = require('asNEAT/utils')['default'],
+        Node = require('asNEAT/nodes/node')['default'],
+        context = require('asNEAT/asNEAT')['default'].context;
+    /**
+      An OscillatorNode that clamps its frequency to an
+      equal tempered scale
+    */
+    var NoteOscillatorNode = function(parameters) {
+      Node.call(this, parameters);
+    };
+    
+    NoteOscillatorNode.prototype = Object.create(Node.prototype);
+    
+    NoteOscillatorNode.prototype.defaultParameters = {
+      type: 0,
+      stepFromRootNote: 0,
+      detune: 0,
+      
+      parameterMutationChance: 0.1,
+      mutatableParameters: [
+        {
+          name: 'type',
+          // doesn't make sense to change type by a delta
+          mutationDeltaChance: 0,
+          randomMutationRange: {min: 0, max: 4},
+          allowInverse: false,
+          discreteMutation: true
+        },{
+          name: 'stepFromRootNote',
+          // doesn't make sense to change type by a delta
+          mutationDeltaChance: 0.8,
+          mutationDelta: {min: -5, max: 5},
+          // TODO: set global min?
+          randomMutationRange: {min: -20, max: 20},
+          discreteMutation: true
+        }
+        // todo: detune?
+      ]
+    };
+    
+    NoteOscillatorNode.prototype.clone = function() {
+      return new NoteOscillatorNode({
+        id: this.id,
+        type: this.type,
+        stepFromRootNote: this.stepFromRootNote,
+        detune: this.detune,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
+    // Refreshes the cached node to be played again
+    NoteOscillatorNode.prototype.refresh = function() {
+      var node = context.createOscillator();
+      node.type = this.type;
+      node.frequency.value = Utils.frequencyOfStepsFromRootNote(this.stepFromRootNote);
+      // cache the current node?
+      this.node = node;
+    };
+    NoteOscillatorNode.prototype.play = function() {
+      var node = this.node;
+      node.start(0);
+      setTimeout(function() {
+        node.stop(0);
+      }, 500);
+    };
+    
+    NoteOscillatorNode.prototype.toString = function() {
+      return this.id+": NoteOscillatorNode("+this.type+","+this.stepFromRootNote+")";
+    };
+    
+    
+    NoteOscillatorNode.TYPES = [
+      "sine",
+      "square",
+      "sawtooth",
+      "triangle"
+      //"custom"
+    ];
+    NoteOscillatorNode.random = function() {
+      var typeI = Utils.randomIndexIn(0,NoteOscillatorNode.TYPES.length),
+          freq = Utils.randomIndexIn(-20, 20);
+      // From w3 spec
+      // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
+      // Q - 1, with a nominal range of 0.0001 to 1000.
+      // gain - 0, with a nominal range of -40 to 40.
+    
+      return new NoteOscillatorNode({
+        type: NoteOscillatorNode.TYPES[typeI],
+        frequency: freq
+        //detune: 0
+      });
+    };
+    
+    __exports__["default"] = NoteOscillatorNode;
   });
 define("asNEAT/nodes/oscillatorNode", 
   ["exports"],
@@ -930,7 +1034,6 @@ define("asNEAT/nodes/oscillatorNode",
     OscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
           freq = Utils.randomIn(A0, C6);
-      // todo: only allow standard notes?
     
       // From w3 spec
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
@@ -1183,7 +1286,9 @@ define("asNEAT/utils",
       Mutates the given
       @param params
      */
-    Utils.mutateParameter = function(params) {
+    Utils.mutateParameter = function(params, target) {
+      var delta, range, newParam;
+    
       _.defaults(params, {
         obj: null,
         parameter: 'param',
@@ -1192,9 +1297,35 @@ define("asNEAT/utils",
         // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
         mutationDeltaChance: 0.8,
         mutationDelta: {min: -0.2, max: 0.2},
+    
+        mutateDelta: function() {
+          if (params.discreteMutation)
+            delta = Utils.randomIndexIn(params.mutationDelta);
+          else
+            delta = Utils.randomIn(params.mutationDelta);
+          Utils.log('mutating by delta '+delta.toFixed(3));
+          params.obj[params.parameter]+=delta;
+        },
+    
         // note: the inverse is also possible (ex (-max, -min]) when
         // allowInverse is true
         randomMutationRange: {min: 0.1, max: 1.5},
+    
+        mutateRandom: function() {
+          range = params.randomMutationRange;
+          if (params.discreteMutation)
+            newParam = Utils.randomIndexIn(range);
+          else
+            newParam = Utils.randomIn(range);
+    
+          // 50% chance of negative
+          if (params.allowInverse && Utils.randomBool())
+            newParam*=-1;
+    
+          Utils.log('mutating with new param '+newParam);
+          params.obj[params.parameter] = newParam;
+        },
+    
         allowInverse: true,
         // true if only integers are allowed (ie for an index), otherwise
         // uses floating point
@@ -1203,32 +1334,14 @@ define("asNEAT/utils",
     
       Utils.log('mutating('+params.parameter+') '+params.obj);
     
-      var delta, range, newParam;
+      
     
       // Only change the weight by a given delta
-      if (Utils.randomChance(params.mutationDeltaChance)) {
-        if (params.discreteMutation)
-          delta = Utils.randomIndexIn(params.mutationDelta);
-        else
-          delta = Utils.randomIn(params.mutationDelta);
-        Utils.log('mutating by delta '+delta.toFixed(3));
-        params.obj[params.parameter]+=delta;
-      }
+      if (Utils.randomChance(params.mutationDeltaChance))
+        params.mutateDelta.call(target);
       // Use a new random weight in range
-      else {
-        range = params.randomMutationRange;
-        if (params.discreteMutation)
-          newParam = Utils.randomIndexIn(range);
-        else
-          newParam = Utils.randomIn(range);
-    
-        // 50% chance of negative
-        if (params.allowInverse && Utils.randomBool())
-          newParam*=-1;
-    
-        Utils.log('mutating with new param '+newParam);
-        params.obj[params.parameter] = newParam;
-      }
+      else
+        params.mutateRandom.call(target);
     };
     
     /*
@@ -1252,6 +1365,40 @@ define("asNEAT/utils",
       // deep clone the defaultParameters so [] and {} aren't referenced by
       // multiple objects
       _.assign(self, _.cloneDeep(defaultParameters), parameters);
+    };
+    
+    Utils.roundTo2Places = function(num) {
+      return +(Math.round(num + "e+2")  + "e-2");
+    };
+    
+    var TWELTH_ROOT = Math.pow(2,1/12);
+    var A4 = 440;
+    var DISTANCE_FROM_A = {
+      c:-9, d:-7, e:-5, f:-4, g:-2, a:0, b:2
+    };
+    /**
+      Gets the frequency based on an equal tempered scale
+      with A4 = 440
+      @param note (ex: 'c4', 'c4#', 'C4b')
+    */
+    Utils.frequencyForNote = function(note) {
+      note = note.toLowerCase().split('');
+      var letter = note[0],
+          octave = parseInt(note[1], 10),
+          modifier = note[2],
+          diff = DISTANCE_FROM_A[letter];
+      if (modifier==='#')
+        ++diff;
+      else if (modifier==='b')
+        --diff;
+    
+      diff+= 12 * (octave-4);
+    
+      return Utils.frequencyOfStepsFromRootNote(diff);
+    };
+    
+    Utils.frequencyOfStepsFromRootNote = function(steps) {
+      return A4 * Math.pow(TWELTH_ROOT, steps);
     };
     
     __exports__["default"] = Utils;
