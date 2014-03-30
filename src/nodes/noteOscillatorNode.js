@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "NoteOscillatorNode";
 /**
   An OscillatorNode that clamps its frequency to an
   equal tempered scale
@@ -11,8 +13,10 @@ var NoteOscillatorNode = function(parameters) {
 };
 
 NoteOscillatorNode.prototype = Object.create(Node.prototype);
-
+NoteOscillatorNode.prototype.name = name;
 NoteOscillatorNode.prototype.defaultParameters = {
+  name: name,
+
   type: 0,
   stepFromRootNote: 0,
   detune: 0,
@@ -66,20 +70,24 @@ NoteOscillatorNode.prototype.play = function() {
   }, 500);
 };
 
+NoteOscillatorNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    type: OscillatorNode.TYPES.nameFor(this.type),
+    stepFromRootNote: this.stepFromRootNote,
+    //note: Utils.noteForFrequency(
+    //        Utils.frequencyOfStepsFromRootNote(
+    //          this.stepFromRootNote)),
+    detune: this.detune,
+  };
+};
+
 NoteOscillatorNode.prototype.toString = function() {
   return this.id+": NoteOscillatorNode("+this.type+","+this.stepFromRootNote+")";
 };
 
-
-NoteOscillatorNode.TYPES = [
-  "sine",
-  "square",
-  "sawtooth",
-  "triangle"
-  //"custom"
-];
 NoteOscillatorNode.random = function() {
-  var typeI = Utils.randomIndexIn(0,NoteOscillatorNode.TYPES.length),
+  var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
       freq = Utils.randomIndexIn(-20, 20);
   // From w3 spec
   // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
@@ -87,7 +95,7 @@ NoteOscillatorNode.random = function() {
   // gain - 0, with a nominal range of -40 to 40.
 
   return new NoteOscillatorNode({
-    type: NoteOscillatorNode.TYPES[typeI],
+    type: OscillatorNode.TYPES[typeI],
     frequency: freq
     //detune: 0
   });

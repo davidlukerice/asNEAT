@@ -1,5 +1,6 @@
 
-var Utils = require('asNEAT/utils')['default'];
+var Utils = require('asNEAT/utils')['default'],
+    name = "Node";
 
 var Node = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
@@ -12,6 +13,7 @@ var Node = function(parameters) {
     this.id = Node.getNextId();
 };
 
+Node.prototype.name = name;
 Node.prototype.defaultParameters = {
   parameterMutationChance: 0.1,
   mutatableParameters: [
@@ -38,6 +40,13 @@ Node.prototype.clone = function() {
 */
 Node.prototype.refresh = function() {
   throw "refresh not implemented";
+};
+
+/**
+  Gets the various parameters characterizing this node
+*/
+Node.prototype.getParameters = function() {
+  throw "getParameters not implemented";
 };
 
 Node.prototype.toString = function() {

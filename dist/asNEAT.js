@@ -35,7 +35,8 @@ define("asNEAT/connection",
     
     var Utils = require('asNEAT/utils')['default'],
         log = Utils.log,
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "Connection";
     
     // TODO: Different kinds of connections?
     var Connection = function(parameters) {
@@ -44,6 +45,7 @@ define("asNEAT/connection",
       this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
     };
     
+    Connection.prototype.name = name;
     Connection.prototype.defaultParameters = {
       sourceNode: null,
       targetNode: null,
@@ -99,6 +101,16 @@ define("asNEAT/connection",
       });
     };
     
+    Connection.prototype.getParameters = function() {
+      return {
+        name: name,
+        weight: this.weight,
+        enabled: this.enabled,
+        sourceNode: this.sourceNode.toString(),
+        targetNode: this.targetNode.toString()
+      };
+    };
+    
     Connection.prototype.toString = function() {
       return (this.enabled? "" : "*") +
               "connection("+this.weight.toFixed(2)+")("+
@@ -118,7 +130,8 @@ define("asNEAT/network",
         OutNode = require('asNEAT/nodes/outNode')['default'],
         Connection = require('asNEAT/connection')['default'],
         nodeTypes = require('asNEAT/asNEAT')['default'].nodeTypes,
-        log = Utils.log;
+        log = Utils.log,
+        name = "Network";
     
     var Network = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
@@ -136,6 +149,7 @@ define("asNEAT/network",
       }
     };
     
+    Network.prototype.name = name;
     Network.prototype.defaultParameters = {
       nodes: [],
       connections: [],
@@ -348,13 +362,15 @@ define("asNEAT/nodes/compressorNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "CompressorNode";
     
     var CompressorNode = function(parameters) {
       Node.call(this, parameters);
     };
     
     CompressorNode.prototype = Object.create(Node.prototype);
+    CompressorNode.prototype.name = name;
     CompressorNode.prototype.defaultParameters = {
       // The decibel value above which the compression will start taking effect.
       // Its default value is -24, with a nominal range of -100 to 0.
@@ -459,6 +475,18 @@ define("asNEAT/nodes/compressorNode",
       this.node = node;
     };
     
+    CompressorNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        threshold: this.threshold,
+        knee: this.knee,
+        ratio: this.ratio,
+        reduction: this.reduction,
+        attack: this.attack,
+        release: this.release
+      };
+    };
+    
     CompressorNode.prototype.toString = function() {
       return this.id+": CompressorNode("+
         this.threshold.toFixed(2)+","+
@@ -496,13 +524,15 @@ define("asNEAT/nodes/delayNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "DelayNode";
     
     var DelayNode = function(parameters) {
       Node.call(this, parameters);
     };
     
     DelayNode.prototype = Object.create(Node.prototype);
+    DelayNode.prototype.name = name;
     DelayNode.prototype.defaultParameters = {
       // in seconds
       delayTime: 0,
@@ -554,6 +584,14 @@ define("asNEAT/nodes/delayNode",
       this.node = delayNode;
     };
     
+    DelayNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        delayTime: this.delayTime,
+        feedbackRatio: this.feedbackRatio
+      };
+    };
+    
     DelayNode.prototype.toString = function() {
       return this.id+": DelayNode("+
         this.delayTime.toFixed(2)+","+
@@ -576,13 +614,15 @@ define("asNEAT/nodes/filterNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "FilterNode";
     
     var FilterNode = function(parameters) {
       Node.call(this, parameters);
     };
     
     FilterNode.prototype = Object.create(Node.prototype);
+    FilterNode.prototype.name = name;
     FilterNode.prototype.defaultParameters = {
       type: 0,
       frequency: 500,
@@ -637,6 +677,17 @@ define("asNEAT/nodes/filterNode",
       this.node = node;
     };
     
+    FilterNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        type: FilterNode.TYPES.nameFor(this.type),
+        frequency: this.frequency,
+        detune: this.detune,
+        q: this.q,
+        gain: this.gain,
+      };
+    };
+    
     FilterNode.prototype.toString = function() {
       return this.id+": FilterNode("+this.type+","+this.frequency.toFixed(2)+")";
     };
@@ -651,6 +702,10 @@ define("asNEAT/nodes/filterNode",
       "notch",
       "allpass"
     ];
+    FilterNode.TYPES.nameFor = function(type) {
+      if (typeof type ==="string") return type;
+      return FilterNode.TYPES[type];
+    };
     FilterNode.random = function() {
       var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),
           // A0 to C8
@@ -679,13 +734,15 @@ define("asNEAT/nodes/gainNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "GainNode";
     
     var GainNode = function(parameters) {
       Node.call(this, parameters);
     };
     
     GainNode.prototype = Object.create(Node.prototype);
+    GainNode.prototype.name = name;
     GainNode.prototype.defaultParameters = {
       // Represents the amount of gain to apply. Its default value is 1
       // (no gain change). The nominal minValue is 0, but may be set
@@ -724,6 +781,13 @@ define("asNEAT/nodes/gainNode",
       this.node = node;
     };
     
+    GainNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        gain: this.gain
+      };
+    };
+    
     GainNode.prototype.toString = function() {
       return this.id+": GainNode("+
         this.gain.toFixed(2)+")";
@@ -749,7 +813,8 @@ define("asNEAT/nodes/node",
   function(__exports__) {
     "use strict";
     
-    var Utils = require('asNEAT/utils')['default'];
+    var Utils = require('asNEAT/utils')['default'],
+        name = "Node";
     
     var Node = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
@@ -762,6 +827,7 @@ define("asNEAT/nodes/node",
         this.id = Node.getNextId();
     };
     
+    Node.prototype.name = name;
     Node.prototype.defaultParameters = {
       parameterMutationChance: 0.1,
       mutatableParameters: [
@@ -788,6 +854,13 @@ define("asNEAT/nodes/node",
     */
     Node.prototype.refresh = function() {
       throw "refresh not implemented";
+    };
+    
+    /**
+      Gets the various parameters characterizing this node
+    */
+    Node.prototype.getParameters = function() {
+      throw "getParameters not implemented";
     };
     
     Node.prototype.toString = function() {
@@ -854,7 +927,9 @@ define("asNEAT/nodes/noteOscillatorNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "NoteOscillatorNode";
     /**
       An OscillatorNode that clamps its frequency to an
       equal tempered scale
@@ -864,8 +939,10 @@ define("asNEAT/nodes/noteOscillatorNode",
     };
     
     NoteOscillatorNode.prototype = Object.create(Node.prototype);
-    
+    NoteOscillatorNode.prototype.name = name;
     NoteOscillatorNode.prototype.defaultParameters = {
+      name: name,
+    
       type: 0,
       stepFromRootNote: 0,
       detune: 0,
@@ -919,20 +996,24 @@ define("asNEAT/nodes/noteOscillatorNode",
       }, 500);
     };
     
+    NoteOscillatorNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        type: OscillatorNode.TYPES.nameFor(this.type),
+        stepFromRootNote: this.stepFromRootNote,
+        //note: Utils.noteForFrequency(
+        //        Utils.frequencyOfStepsFromRootNote(
+        //          this.stepFromRootNote)),
+        detune: this.detune,
+      };
+    };
+    
     NoteOscillatorNode.prototype.toString = function() {
       return this.id+": NoteOscillatorNode("+this.type+","+this.stepFromRootNote+")";
     };
     
-    
-    NoteOscillatorNode.TYPES = [
-      "sine",
-      "square",
-      "sawtooth",
-      "triangle"
-      //"custom"
-    ];
     NoteOscillatorNode.random = function() {
-      var typeI = Utils.randomIndexIn(0,NoteOscillatorNode.TYPES.length),
+      var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
           freq = Utils.randomIndexIn(-20, 20);
       // From w3 spec
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
@@ -940,7 +1021,7 @@ define("asNEAT/nodes/noteOscillatorNode",
       // gain - 0, with a nominal range of -40 to 40.
     
       return new NoteOscillatorNode({
-        type: NoteOscillatorNode.TYPES[typeI],
+        type: OscillatorNode.TYPES[typeI],
         frequency: freq
         //detune: 0
       });
@@ -956,6 +1037,7 @@ define("asNEAT/nodes/oscillatorNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         context = require('asNEAT/asNEAT')['default'].context,
+        name = "OscillatorNode",
         A0 = 27.5,
         C6 = 1046.5,
         C8 = 4186.0;
@@ -965,6 +1047,7 @@ define("asNEAT/nodes/oscillatorNode",
     };
     
     OscillatorNode.prototype = Object.create(Node.prototype);
+    OscillatorNode.prototype.name = name;
     
     OscillatorNode.prototype.defaultParameters = {
       type: 0,
@@ -1019,6 +1102,15 @@ define("asNEAT/nodes/oscillatorNode",
       }, 500);
     };
     
+    OscillatorNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        type: OscillatorNode.TYPES.nameFor(this.type),
+        frequency: this.frequency,
+        detune: this.detune
+      };
+    };
+    
     OscillatorNode.prototype.toString = function() {
       return this.id+": OscillatorNode("+this.type+","+this.frequency.toFixed(2)+")";
     };
@@ -1031,6 +1123,10 @@ define("asNEAT/nodes/oscillatorNode",
       "triangle"
       //"custom"
     ];
+    OscillatorNode.TYPES.nameFor = function(type) {
+      if (typeof type ==="string") return type;
+      return OscillatorNode.TYPES[type];
+    };
     OscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
           freq = Utils.randomIn(A0, C6);
@@ -1055,7 +1151,8 @@ define("asNEAT/nodes/outNode",
     "use strict";
     
     var Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "OutNode";
     
     var OutNode = function(parameters) {
       Node.call(this, parameters);
@@ -1063,6 +1160,7 @@ define("asNEAT/nodes/outNode",
     };
     
     OutNode.prototype = Object.create(Node.prototype);
+    OutNode.prototype.name = name;
     OutNode.prototype.defaultParameters = {};
     OutNode.prototype.clone = function() {
       return new OutNode({
@@ -1070,6 +1168,11 @@ define("asNEAT/nodes/outNode",
       });
     };
     OutNode.prototype.refresh = function() {
+    };
+    OutNode.prototype.getParameters = function() {
+      return {
+        name: name
+      };
     };
     OutNode.prototype.toString = function() {
       return this.id+": OutNode";
@@ -1084,13 +1187,15 @@ define("asNEAT/nodes/pannerNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context;
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "PannerNode";
     
     var PannerNode = function(parameters) {
       Node.call(this, parameters);
     };
     
     PannerNode.prototype = Object.create(Node.prototype);
+    PannerNode.prototype.name = name;
     PannerNode.prototype.defaultParameters = {
       // position
       x: 0,
@@ -1147,6 +1252,15 @@ define("asNEAT/nodes/pannerNode",
       this.node = node;
     };
     
+    PannerNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        x: this.x.toFixed(2),
+        y: this.y.toFixed(2),
+        z: this.z.toFixed(2)
+      };
+    };
+    
     PannerNode.prototype.toString = function() {
       return this.id+": PannerNode("+this.x.toFixed(2)+
         ", "+this.y.toFixed(2)+", "+this.z.toFixed(2)+")";
@@ -1179,7 +1293,7 @@ define("asNEAT/utils",
       if (!Utils.IS_DEBUG) return;
       
       console.log(msg);
-      if ($)
+      if (typeof $ !== "undefined")
         $('.log').prepend('<div>'+msg+'</div>');
     };
     
@@ -1395,6 +1509,11 @@ define("asNEAT/utils",
       diff+= 12 * (octave-4);
     
       return Utils.frequencyOfStepsFromRootNote(diff);
+    };
+    
+    Utils.noteForFrequency = function() {
+      // TODO: reverse frequencyForNote
+      // TODO: Tests for frequencyForNote(noteForFrequency(x))===x
     };
     
     Utils.frequencyOfStepsFromRootNote = function(steps) {

@@ -7,7 +7,7 @@ Utils.log = function(msg) {
   if (!Utils.IS_DEBUG) return;
   
   console.log(msg);
-  if ($)
+  if (typeof $ !== "undefined")
     $('.log').prepend('<div>'+msg+'</div>');
 };
 
@@ -223,6 +223,11 @@ Utils.frequencyForNote = function(note) {
   diff+= 12 * (octave-4);
 
   return Utils.frequencyOfStepsFromRootNote(diff);
+};
+
+Utils.noteForFrequency = function() {
+  // TODO: reverse frequencyForNote
+  // TODO: Tests for frequencyForNote(noteForFrequency(x))===x
 };
 
 Utils.frequencyOfStepsFromRootNote = function(steps) {

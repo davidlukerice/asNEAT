@@ -83,8 +83,22 @@ test("frequencyOfStepsFromRootNote", function() {
 module("Network Tests");
 var Network = require('asNEAT/network')['default'];
 
+test('network', function() {
+var a = new Network()
+  equal(a.connections.length, 1, "network starts with single connection");
+});
+
 test("Same default objects/arrays not referenced by multiple networks", function() {
   var a = new Network();
   var b = new Network();
   notEqual(a.nodes, b.nodes, "Nodes not the same");
+});
+
+test("split node", function() {
+  var a = new Network(),
+      connection = a.connections[0];
+
+  a.splitMutation();
+  equal(a.connections.length, 3, "connections increased (1_old+2_new)");
+  ok(!connection.enabled, "old connection is disabled");
 });

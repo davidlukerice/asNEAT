@@ -1,13 +1,15 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "PannerNode";
 
 var PannerNode = function(parameters) {
   Node.call(this, parameters);
 };
 
 PannerNode.prototype = Object.create(Node.prototype);
+PannerNode.prototype.name = name;
 PannerNode.prototype.defaultParameters = {
   // position
   x: 0,
@@ -62,6 +64,15 @@ PannerNode.prototype.refresh = function() {
 
   // cache the current node?
   this.node = node;
+};
+
+PannerNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    x: this.x.toFixed(2),
+    y: this.y.toFixed(2),
+    z: this.z.toFixed(2)
+  };
 };
 
 PannerNode.prototype.toString = function() {

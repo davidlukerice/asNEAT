@@ -1,13 +1,15 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "CompressorNode";
 
 var CompressorNode = function(parameters) {
   Node.call(this, parameters);
 };
 
 CompressorNode.prototype = Object.create(Node.prototype);
+CompressorNode.prototype.name = name;
 CompressorNode.prototype.defaultParameters = {
   // The decibel value above which the compression will start taking effect.
   // Its default value is -24, with a nominal range of -100 to 0.
@@ -110,6 +112,18 @@ CompressorNode.prototype.refresh = function() {
 
   // cache the current node?
   this.node = node;
+};
+
+CompressorNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    threshold: this.threshold,
+    knee: this.knee,
+    ratio: this.ratio,
+    reduction: this.reduction,
+    attack: this.attack,
+    release: this.release
+  };
 };
 
 CompressorNode.prototype.toString = function() {

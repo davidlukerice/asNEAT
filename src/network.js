@@ -5,7 +5,8 @@ var Utils = require('asNEAT/utils')['default'],
     OutNode = require('asNEAT/nodes/outNode')['default'],
     Connection = require('asNEAT/connection')['default'],
     nodeTypes = require('asNEAT/asNEAT')['default'].nodeTypes,
-    log = Utils.log;
+    log = Utils.log,
+    name = "Network";
 
 var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
@@ -23,6 +24,7 @@ var Network = function(parameters) {
   }
 };
 
+Network.prototype.name = name;
 Network.prototype.defaultParameters = {
   nodes: [],
   connections: [],

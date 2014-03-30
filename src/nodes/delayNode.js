@@ -1,13 +1,15 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "DelayNode";
 
 var DelayNode = function(parameters) {
   Node.call(this, parameters);
 };
 
 DelayNode.prototype = Object.create(Node.prototype);
+DelayNode.prototype.name = name;
 DelayNode.prototype.defaultParameters = {
   // in seconds
   delayTime: 0,
@@ -57,6 +59,14 @@ DelayNode.prototype.refresh = function() {
   gainNode.connect(delayNode);
 
   this.node = delayNode;
+};
+
+DelayNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    delayTime: this.delayTime,
+    feedbackRatio: this.feedbackRatio
+  };
 };
 
 DelayNode.prototype.toString = function() {

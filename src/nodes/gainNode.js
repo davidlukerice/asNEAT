@@ -1,13 +1,15 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "GainNode";
 
 var GainNode = function(parameters) {
   Node.call(this, parameters);
 };
 
 GainNode.prototype = Object.create(Node.prototype);
+GainNode.prototype.name = name;
 GainNode.prototype.defaultParameters = {
   // Represents the amount of gain to apply. Its default value is 1
   // (no gain change). The nominal minValue is 0, but may be set
@@ -44,6 +46,13 @@ GainNode.prototype.refresh = function() {
   var node = context.createGain();
   node.gain.value = this.gain;
   this.node = node;
+};
+
+GainNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    gain: this.gain
+  };
 };
 
 GainNode.prototype.toString = function() {

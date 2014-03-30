@@ -2,6 +2,7 @@
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context,
+    name = "OscillatorNode",
     A0 = 27.5,
     C6 = 1046.5,
     C8 = 4186.0;
@@ -11,6 +12,7 @@ var OscillatorNode = function(parameters) {
 };
 
 OscillatorNode.prototype = Object.create(Node.prototype);
+OscillatorNode.prototype.name = name;
 
 OscillatorNode.prototype.defaultParameters = {
   type: 0,
@@ -65,6 +67,15 @@ OscillatorNode.prototype.play = function() {
   }, 500);
 };
 
+OscillatorNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    type: OscillatorNode.TYPES.nameFor(this.type),
+    frequency: this.frequency,
+    detune: this.detune
+  };
+};
+
 OscillatorNode.prototype.toString = function() {
   return this.id+": OscillatorNode("+this.type+","+this.frequency.toFixed(2)+")";
 };
@@ -77,6 +88,10 @@ OscillatorNode.TYPES = [
   "triangle"
   //"custom"
 ];
+OscillatorNode.TYPES.nameFor = function(type) {
+  if (typeof type ==="string") return type;
+  return OscillatorNode.TYPES[type];
+};
 OscillatorNode.random = function() {
   var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
       freq = Utils.randomIn(A0, C6);

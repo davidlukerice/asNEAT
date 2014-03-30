@@ -1,13 +1,15 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "FilterNode";
 
 var FilterNode = function(parameters) {
   Node.call(this, parameters);
 };
 
 FilterNode.prototype = Object.create(Node.prototype);
+FilterNode.prototype.name = name;
 FilterNode.prototype.defaultParameters = {
   type: 0,
   frequency: 500,
@@ -62,6 +64,17 @@ FilterNode.prototype.refresh = function() {
   this.node = node;
 };
 
+FilterNode.prototype.getParameters = function() {
+  return {
+    name: name,
+    type: FilterNode.TYPES.nameFor(this.type),
+    frequency: this.frequency,
+    detune: this.detune,
+    q: this.q,
+    gain: this.gain,
+  };
+};
+
 FilterNode.prototype.toString = function() {
   return this.id+": FilterNode("+this.type+","+this.frequency.toFixed(2)+")";
 };
@@ -76,6 +89,10 @@ FilterNode.TYPES = [
   "notch",
   "allpass"
 ];
+FilterNode.TYPES.nameFor = function(type) {
+  if (typeof type ==="string") return type;
+  return FilterNode.TYPES[type];
+};
 FilterNode.random = function() {
   var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),
       // A0 to C8

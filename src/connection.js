@@ -1,7 +1,8 @@
 
 var Utils = require('asNEAT/utils')['default'],
     log = Utils.log,
-    context = require('asNEAT/asNEAT')['default'].context;
+    context = require('asNEAT/asNEAT')['default'].context,
+    name = "Connection";
 
 // TODO: Different kinds of connections?
 var Connection = function(parameters) {
@@ -10,6 +11,7 @@ var Connection = function(parameters) {
   this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
 };
 
+Connection.prototype.name = name;
 Connection.prototype.defaultParameters = {
   sourceNode: null,
   targetNode: null,
@@ -63,6 +65,16 @@ Connection.prototype.mutate = function() {
     mutationDelta: this.mutationDelta,
     randomMutationRange: this.randomMutationRange
   });
+};
+
+Connection.prototype.getParameters = function() {
+  return {
+    name: name,
+    weight: this.weight,
+    enabled: this.enabled,
+    sourceNode: this.sourceNode.toString(),
+    targetNode: this.targetNode.toString()
+  };
 };
 
 Connection.prototype.toString = function() {
