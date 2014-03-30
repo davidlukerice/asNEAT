@@ -7,12 +7,12 @@ var Utils = require('asNEAT/utils')['default'],
 var Connection = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
   this.gainNode = null;
-  this.id = Utils.cantorPair(this.inNode.id, this.outNode.id);
+  this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
 };
 
 Connection.prototype.defaultParameters = {
-  inNode: null,
-  outNode: null,
+  sourceNode: null,
+  targetNode: null,
   weight: 1.0,
   enabled: true,
 
@@ -23,15 +23,15 @@ Connection.prototype.defaultParameters = {
 };
 
 /**
-  @param clonedInNode {Node} (optional)
-  @param clonedOutNode {Node} (optional)
+  @param clonedsourceNode {Node} (optional)
+  @param clonedtargetNode {Node} (optional)
 */
-Connection.prototype.clone = function(clonedInNode, clonedOutNode) {
-  var inNode = clonedInNode || this.inNode.clone();
-  var outNode = clonedOutNode || this.outNode.clone();
+Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
+  var sourceNode = clonedsourceNode || this.sourceNode.clone();
+  var targetNode = clonedtargetNode || this.targetNode.clone();
   return new Connection({
-    inNode: inNode,
-    outNode: outNode,
+    sourceNode: sourceNode,
+    targetNode: targetNode,
     weight: this.weight,
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
@@ -47,8 +47,8 @@ Connection.prototype.connect = function() {
   // weight attribute
   this.gainNode = context.createGain();
   this.gainNode.gain.value = this.weight;
-  this.inNode.node.connect(this.gainNode);
-  this.gainNode.connect(this.outNode.node);
+  this.sourceNode.node.connect(this.gainNode);
+  this.gainNode.connect(this.targetNode.node);
 };
 
 Connection.prototype.disable = function() {
@@ -68,7 +68,7 @@ Connection.prototype.mutate = function() {
 Connection.prototype.toString = function() {
   return (this.enabled? "" : "*") +
           "connection("+this.weight.toFixed(2)+")("+
-          this.inNode.id+" --> "+this.outNode.id+")";
+          this.sourceNode.id+" --> "+this.targetNode.id+")";
 };
 
 export default Connection;

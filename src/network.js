@@ -16,8 +16,8 @@ var Network = function(parameters) {
   }
   if (this.connections.length===0) {
     this.connections.push(new Connection({
-      inNode: this.nodes[0],
-      outNode: this.nodes[1],
+      sourceNode: this.nodes[0],
+      targetNode: this.nodes[1],
       weight: 0.1
     }));
   }
@@ -43,10 +43,10 @@ Network.prototype.clone = function() {
   // Clone each connection
   var clonedConnections = [];
   _.forEach(this.connections, function(connection) {
-    var clonedInNode = _.find(clonedNodes, {id: connection.inNode.id});
-    var clonedOutNode = _.find(clonedNodes, {id: connection.outNode.id});
+    var clonedsourceNode = _.find(clonedNodes, {id: connection.sourceNode.id});
+    var clonedtargetNode = _.find(clonedNodes, {id: connection.targetNode.id});
 
-    clonedConnections.push(connection.clone(clonedInNode, clonedOutNode));
+    clonedConnections.push(connection.clone(clonedsourceNode, clonedtargetNode));
   });
 
   return new Network({
@@ -113,13 +113,13 @@ Network.prototype.splitMutation = function() {
   // split node is 1.0
   var newNode = Node.random(),
       toConnection = new Connection({
-        inNode: conn.inNode,
-        outNode: newNode,
+        sourceNode: conn.sourceNode,
+        targetNode: newNode,
         weight: conn.weight
       }),
       fromConnection = new Connection({
-        inNode: newNode,
-        outNode: conn.outNode
+        sourceNode: newNode,
+        targetNode: conn.targetNode
       });
 
   conn.disable();
@@ -143,15 +143,15 @@ Network.prototype.addOscillator = function() {
   
   // TODO: will the out node always be [1]?
   var connection = new Connection({
-    inNode: oscillator,
-    outNode: this.nodes[1],
+    sourceNode: oscillator,
+    targetNode: this.nodes[1],
     weight: 0.5
   });
 
   this.nodes.push(oscillator);
   this.connections.push(connection);
   // TODO: find new input to make a connection to
-  // TODO: For now, just connect it directly to the outNode
+  // TODO: For now, just connect it directly to the targetNode
 
   log('adding oscillator '+oscillator.toString());
 

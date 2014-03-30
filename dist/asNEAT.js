@@ -1,4 +1,4 @@
-/* asNEAT 0.0.5 2014-03-27 */
+/* asNEAT 0.0.5 2014-03-30 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -41,12 +41,12 @@ define("asNEAT/connection",
     var Connection = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
       this.gainNode = null;
-      this.id = Utils.cantorPair(this.inNode.id, this.outNode.id);
+      this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
     };
     
     Connection.prototype.defaultParameters = {
-      inNode: null,
-      outNode: null,
+      sourceNode: null,
+      targetNode: null,
       weight: 1.0,
       enabled: true,
     
@@ -57,15 +57,15 @@ define("asNEAT/connection",
     };
     
     /**
-      @param clonedInNode {Node} (optional)
-      @param clonedOutNode {Node} (optional)
+      @param clonedsourceNode {Node} (optional)
+      @param clonedtargetNode {Node} (optional)
     */
-    Connection.prototype.clone = function(clonedInNode, clonedOutNode) {
-      var inNode = clonedInNode || this.inNode.clone();
-      var outNode = clonedOutNode || this.outNode.clone();
+    Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
+      var sourceNode = clonedsourceNode || this.sourceNode.clone();
+      var targetNode = clonedtargetNode || this.targetNode.clone();
       return new Connection({
-        inNode: inNode,
-        outNode: outNode,
+        sourceNode: sourceNode,
+        targetNode: targetNode,
         weight: this.weight,
         enabled: this.enabled,
         mutationDeltaChance: this.mutationDeltaChance,
@@ -81,8 +81,8 @@ define("asNEAT/connection",
       // weight attribute
       this.gainNode = context.createGain();
       this.gainNode.gain.value = this.weight;
-      this.inNode.node.connect(this.gainNode);
-      this.gainNode.connect(this.outNode.node);
+      this.sourceNode.node.connect(this.gainNode);
+      this.gainNode.connect(this.targetNode.node);
     };
     
     Connection.prototype.disable = function() {
@@ -102,7 +102,7 @@ define("asNEAT/connection",
     Connection.prototype.toString = function() {
       return (this.enabled? "" : "*") +
               "connection("+this.weight.toFixed(2)+")("+
-              this.inNode.id+" --> "+this.outNode.id+")";
+              this.sourceNode.id+" --> "+this.targetNode.id+")";
     };
     
     __exports__["default"] = Connection;
@@ -129,8 +129,8 @@ define("asNEAT/network",
       }
       if (this.connections.length===0) {
         this.connections.push(new Connection({
-          inNode: this.nodes[0],
-          outNode: this.nodes[1],
+          sourceNode: this.nodes[0],
+          targetNode: this.nodes[1],
           weight: 0.1
         }));
       }
@@ -156,10 +156,10 @@ define("asNEAT/network",
       // Clone each connection
       var clonedConnections = [];
       _.forEach(this.connections, function(connection) {
-        var clonedInNode = _.find(clonedNodes, {id: connection.inNode.id});
-        var clonedOutNode = _.find(clonedNodes, {id: connection.outNode.id});
+        var clonedsourceNode = _.find(clonedNodes, {id: connection.sourceNode.id});
+        var clonedtargetNode = _.find(clonedNodes, {id: connection.targetNode.id});
     
-        clonedConnections.push(connection.clone(clonedInNode, clonedOutNode));
+        clonedConnections.push(connection.clone(clonedsourceNode, clonedtargetNode));
       });
     
       return new Network({
@@ -226,13 +226,13 @@ define("asNEAT/network",
       // split node is 1.0
       var newNode = Node.random(),
           toConnection = new Connection({
-            inNode: conn.inNode,
-            outNode: newNode,
+            sourceNode: conn.sourceNode,
+            targetNode: newNode,
             weight: conn.weight
           }),
           fromConnection = new Connection({
-            inNode: newNode,
-            outNode: conn.outNode
+            sourceNode: newNode,
+            targetNode: conn.targetNode
           });
     
       conn.disable();
@@ -256,15 +256,15 @@ define("asNEAT/network",
       
       // TODO: will the out node always be [1]?
       var connection = new Connection({
-        inNode: oscillator,
-        outNode: this.nodes[1],
+        sourceNode: oscillator,
+        targetNode: this.nodes[1],
         weight: 0.5
       });
     
       this.nodes.push(oscillator);
       this.connections.push(connection);
       // TODO: find new input to make a connection to
-      // TODO: For now, just connect it directly to the outNode
+      // TODO: For now, just connect it directly to the targetNode
     
       log('adding oscillator '+oscillator.toString());
     
