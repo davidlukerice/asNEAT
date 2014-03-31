@@ -88,15 +88,17 @@ NoteOscillatorNode.prototype.toString = function() {
 
 NoteOscillatorNode.random = function() {
   var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-      freq = Utils.randomIndexIn(-20, 20);
-  // From w3 spec
-  // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
+      stepFromRootNote = Utils.randomIndexIn(-20, 20);
+
+  // stepFromRootNote - # of spets from A4=440hz on a tempered scale.
+
   // Q - 1, with a nominal range of 0.0001 to 1000.
+
   // gain - 0, with a nominal range of -40 to 40.
 
   return new NoteOscillatorNode({
     type: OscillatorNode.TYPES[typeI],
-    frequency: freq
+    stepFromRootNote: stepFromRootNote
     //detune: 0
   });
 };
