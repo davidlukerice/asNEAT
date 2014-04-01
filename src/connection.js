@@ -72,8 +72,8 @@ Connection.prototype.getParameters = function() {
     name: name,
     weight: this.weight,
     enabled: this.enabled,
-    sourceNode: this.sourceNode.toString(),
-    targetNode: this.targetNode.toString()
+    sourceNode: this.sourceNode.name,
+    targetNode: this.targetNode.name
   };
 };
 

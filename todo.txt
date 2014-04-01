@@ -17,6 +17,7 @@ Planned:
   * crossovers
 - Connections:
   * change various gain parameters? liek linearRampToValue...
+  * getParameters also returns what it's connecting to
 - Nodes:
   * delay
     - make actually 'slap dellay ish'
