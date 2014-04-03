@@ -64,6 +64,7 @@ DelayNode.prototype.refresh = function() {
 DelayNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     delayTime: this.delayTime,
     feedbackRatio: this.feedbackRatio
   };

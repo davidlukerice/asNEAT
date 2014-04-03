@@ -104,6 +104,7 @@ define("asNEAT/connection",
     Connection.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         weight: this.weight,
         enabled: this.enabled,
         sourceNode: this.sourceNode.name,
@@ -532,6 +533,7 @@ define("asNEAT/nodes/compressorNode",
     CompressorNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         threshold: this.threshold,
         knee: this.knee,
         ratio: this.ratio,
@@ -641,6 +643,7 @@ define("asNEAT/nodes/delayNode",
     DelayNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         delayTime: this.delayTime,
         feedbackRatio: this.feedbackRatio
       };
@@ -734,6 +737,7 @@ define("asNEAT/nodes/filterNode",
     FilterNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         type: FilterNode.TYPES.nameFor(this.type),
         frequency: this.frequency,
         detune: this.detune,
@@ -838,6 +842,7 @@ define("asNEAT/nodes/gainNode",
     GainNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         gain: this.gain
       };
     };
@@ -1053,6 +1058,7 @@ define("asNEAT/nodes/noteOscillatorNode",
     NoteOscillatorNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         type: OscillatorNode.TYPES.nameFor(this.type),
         stepFromRootNote: this.stepFromRootNote,
         //note: Utils.noteForFrequency(
@@ -1161,6 +1167,7 @@ define("asNEAT/nodes/oscillatorNode",
     OscillatorNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         type: OscillatorNode.TYPES.nameFor(this.type),
         frequency: this.frequency,
         detune: this.detune
@@ -1227,7 +1234,8 @@ define("asNEAT/nodes/outNode",
     };
     OutNode.prototype.getParameters = function() {
       return {
-        name: name
+        name: name,
+        id: this.id
       };
     };
     OutNode.prototype.toString = function() {
@@ -1311,6 +1319,7 @@ define("asNEAT/nodes/pannerNode",
     PannerNode.prototype.getParameters = function() {
       return {
         name: name,
+        id: this.id,
         x: this.x.toFixed(2),
         y: this.y.toFixed(2),
         z: this.z.toFixed(2)

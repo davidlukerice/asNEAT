@@ -117,6 +117,7 @@ CompressorNode.prototype.refresh = function() {
 CompressorNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     threshold: this.threshold,
     knee: this.knee,
     ratio: this.ratio,

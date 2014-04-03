@@ -69,6 +69,7 @@ PannerNode.prototype.refresh = function() {
 PannerNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     x: this.x.toFixed(2),
     y: this.y.toFixed(2),
     z: this.z.toFixed(2)

@@ -73,6 +73,7 @@ NoteOscillatorNode.prototype.play = function() {
 NoteOscillatorNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     type: OscillatorNode.TYPES.nameFor(this.type),
     stepFromRootNote: this.stepFromRootNote,
     //note: Utils.noteForFrequency(

@@ -20,7 +20,8 @@ OutNode.prototype.refresh = function() {
 };
 OutNode.prototype.getParameters = function() {
   return {
-    name: name
+    name: name,
+    id: this.id
   };
 };
 OutNode.prototype.toString = function() {

@@ -51,6 +51,7 @@ GainNode.prototype.refresh = function() {
 GainNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     gain: this.gain
   };
 };

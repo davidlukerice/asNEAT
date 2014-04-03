@@ -70,6 +70,7 @@ OscillatorNode.prototype.play = function() {
 OscillatorNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     type: OscillatorNode.TYPES.nameFor(this.type),
     frequency: this.frequency,
     detune: this.detune

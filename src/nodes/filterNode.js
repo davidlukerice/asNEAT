@@ -67,6 +67,7 @@ FilterNode.prototype.refresh = function() {
 FilterNode.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     type: FilterNode.TYPES.nameFor(this.type),
     frequency: this.frequency,
     detune: this.detune,

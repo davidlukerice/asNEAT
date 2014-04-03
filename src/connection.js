@@ -70,6 +70,7 @@ Connection.prototype.mutate = function() {
 Connection.prototype.getParameters = function() {
   return {
     name: name,
+    id: this.id,
     weight: this.weight,
     enabled: this.enabled,
     sourceNode: this.sourceNode.name,
