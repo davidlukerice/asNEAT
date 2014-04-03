@@ -81,10 +81,11 @@ Network.prototype.play = function() {
 };
 Network.prototype.mutate = function() {
   var mutations = [
-    {weight: 0.25, element: this.splitMutation},
-    {weight: 0.25, element: this.addOscillator},
-    {weight: 0.25, element: this.mutateConnectionWeights},
-    {weight: 0.25, element: this.mutateNodeParameters}
+    {weight: 0.2, element: this.splitMutation},
+    {weight: 0.2, element: this.addOscillator},
+    {weight: 0.2, element: this.addConnection},
+    {weight: 0.2, element: this.mutateConnectionWeights},
+    {weight: 0.2, element: this.mutateNodeParameters}
   ];
   var mutation = Utils.weightedSelection(mutations);
   mutation.call(this);
@@ -139,7 +140,7 @@ Network.prototype.splitMutation = function() {
   in one of the current nodes
  */
 Network.prototype.addOscillator = function() {
-  
+
   // TODO: Pick whether an oscillator or a note oscillator
   var oscillator = NoteOscillatorNode.random();
   
@@ -159,6 +160,57 @@ Network.prototype.addOscillator = function() {
 
   return this;
 };
+
+Network.prototype.addConnection = function() {
+  var possibleConns = this.getPossibleNewConnections();
+  if (possibleConns.length===0) {
+    log('no possible Connections');
+    return this;
+  }
+
+  var newConnection = Utils.randomElementIn(possibleConns);
+  this.connections.push(newConnection);
+  log('new connection: '+newConnection.toString());
+
+  return this;
+};
+  Network.prototype.getPossibleNewConnections = function() {
+    // TODO: Just build the potential connections when new nodes are added removed?
+    //       perfomance hit when adding new nodes, but don't have to O(n^2) for adding a new connection.
+    //       Would have to regenerate on copy though
+
+    // TODO: Allow connections to parameters for FM synthesis
+    var self = this,
+        connections = [];
+
+    // Loop through all non output nodes
+    _.forEach(this.nodes, function(sourceNode) {
+      if (sourceNode.name==="OutNode") 
+        return;
+      // Create possible connection if they don't exist already
+      _.forEach(self.nodes, function(targetNode) {
+        if (targetNode.name==="OscillatorNode" ||
+            targetNode.name==="NoteOscillatorNode")
+          return;
+        if (sourceNode===targetNode)
+          return;
+
+        var connExists = _.find(self.connections, function(conn) {
+          return conn.sourceNode === sourceNode &&
+                 conn.targetNode === targetNode;
+        });
+        if (!connExists)
+          connections.push(new Connection({
+            sourceNode: sourceNode,
+            targetNode: targetNode,
+            // less than one to decrease risk of harsh feedback
+            weight: 0.5
+          }));
+      });
+    });
+      
+    return connections;
+  };
 
 /*
   @param forceMutation {bool} (default: true) Makes at least one connection mutate
@@ -210,7 +262,6 @@ Network.prototype.mutateNodeParameters = function(forceMutation) {
 };
 
 Network.prototype.getEnabledConnections = function() {
-  // TODO: Cache if a performance issue
   return _.filter(this.connections, 'enabled');
 };
 

@@ -14,7 +14,7 @@
     <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
     <button class="addOscillator">add Oscillator</button>
-    <button class="addConnection" disabled>Add Connection</button>
+    <button class="addConnection">Add Connection</button>
     <button class="mutateWeight">Mutate Weights</button>
     <button class="mutateNodeParameters">Mutate Node parameter</button>
     <br>
@@ -66,7 +66,8 @@
             refresh();
           });
           $('button.addConnection').click(function() {
-            log('todo: add Connection');
+            network.addConnection();
+            refresh();
           });
           $('button.mutateWeight').click(function() {
             network.mutateConnectionWeights();
