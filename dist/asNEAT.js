@@ -1003,7 +1003,15 @@ define("asNEAT/nodes/noteOscillatorNode",
       name: name,
     
       type: 0,
+    
+      // Offset from root (currently A4=440) to play
+      // @note This parameter isn't evolved but is useful when
+      // playing a set note from either an onscreen or MIDI keyboard
       stepFromRootNote: 0,
+      
+      // offset from note determined by root_stepFromRootNote
+      noteOffset: 0,
+      
       detune: 0,
       
       parameterMutationChance: 0.1,
@@ -1016,7 +1024,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           allowInverse: false,
           discreteMutation: true
         },{
-          name: 'stepFromRootNote',
+          name: 'noteOffset',
           // doesn't make sense to change type by a delta
           mutationDeltaChance: 0.8,
           mutationDelta: {min: -5, max: 5},
@@ -1032,7 +1040,7 @@ define("asNEAT/nodes/noteOscillatorNode",
       return new NoteOscillatorNode({
         id: this.id,
         type: this.type,
-        stepFromRootNote: this.stepFromRootNote,
+        noteOffset: this.noteOffset,
         detune: this.detune,
         parameterMutationChance: this.parameterMutationChance,
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
@@ -1043,7 +1051,7 @@ define("asNEAT/nodes/noteOscillatorNode",
     NoteOscillatorNode.prototype.refresh = function() {
       var node = context.createOscillator();
       node.type = this.type;
-      node.frequency.value = Utils.frequencyOfStepsFromRootNote(this.stepFromRootNote);
+      node.frequency.value = Utils.frequencyOfStepsFromRootNote(this.noteOffset);
       // cache the current node?
       this.node = node;
     };
@@ -1060,23 +1068,23 @@ define("asNEAT/nodes/noteOscillatorNode",
         name: name,
         id: this.id,
         type: OscillatorNode.TYPES.nameFor(this.type),
-        stepFromRootNote: this.stepFromRootNote,
+        noteOffset: this.noteOffset,
         //note: Utils.noteForFrequency(
         //        Utils.frequencyOfStepsFromRootNote(
-        //          this.stepFromRootNote)),
+        //          this.noteOffset)),
         detune: this.detune,
       };
     };
     
     NoteOscillatorNode.prototype.toString = function() {
-      return this.id+": NoteOscillatorNode("+this.type+","+this.stepFromRootNote+")";
+      return this.id+": NoteOscillatorNode("+this.type+","+this.noteOffset+")";
     };
     
     NoteOscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-          stepFromRootNote = Utils.randomIndexIn(-20, 20);
+          noteOffset = Utils.randomIndexIn(-20, 20);
     
-      // stepFromRootNote - # of spets from A4=440hz on a tempered scale.
+      // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
     
       // Q - 1, with a nominal range of 0.0001 to 1000.
     
@@ -1084,7 +1092,7 @@ define("asNEAT/nodes/noteOscillatorNode",
     
       return new NoteOscillatorNode({
         type: OscillatorNode.TYPES[typeI],
-        stepFromRootNote: stepFromRootNote
+        noteOffset: noteOffset
         //detune: 0
       });
     };
