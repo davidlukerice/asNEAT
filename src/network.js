@@ -187,7 +187,8 @@ Network.prototype.addConnection = function() {
     _.forEach(this.nodes, function(sourceNode) {
       if (sourceNode.name==="OutNode") 
         return;
-      // Create possible connection if they don't exist already
+      // Create possible connection if it (or its inverse)
+      // doesn't exist already
       _.forEach(self.nodes, function(targetNode) {
         if (targetNode.name==="OscillatorNode" ||
             targetNode.name==="NoteOscillatorNode")
@@ -196,8 +197,10 @@ Network.prototype.addConnection = function() {
           return;
 
         var connExists = _.find(self.connections, function(conn) {
-          return conn.sourceNode === sourceNode &&
-                 conn.targetNode === targetNode;
+          return (conn.sourceNode === sourceNode &&
+                  conn.targetNode === targetNode) ||
+                 (conn.sourceNode === targetNode &&
+                  conn.targetNode === sourceNode);
         });
         if (!connExists)
           connections.push(new Connection({
