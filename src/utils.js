@@ -210,19 +210,23 @@ var DISTANCE_FROM_A = {
   @param note (ex: 'c4', 'c4#', 'C4b')
 */
 Utils.frequencyForNote = function(note) {
+  var steps = Utils.stepsFromRootNote(note);
+  return Utils.frequencyOfStepsFromRootNote(steps);
+};
+
+Utils.stepsFromRootNote = function(note) {
   note = note.toLowerCase().split('');
   var letter = note[0],
       octave = parseInt(note[1], 10),
       modifier = note[2],
-      diff = DISTANCE_FROM_A[letter];
+      steps = DISTANCE_FROM_A[letter];
   if (modifier==='#')
-    ++diff;
+    ++steps;
   else if (modifier==='b')
-    --diff;
+    --steps;
 
-  diff+= 12 * (octave-4);
-
-  return Utils.frequencyOfStepsFromRootNote(diff);
+  steps+= 12 * (octave-4);
+  return steps;
 };
 
 Utils.noteForFrequency = function() {

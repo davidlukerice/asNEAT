@@ -268,6 +268,10 @@ Network.prototype.getEnabledConnections = function() {
   return _.filter(this.connections, 'enabled');
 };
 
+Network.prototype.getNoteOscillatorNodes = function() {
+  return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
+};
+
 Network.prototype.toString = function() {
   var str = "Nodes:<br>";
   _.forEach(this.nodes, function(ele) {

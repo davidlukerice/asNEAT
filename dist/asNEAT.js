@@ -1,4 +1,4 @@
-/* asNEAT 0.0.5 2014-04-02 */
+/* asNEAT 0.0.5 2014-04-03 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -392,6 +392,10 @@ define("asNEAT/network",
     
     Network.prototype.getEnabledConnections = function() {
       return _.filter(this.connections, 'enabled');
+    };
+    
+    Network.prototype.getNoteOscillatorNodes = function() {
+      return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
     };
     
     Network.prototype.toString = function() {
@@ -1569,19 +1573,23 @@ define("asNEAT/utils",
       @param note (ex: 'c4', 'c4#', 'C4b')
     */
     Utils.frequencyForNote = function(note) {
+      var steps = Utils.stepsFromRootNote(note);
+      return Utils.frequencyOfStepsFromRootNote(steps);
+    };
+    
+    Utils.stepsFromRootNote = function(note) {
       note = note.toLowerCase().split('');
       var letter = note[0],
           octave = parseInt(note[1], 10),
           modifier = note[2],
-          diff = DISTANCE_FROM_A[letter];
+          steps = DISTANCE_FROM_A[letter];
       if (modifier==='#')
-        ++diff;
+        ++steps;
       else if (modifier==='b')
-        --diff;
+        --steps;
     
-      diff+= 12 * (octave-4);
-    
-      return Utils.frequencyOfStepsFromRootNote(diff);
+      steps+= 12 * (octave-4);
+      return steps;
     };
     
     Utils.noteForFrequency = function() {

@@ -72,6 +72,14 @@ test("frequencyForNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyForNote('B4')), 493.88, 'B4');
   equal(Utils.roundTo2Places(Utils.frequencyForNote('C5')), 523.25, 'C5');
 });
+test("stepsFromRootNote", function() {
+  equal(Utils.stepsFromRootNote('A3'), -12, 'A3');
+  equal(Utils.stepsFromRootNote('G4'), -2, 'G4');
+  equal(Utils.stepsFromRootNote('A4b'), -1, 'A4b');
+  equal(Utils.stepsFromRootNote('A4'), 0, 'A4');
+  equal(Utils.stepsFromRootNote('B4b'), 1, 'B4b');
+  equal(Utils.stepsFromRootNote('B4'), 2, 'B4');
+});
 test("frequencyOfStepsFromRootNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(-2)), 392.00, '-2');
   equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(-1)), 415.30, '-1');
@@ -101,4 +109,15 @@ test("split node", function() {
   a.splitMutation();
   equal(a.connections.length, 3, "connections increased (1_old+2_new)");
   ok(!connection.enabled, "old connection is disabled");
+});
+
+test("getNoteOscillatorNodes", function() {
+  var a = new Network(),
+      firstOscillator = a.nodes[0];
+
+  equal(firstOscillator, a.getNoteOscillatorNodes()[0], "gets first oscillator");
+  equal(a.getNoteOscillatorNodes().length, 1, "starts with one");
+  
+  a.addOscillator();
+  equal(a.getNoteOscillatorNodes().length, 2, "addOscillator inscreases to 2");
 });
