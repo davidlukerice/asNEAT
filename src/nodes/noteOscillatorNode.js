@@ -1,4 +1,3 @@
-
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
@@ -66,7 +65,8 @@ NoteOscillatorNode.prototype.clone = function() {
 NoteOscillatorNode.prototype.refresh = function() {
   var node = context.createOscillator();
   node.type = this.type;
-  node.frequency.value = Utils.frequencyOfStepsFromRootNote(this.noteOffset);
+  node.frequency.value = Utils.frequencyOfStepsFromRootNote(
+      this.stepFromRootNote + this.noteOffset);
   // cache the current node?
   this.node = node;
 };
