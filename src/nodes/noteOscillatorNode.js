@@ -78,6 +78,18 @@ NoteOscillatorNode.prototype.play = function() {
   }, 500);
 };
 
+/**
+  Plays a note until the return handler is called
+  @return function stop
+**/
+NoteOscillatorNode.prototype.playHold = function() {
+  var node = this.node;
+  node.start(0);
+  return function stop() {
+    node.stop(0);
+  };
+};
+
 NoteOscillatorNode.prototype.getParameters = function() {
   return {
     name: name,

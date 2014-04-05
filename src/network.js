@@ -59,16 +59,7 @@ Network.prototype.clone = function() {
   });
 };
 Network.prototype.play = function() {
-  // refresh all the nodes since each can only play 
-  // once (note: changing in the current webAudio draft)
-  _.forEach(this.nodes, function(node) {
-    node.refresh();
-  });
-
-  // setup all the connections
-  _.forEach(this.connections, function(connection) {
-    connection.connect();
-  });
+  playPrep.call(this);
 
   // play the oscillators
   // TODO: Better way to access just the oscillator nodes
@@ -79,6 +70,42 @@ Network.prototype.play = function() {
 
   return this;
 };
+
+/**
+  Plays the network until the return handler is called
+  @return function stop
+**/
+Network.prototype.playHold = function() {
+  playPrep.call(this);
+
+  var stopHandlers = [];
+
+  // play the oscillators
+  // TODO: Better way to access just the oscillator nodes
+  _.forEach(this.nodes, function(node) {
+    if (node.playHold)
+      stopHandlers.push(node.playHold());
+  });
+
+  return function stop() {
+    _.forEach(stopHandlers, function(handler) {
+      handler();
+    });
+  };
+};
+function playPrep() {
+  // refresh all the nodes since each can only play 
+  // once (note: changing in the current webAudio draft)
+  _.forEach(this.nodes, function(node) {
+    node.refresh();
+  });
+
+  // setup all the connections
+  _.forEach(this.connections, function(connection) {
+    connection.connect();
+  });
+}
+
 Network.prototype.mutate = function() {
   var mutations = [
     {weight: 0.2, element: this.splitMutation},
