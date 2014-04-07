@@ -1,4 +1,4 @@
-/* asNEAT 0.0.5 2014-04-05 */
+/* asNEAT 0.0.5 2014-04-07 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -294,20 +294,26 @@ define("asNEAT/network",
      */
     Network.prototype.addOscillator = function() {
     
-      // TODO: Pick whether an oscillator or a note oscillator
+      // TODO: Pick whether an oscillator (FM) or a note oscillator (keyboard)
       var oscillator = NoteOscillatorNode.random();
       
-      // TODO: will the out node always be [1]?
+      // TODO: Allow FM connections (to node parameters)
+      // Pick a random non oscillator node
+      var possibleTargets = _.filter(this.nodes, function(node) {
+        return node.name !== "OscillatorNode" &&
+               node.name !== "NoteOscillatorNode";
+      });
+    
+      var target = Utils.randomElementIn(possibleTargets);
+    
       var connection = new Connection({
         sourceNode: oscillator,
-        targetNode: this.nodes[1],
+        targetNode: target,
         weight: 0.5
       });
     
       this.nodes.push(oscillator);
       this.connections.push(connection);
-      // TODO: find new input to make a connection to
-      // TODO: For now, just connect it directly to the targetNode
     
       log('adding oscillator '+oscillator.toString());
     
