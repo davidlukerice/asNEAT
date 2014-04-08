@@ -12,7 +12,10 @@ var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
 
   if (this.nodes.length===0) {
-    this.nodes.push(NoteOscillatorNode.random());
+    // Create a basic onscillator without any offset to start
+    var osc = NoteOscillatorNode.random();
+    osc.noteOffset = 0;
+    this.nodes.push(osc);
     this.nodes.push(new OutNode());
   }
   if (this.connections.length===0) {

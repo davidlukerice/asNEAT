@@ -1,4 +1,4 @@
-/* asNEAT 0.0.5 2014-04-07 */
+/* asNEAT 0.0.6 2014-04-08 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -138,7 +138,10 @@ define("asNEAT/network",
       Utils.extend(this, this.defaultParameters, parameters);
     
       if (this.nodes.length===0) {
-        this.nodes.push(NoteOscillatorNode.random());
+        // Create a basic onscillator without any offset to start
+        var osc = NoteOscillatorNode.random();
+        osc.noteOffset = 0;
+        this.nodes.push(osc);
         this.nodes.push(new OutNode());
       }
       if (this.connections.length===0) {
