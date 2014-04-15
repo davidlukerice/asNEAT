@@ -22,7 +22,7 @@ var Network = function(parameters) {
     this.connections.push(new Connection({
       sourceNode: this.nodes[0],
       targetNode: this.nodes[1],
-      weight: 0.1
+      weight: 0.5
     }));
   }
 };
