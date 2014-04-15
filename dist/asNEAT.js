@@ -1,4 +1,4 @@
-/* asNEAT 0.0.6 2014-04-08 */
+/* asNEAT 0.0.6 2014-04-15 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -10,6 +10,15 @@ define("asNEAT/asNEAT",
       window.webkitAudioContext ||
       function() {this.supported = false;};
     ns.context = new window.AudioContext();
+    
+    // only create the gain if context is found
+    // (helps on tests)
+    if (ns.context.createGain) {
+      ns.globalGain = ns.context.createGain();
+      ns.globalGain.gain.value = 1.0;
+      ns.globalGain.connect(ns.context.destination);
+    }
+    
     
     // All the registered usable nodes
     // TODO: Give weights for selection in mutation?
@@ -1286,12 +1295,12 @@ define("asNEAT/nodes/outNode",
     "use strict";
     
     var Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
         name = "OutNode";
     
     var OutNode = function(parameters) {
       Node.call(this, parameters);
-      this.node = context.destination;
+      this.node = asNEAT.globalGain;
     };
     
     OutNode.prototype = Object.create(Node.prototype);

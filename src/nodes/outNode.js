@@ -1,11 +1,11 @@
 
 var Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
     name = "OutNode";
 
 var OutNode = function(parameters) {
   Node.call(this, parameters);
-  this.node = context.destination;
+  this.node = asNEAT.globalGain;
 };
 
 OutNode.prototype = Object.create(Node.prototype);
