@@ -5,7 +5,8 @@ var Utils = require('asNEAT/utils')['default'],
 var Node = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
 
-  // todo: fix hack with better inheritance model
+  this.hasChanged = false;
+
   // Only generate a new id if one isn't given in the parameters
   if (parameters && typeof parameters.id !== 'undefined')
     this.id = parameters.id;

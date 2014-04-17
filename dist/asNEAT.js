@@ -1,4 +1,4 @@
-/* asNEAT 0.0.6 2014-04-15 */
+/* asNEAT 0.0.6 2014-04-17 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -51,6 +51,7 @@ define("asNEAT/connection",
     var Connection = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
       this.gainNode = null;
+      this.hasChanged = false;
       this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
     };
     
@@ -94,20 +95,23 @@ define("asNEAT/connection",
       this.gainNode.gain.value = this.weight;
       this.sourceNode.node.connect(this.gainNode);
       this.gainNode.connect(this.targetNode.node);
+      return this;
     };
     
     Connection.prototype.disable = function() {
       this.enabled = false;
+      return this;
     };
     
     Connection.prototype.mutate = function() {
-      Utils.mutateParameter({
+      var mutationInfo = Utils.mutateParameter({
         obj: this,
         parameter: 'weight',
         mutationDeltaChance: this.mutationDeltaChance,
         mutationDelta: this.mutationDelta,
         randomMutationRange: this.randomMutationRange
       });
+      return this;
     };
     
     Connection.prototype.getParameters = function() {
@@ -145,6 +149,9 @@ define("asNEAT/network",
     
     var Network = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
+    
+      // {objectsChanged [], changeDescription string}
+      this.lastMutation = null;
     
       if (this.nodes.length===0) {
         // Create a basic onscillator without any offset to start
@@ -244,7 +251,12 @@ define("asNEAT/network",
       });
     }
     
+    /**
+      Randomly mutates the network based on weighted probabilities.
+      @note Each one updates lastMutation
+    */
     Network.prototype.mutate = function() {
+      // TODO: Other mutations?
       var mutations = [
         {weight: 0.2, element: this.splitMutation},
         {weight: 0.2, element: this.addOscillator},
@@ -254,8 +266,20 @@ define("asNEAT/network",
       ];
       var mutation = Utils.weightedSelection(mutations);
       mutation.call(this);
+      
+      // Clear old changed objects
+      _.forEach(this.nodes, function(node) {
+        node.hasChanged = false;
+      });
+      _.forEach(this.connections, function(connection) {
+        connection.hasChanged = false;
+      });
     
-      // TODO: Other mutations?
+      // Update newly changed objects
+      var lastMutation = this.lastMutation;
+      _.forEach(lastMutation.objectsChanged, function(objects) {
+        objects.hasChanged = true;
+      });
     
       return this;
     };
@@ -297,6 +321,17 @@ define("asNEAT/network",
     
       log('splitting conn '+conn.toString()+' with '+newNode.toString());
     
+      //{objectsChanged [], changeDescription string}
+      this.lastMutation = {
+        objectsChanged: [
+          newNode,
+          toConnection,
+          fromConnection
+        ],
+    
+        changeDescription: "Splitting Connection"
+      };
+    
       return this;
     };
     
@@ -329,6 +364,16 @@ define("asNEAT/network",
     
       log('adding oscillator '+oscillator.toString());
     
+      //{objectsChanged [], changeDescription string}
+      this.lastMutation = {
+        objectsChanged: [
+          oscillator,
+          connection
+        ],
+    
+        changeDescription: "Adding Oscillator"
+      };
+    
       return this;
     };
     
@@ -342,6 +387,15 @@ define("asNEAT/network",
       var newConnection = Utils.randomElementIn(possibleConns);
       this.connections.push(newConnection);
       log('new connection: '+newConnection.toString());
+    
+      //{objectsChanged [], changeDescription string}
+      this.lastMutation = {
+        objectsChanged: [
+          newConnection
+        ],
+    
+        changeDescription: "Adding Connection"
+      };
     
       return this;
     };
@@ -387,16 +441,18 @@ define("asNEAT/network",
       };
     
     /*
+      For each connection, mutate based on the given probability
       @param forceMutation {bool} (default: true) Makes at least one connection mutate
     */
     Network.prototype.mutateConnectionWeights = function(forceMutation) {
       if (typeof(forceMutation)==='undefined') forceMutation = true;
     
       var mutationRate = this.connectionMutationRate,
-          anyMutations = false;
+          anyMutations = false,
+          objectsChanged = [];
       _.forEach(this.connections, function(conn) {
         if (Utils.random() <= mutationRate) {
-          conn.mutate();
+          objectsChanged.push(conn.mutate());
           anyMutations = true;
         }
       });
@@ -406,8 +462,14 @@ define("asNEAT/network",
       if (!anyMutations && forceMutation) {
         log('forcing weight mutation');
         var conn = Utils.randomElementIn(this.connections);
-        conn.mutate();
+        objectsChanged.push(conn.mutate());
       }
+    
+      //{objectsChanged [], changeDescription string}
+      this.lastMutation = {
+        objectsChanged: objectsChanged,
+        changeDescription: "Mutating connection gain"
+      };
     
       return this;
     };
@@ -416,10 +478,11 @@ define("asNEAT/network",
       if (typeof(forceMutation)==='undefined') forceMutation = true;
     
       var mutationRate = this.nodeMutationRate,
-          anyMutations = false;
+          anyMutations = false,
+          objectsChanged = [];
       _.forEach(this.nodes, function(node) {
         if (Utils.random() <= mutationRate) {
-          node.mutate();
+          objectsChanged.push(node.mutate());
           anyMutations = true;
         }
       });
@@ -429,8 +492,13 @@ define("asNEAT/network",
       if (!anyMutations && forceMutation) {
         log('forcing node mutation');
         var node = Utils.randomElementIn(this.nodes);
-        node.mutate();
+        objectsChanged.push(node.mutate());
       }
+      //{objectsChanged [], changeDescription string}
+      this.lastMutation = {
+        objectsChanged: objectsChanged,
+        changeDescription: "Mutating Node Parameters"
+      };
     
       return this;
     };
@@ -927,7 +995,8 @@ define("asNEAT/nodes/node",
     var Node = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
     
-      // todo: fix hack with better inheritance model
+      this.hasChanged = false;
+    
       // Only generate a new id if one isn't given in the parameters
       if (parameters && typeof parameters.id !== 'undefined')
         this.id = parameters.id;
@@ -1545,6 +1614,7 @@ define("asNEAT/utils",
     /*
       Mutates the given
       @param params
+      @return {mutatedParameter, changeDescription}
      */
     Utils.mutateParameter = function(params, target) {
       var delta, range, newParam;
@@ -1565,6 +1635,11 @@ define("asNEAT/utils",
             delta = Utils.randomIn(params.mutationDelta);
           Utils.log('mutating by delta '+delta.toFixed(3));
           params.obj[params.parameter]+=delta;
+    
+          return {
+            mutatedParameter: params.parameter,
+            changeDescription: "by delta "+delta.toFixed(3)
+          };
         },
     
         // note: the inverse is also possible (ex (-max, -min]) when
@@ -1584,6 +1659,10 @@ define("asNEAT/utils",
     
           Utils.log('mutating with new param '+newParam);
           params.obj[params.parameter] = newParam;
+          return {
+            mutatedParameter: params.parameter,
+            changeDescription: "to "+newParam
+          };
         },
     
         allowInverse: true,
@@ -1598,10 +1677,10 @@ define("asNEAT/utils",
     
       // Only change the weight by a given delta
       if (Utils.randomChance(params.mutationDeltaChance))
-        params.mutateDelta.call(target);
+        return params.mutateDelta.call(target);
       // Use a new random weight in range
       else
-        params.mutateRandom.call(target);
+        return params.mutateRandom.call(target);
     };
     
     /*

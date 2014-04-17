@@ -11,6 +11,9 @@ var Utils = require('asNEAT/utils')['default'],
 var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
 
+  // {objectsChanged [], changeDescription string}
+  this.lastMutation = null;
+
   if (this.nodes.length===0) {
     // Create a basic onscillator without any offset to start
     var osc = NoteOscillatorNode.random();
@@ -109,7 +112,12 @@ function playPrep() {
   });
 }
 
+/**
+  Randomly mutates the network based on weighted probabilities.
+  @note Each one updates lastMutation
+*/
 Network.prototype.mutate = function() {
+  // TODO: Other mutations?
   var mutations = [
     {weight: 0.2, element: this.splitMutation},
     {weight: 0.2, element: this.addOscillator},
@@ -119,8 +127,20 @@ Network.prototype.mutate = function() {
   ];
   var mutation = Utils.weightedSelection(mutations);
   mutation.call(this);
+  
+  // Clear old changed objects
+  _.forEach(this.nodes, function(node) {
+    node.hasChanged = false;
+  });
+  _.forEach(this.connections, function(connection) {
+    connection.hasChanged = false;
+  });
 
-  // TODO: Other mutations?
+  // Update newly changed objects
+  var lastMutation = this.lastMutation;
+  _.forEach(lastMutation.objectsChanged, function(objects) {
+    objects.hasChanged = true;
+  });
 
   return this;
 };
@@ -162,6 +182,17 @@ Network.prototype.splitMutation = function() {
 
   log('splitting conn '+conn.toString()+' with '+newNode.toString());
 
+  //{objectsChanged [], changeDescription string}
+  this.lastMutation = {
+    objectsChanged: [
+      newNode,
+      toConnection,
+      fromConnection
+    ],
+
+    changeDescription: "Splitting Connection"
+  };
+
   return this;
 };
 
@@ -194,6 +225,16 @@ Network.prototype.addOscillator = function() {
 
   log('adding oscillator '+oscillator.toString());
 
+  //{objectsChanged [], changeDescription string}
+  this.lastMutation = {
+    objectsChanged: [
+      oscillator,
+      connection
+    ],
+
+    changeDescription: "Adding Oscillator"
+  };
+
   return this;
 };
 
@@ -207,6 +248,15 @@ Network.prototype.addConnection = function() {
   var newConnection = Utils.randomElementIn(possibleConns);
   this.connections.push(newConnection);
   log('new connection: '+newConnection.toString());
+
+  //{objectsChanged [], changeDescription string}
+  this.lastMutation = {
+    objectsChanged: [
+      newConnection
+    ],
+
+    changeDescription: "Adding Connection"
+  };
 
   return this;
 };
@@ -252,16 +302,18 @@ Network.prototype.addConnection = function() {
   };
 
 /*
+  For each connection, mutate based on the given probability
   @param forceMutation {bool} (default: true) Makes at least one connection mutate
 */
 Network.prototype.mutateConnectionWeights = function(forceMutation) {
   if (typeof(forceMutation)==='undefined') forceMutation = true;
 
   var mutationRate = this.connectionMutationRate,
-      anyMutations = false;
+      anyMutations = false,
+      objectsChanged = [];
   _.forEach(this.connections, function(conn) {
     if (Utils.random() <= mutationRate) {
-      conn.mutate();
+      objectsChanged.push(conn.mutate());
       anyMutations = true;
     }
   });
@@ -271,8 +323,14 @@ Network.prototype.mutateConnectionWeights = function(forceMutation) {
   if (!anyMutations && forceMutation) {
     log('forcing weight mutation');
     var conn = Utils.randomElementIn(this.connections);
-    conn.mutate();
+    objectsChanged.push(conn.mutate());
   }
+
+  //{objectsChanged [], changeDescription string}
+  this.lastMutation = {
+    objectsChanged: objectsChanged,
+    changeDescription: "Mutating connection gain"
+  };
 
   return this;
 };
@@ -281,10 +339,11 @@ Network.prototype.mutateNodeParameters = function(forceMutation) {
   if (typeof(forceMutation)==='undefined') forceMutation = true;
 
   var mutationRate = this.nodeMutationRate,
-      anyMutations = false;
+      anyMutations = false,
+      objectsChanged = [];
   _.forEach(this.nodes, function(node) {
     if (Utils.random() <= mutationRate) {
-      node.mutate();
+      objectsChanged.push(node.mutate());
       anyMutations = true;
     }
   });
@@ -294,8 +353,13 @@ Network.prototype.mutateNodeParameters = function(forceMutation) {
   if (!anyMutations && forceMutation) {
     log('forcing node mutation');
     var node = Utils.randomElementIn(this.nodes);
-    node.mutate();
+    objectsChanged.push(node.mutate());
   }
+  //{objectsChanged [], changeDescription string}
+  this.lastMutation = {
+    objectsChanged: objectsChanged,
+    changeDescription: "Mutating Node Parameters"
+  };
 
   return this;
 };

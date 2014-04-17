@@ -8,6 +8,7 @@ var Utils = require('asNEAT/utils')['default'],
 var Connection = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
   this.gainNode = null;
+  this.hasChanged = false;
   this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
 };
 
@@ -51,20 +52,23 @@ Connection.prototype.connect = function() {
   this.gainNode.gain.value = this.weight;
   this.sourceNode.node.connect(this.gainNode);
   this.gainNode.connect(this.targetNode.node);
+  return this;
 };
 
 Connection.prototype.disable = function() {
   this.enabled = false;
+  return this;
 };
 
 Connection.prototype.mutate = function() {
-  Utils.mutateParameter({
+  var mutationInfo = Utils.mutateParameter({
     obj: this,
     parameter: 'weight',
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDelta: this.mutationDelta,
     randomMutationRange: this.randomMutationRange
   });
+  return this;
 };
 
 Connection.prototype.getParameters = function() {

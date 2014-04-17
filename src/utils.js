@@ -113,6 +113,7 @@ Utils.weightedSelection = function(xs) {
 /*
   Mutates the given
   @param params
+  @return {mutatedParameter, changeDescription}
  */
 Utils.mutateParameter = function(params, target) {
   var delta, range, newParam;
@@ -133,6 +134,11 @@ Utils.mutateParameter = function(params, target) {
         delta = Utils.randomIn(params.mutationDelta);
       Utils.log('mutating by delta '+delta.toFixed(3));
       params.obj[params.parameter]+=delta;
+
+      return {
+        mutatedParameter: params.parameter,
+        changeDescription: "by delta "+delta.toFixed(3)
+      };
     },
 
     // note: the inverse is also possible (ex (-max, -min]) when
@@ -152,6 +158,10 @@ Utils.mutateParameter = function(params, target) {
 
       Utils.log('mutating with new param '+newParam);
       params.obj[params.parameter] = newParam;
+      return {
+        mutatedParameter: params.parameter,
+        changeDescription: "to "+newParam
+      };
     },
 
     allowInverse: true,
@@ -166,10 +176,10 @@ Utils.mutateParameter = function(params, target) {
 
   // Only change the weight by a given delta
   if (Utils.randomChance(params.mutationDeltaChance))
-    params.mutateDelta.call(target);
+    return params.mutateDelta.call(target);
   // Use a new random weight in range
   else
-    params.mutateRandom.call(target);
+    return params.mutateRandom.call(target);
 };
 
 /*
