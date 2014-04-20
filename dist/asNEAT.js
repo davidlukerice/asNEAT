@@ -1,4 +1,4 @@
-/* asNEAT 0.0.6 2014-04-17 */
+/* asNEAT 0.0.6 2014-04-19 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -1046,6 +1046,7 @@ define("asNEAT/nodes/node",
     
     /**
       Mutates at least one parameter
+      @return this Node
     */
     Node.prototype.mutate = function() {
       var self = this,
@@ -1055,7 +1056,7 @@ define("asNEAT/nodes/node",
     
       if (!parameters || parameters.length===0) {
         Utils.log('no mutation parameters');
-        return;
+        return this;
       }
       _.forEach(this.mutatableParameters, function(param) {
         if (!Utils.randomChance(chance))
@@ -1068,6 +1069,8 @@ define("asNEAT/nodes/node",
         var param = Utils.randomElementIn(parameters);
         mutate(param);
       }
+    
+      return this;
     
       function mutate(param) {
         Utils.mutateParameter({
