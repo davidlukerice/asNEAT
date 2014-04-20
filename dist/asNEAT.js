@@ -384,9 +384,9 @@ define("asNEAT/network",
       if (possibleConns.length===0) {
         log('no possible Connections');
         this.lastMutation = {
-        objectsChanged: [],
-        changeDescription: "No Mutation (No connections to add)"
-      };
+          objectsChanged: [],
+          changeDescription: "No Mutation (No connections to add)"
+        };
         return this;
       }
     
