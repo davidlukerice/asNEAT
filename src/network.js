@@ -138,6 +138,8 @@ Network.prototype.mutate = function() {
 
   // Update newly changed objects
   var lastMutation = this.lastMutation;
+  if (lastMutation == null)
+    throw "no last mutation from mutate";
   _.forEach(lastMutation.objectsChanged, function(objects) {
     objects.hasChanged = true;
   });
@@ -242,6 +244,10 @@ Network.prototype.addConnection = function() {
   var possibleConns = this.getPossibleNewConnections();
   if (possibleConns.length===0) {
     log('no possible Connections');
+    this.lastMutation = {
+      objectsChanged: [],
+      changeDescription: "No Mutation (No connections to add)"
+    };
     return this;
   }
 
@@ -254,7 +260,6 @@ Network.prototype.addConnection = function() {
     objectsChanged: [
       newConnection
     ],
-
     changeDescription: "Adding Connection"
   };
 

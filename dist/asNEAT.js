@@ -277,6 +277,8 @@ define("asNEAT/network",
     
       // Update newly changed objects
       var lastMutation = this.lastMutation;
+      if (lastMutation == null)
+        throw "no last mutation from mutate";
       _.forEach(lastMutation.objectsChanged, function(objects) {
         objects.hasChanged = true;
       });
@@ -381,6 +383,10 @@ define("asNEAT/network",
       var possibleConns = this.getPossibleNewConnections();
       if (possibleConns.length===0) {
         log('no possible Connections');
+        this.lastMutation = {
+        objectsChanged: [],
+        changeDescription: "No Mutation (No connections to add)"
+      };
         return this;
       }
     
@@ -393,7 +399,6 @@ define("asNEAT/network",
         objectsChanged: [
           newConnection
         ],
-    
         changeDescription: "Adding Connection"
       };
     

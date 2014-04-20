@@ -1,4 +1,4 @@
-module("Basic Tests");
+module("Sanity Check");
  
 test("testing runner", function() {
   ok(true, "true is truthy!");
@@ -120,4 +120,19 @@ test("getNoteOscillatorNodes", function() {
   
   a.addOscillator();
   equal(a.getNoteOscillatorNodes().length, 2, "addOscillator inscreases to 2");
+});
+
+test("mutations update lastMutation", function() {
+  var a = new Network();
+  equal(a.lastMutation, null, "starts null");
+  testLastMutation(a.clone().splitMutation(), "splitMutation");
+  testLastMutation(a.clone().addOscillator(), "addOscillator");
+  testLastMutation(a.clone().addConnection(), "addConnection");
+  testLastMutation(a.clone().mutateConnectionWeights(), "mutateConnectionWeights");
+  testLastMutation(a.clone().mutateNodeParameters(), "mutateNodeParameters");
+
+  function testLastMutation(net, msg) {
+    ok(_.isArray(net.lastMutation.objectsChanged) &&
+       _.isString(net.lastMutation.changeDescription), msg);
+  }
 });
