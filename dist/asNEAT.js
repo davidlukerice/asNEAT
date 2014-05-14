@@ -331,7 +331,7 @@ define("asNEAT/network",
           fromConnection
         ],
     
-        changeDescription: "Splitting Connection"
+        changeDescription: "Split Connection"
       };
     
       return this;
@@ -373,7 +373,7 @@ define("asNEAT/network",
           connection
         ],
     
-        changeDescription: "Adding Oscillator"
+        changeDescription: "Added Oscillator"
       };
     
       return this;
@@ -399,7 +399,7 @@ define("asNEAT/network",
         objectsChanged: [
           newConnection
         ],
-        changeDescription: "Adding Connection"
+        changeDescription: "Added Connection"
       };
     
       return this;
@@ -473,7 +473,7 @@ define("asNEAT/network",
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: objectsChanged,
-        changeDescription: "Mutating connection gain"
+        changeDescription: "Mutated connection gain"
       };
     
       return this;
@@ -502,7 +502,7 @@ define("asNEAT/network",
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: objectsChanged,
-        changeDescription: "Mutating Node Parameters"
+        changeDescription: "Mutated Node Parameters"
       };
     
       return this;
