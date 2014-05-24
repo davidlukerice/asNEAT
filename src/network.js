@@ -161,20 +161,19 @@ Network.prototype.splitMutation = function() {
       selectedType = nodeTypes[typesI],
       Node = require('asNEAT/nodes/'+selectedType)['default'];
 
-  // TODO: Create a random new node
-
-  // The first new connection matches the same weight
-  // as the old one and the new connection after the 
-  // split node is 1.0
+  // "The new connection leading into the new node receives a weight of 1,
+  // and the new connection leading out receives the same weight as the old
+  // connection." ~ Stanley
   var newNode = Node.random(),
       toConnection = new Connection({
         sourceNode: conn.sourceNode,
         targetNode: newNode,
-        weight: conn.weight
+        weight: 1.0
       }),
       fromConnection = new Connection({
         sourceNode: newNode,
-        targetNode: conn.targetNode
+        targetNode: conn.targetNode,
+        weight: conn.weight
       });
 
   conn.disable();
