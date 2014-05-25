@@ -15,7 +15,7 @@ Population.prototype.name = name;
 Population.prototype.defaultParameters = {
   networks: [],
   populationCount: 9,
-  crossoverRate: 0.7,
+  crossoverRate: 0.3,
   mutationRate: 1.0
 };
 
@@ -58,8 +58,10 @@ Population.generateFromParents = function(parents, params) {
       y = Utils.randomElementIn(parents, x);
       x = x.crossWith(y);
     }
-    else
+    
+    if (Utils.randomChance(newPopulation.mutationRate))
       x = x.clone().mutate();
+
     newPopulation.networks.push(x);
   }
   return newPopulation;
