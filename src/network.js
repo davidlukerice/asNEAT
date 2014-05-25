@@ -74,7 +74,7 @@ Network.prototype.crossWith = function(otherNetwork) {
       tConnections = this.connections,
       oConnections = otherNetwork.connections,
       nodes = [], connections = [], tI, oI,
-      tLen, oLen, tItem, oItem;
+      tLen, oLen, tItem, oItem, newNetwork;
 
   // Copy over nodes in order of index
   function pushTNode() {
@@ -85,36 +85,6 @@ Network.prototype.crossWith = function(otherNetwork) {
     nodes.push(oItem.clone());
     oItem = oNodes[oI++];
   }
-
-  tI = 0; oI=0;
-  tLen = tNodes.length;
-  oLen = oNodes.length;
-  tItem = tNodes[tI++];
-  oItem = oNodes[oI++];
-
-  while(tI <= tLen || oI <= oLen) {
-    if (tItem && !oItem)
-      pushTNode();
-    else if (!tItem && oItem)
-      pushONode();
-    else if (tItem.id === oItem.id) {
-      if (Utils.randomBool()) {
-        pushTNode();
-        oItem = oNodes[oI++];
-      }
-      else {
-        pushONode();
-        tItem = tNodes[tI++];
-      }
-    }
-    else if (tItem.id < oItem.id)
-      pushTNode();
-    // oItem.id < tItem.id
-    else
-      pushONode();
-  }
-
-  // Copy over connections, randomly picking if same id
   function pushTConnection() {
     var source = _.find(nodes, {id: tItem.sourceNode.id});
     var target = _.find(nodes, {id: tItem.targetNode.id});
@@ -128,40 +98,51 @@ Network.prototype.crossWith = function(otherNetwork) {
     oItem = oConnections[oI++];
   }
 
-  tI=0; oI=0;
-  tLen = tConnections.length;
-  oLen = oConnections.length;
-  tItem = tConnections[tI++];
-  oItem = oConnections[oI++];
+  function mergeElements(tElements, oElements, pushTHandler, pushOHandler) {
+    tI = 0; oI=0;
+    tLen = tElements.length;
+    oLen = oElements.length;
+    tItem = tElements[tI++];
+    oItem = oElements[oI++];
 
-  while (tI <= tLen || oI <= oLen) {
-    if (tItem && !oItem)
-      pushTConnection();
-    else if (!tItem && oItem)
-      pushOConnection();
-    else if (tItem.id === oItem.id) {
-      if (Utils.randomBool()) {
-        pushTConnection();
-        oItem = oConnections[oI++];
+    while(tI <= tLen || oI <= oLen) {
+      if (tItem && !oItem)
+        pushTHandler();
+      else if (!tItem && oItem)
+        pushOHandler();
+      else if (tItem.id === oItem.id) {
+        if (Utils.randomBool()) {
+          pushTHandler();
+          oItem = oElements[oI++];
+        }
+        else {
+          pushOHandler();
+          tItem = tElements[tI++];
+        }
       }
-      else {
-        pushOConnection();
-        tItem = tConnections[tI++];
-      }
+      else if (tItem.id < oItem.id)
+        pushTHandler();
+      // oItem.id < tItem.id
+      else
+        pushOHandler();
     }
-    else if (tItem.id < oItem.id)
-      pushTConnection();
-    // oItem.id < tItem.id
-    else
-      pushOConnection();
   }
 
-  // TODO: Update last Mutation info object data thing?
+  mergeElements(tNodes, oNodes, pushTNode, pushONode);
+  mergeElements(tConnections, oConnections, pushTConnection, pushOConnection);
 
-  return new Network({
+  newNetwork = new Network({
     nodes: nodes,
     connections: connections,
   });
+  newNetwork.lastMutation = {
+    // TODO: Highlight changed objects? maybe add in blue for first parent, red for other?
+    objectsChanged: [],
+    changeDescription: "Crossed instruments "+this.id+" & "+otherNetwork.id
+  };
+  updateObjectsInMutation(newNetwork.lastMutation);
+
+  return newNetwork;
 };
 Network.prototype.play = function() {
   playPrep.call(this);
@@ -238,16 +219,20 @@ Network.prototype.mutate = function() {
     connection.hasChanged = false;
   });
 
-  // Update newly changed objects
-  var lastMutation = this.lastMutation;
-  if (lastMutation == null)
-    throw "no last mutation from mutate";
-  _.forEach(lastMutation.objectsChanged, function(objects) {
-    objects.hasChanged = true;
-  });
+  updateObjectsInMutation(this.lastMutation);
 
   return this;
 };
+
+// Update newly changed objects
+function updateObjectsInMutation(lastMutation) {
+  if (lastMutation == null)
+    throw "no last mutation from mutate";
+
+  _.forEach(lastMutation.objectsChanged, function(objects) {
+    objects.hasChanged = true;
+  });
+}
 
 /*
   Randomly select a connection to split in two
