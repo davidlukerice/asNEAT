@@ -9,7 +9,6 @@ var Utils = require('asNEAT/utils')['default'],
 */
 var Population = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
-
 };
 
 Population.prototype.name = name;

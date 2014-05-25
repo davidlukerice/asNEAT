@@ -168,6 +168,12 @@ define("asNEAT/network",
           weight: 0.5
         }));
       }
+    
+      // Only generate a new id if one isn't given in the parameters
+      if (parameters && typeof parameters.id !== 'undefined')
+        this.id = parameters.id;
+      else
+        this.id = Network.getNextId();
     };
     
     Network.prototype.name = name;
@@ -614,6 +620,11 @@ define("asNEAT/network",
       });
     
       return str;
+    };
+    
+    Network.id=0;
+    Network.getNextId = function() {
+      return Network.id++;
     };
     
     __exports__["default"] = Network;
@@ -1602,7 +1613,6 @@ define("asNEAT/population",
     */
     var Population = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
-    
     };
     
     Population.prototype.name = name;

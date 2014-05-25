@@ -29,6 +29,12 @@ var Network = function(parameters) {
       weight: 0.5
     }));
   }
+
+  // Only generate a new id if one isn't given in the parameters
+  if (parameters && typeof parameters.id !== 'undefined')
+    this.id = parameters.id;
+  else
+    this.id = Network.getNextId();
 };
 
 Network.prototype.name = name;
@@ -475,6 +481,11 @@ Network.prototype.toString = function() {
   });
 
   return str;
+};
+
+Network.id=0;
+Network.getNextId = function() {
+  return Network.id++;
 };
 
 export default Network;
