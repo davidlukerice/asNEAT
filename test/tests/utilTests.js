@@ -16,10 +16,11 @@ test("randomElementIn", function() {
   var x = {id:0};
   equal(Utils.randomElementIn([x], x), undefined, "arr containing notX returns undefined");
 
-  xs = [1, 2];
+  var y = {id:1};
+  xs = [x, y];
   var pick = Utils.randomElementIn(xs);
   ok(pick == xs[0] || pick == xs[1], "Picks element in xs");
-  equal(Utils.randomElementIn(xs, 1), 2, "Doesn't pick notX");
+  equal(Utils.randomElementIn(xs, x), y, "Doesn't pick notX");
 });
 
 test("clamp", function() {
