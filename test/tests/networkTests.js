@@ -18,15 +18,15 @@ test("crossWith", function() {
   a = new Network();
   c = a.crossWith(a);
   ok(a.nodes.length === c.nodes.length, 
-    "crossing with itself contains same number nodes");
+    "crossing with itself contains same number of nodes");
   ok(a.connections.length === c.connections.length, 
-    "crossing with itself contains same number nodes");
+    "crossing with itself contains same number of connections");
 
   a = new Network(),
   b = new Network(),
   c = a.crossWith(b);
   equal(c.nodes.length, a.nodes.length+b.nodes.length-1,
-    "Child has same number nodes, less the output");
+    "Child has same number nodes as a+b, less the shared output node");
   equal(c.connections.length, a.connections.length+b.connections.length,
     "Child has same number connections");
 
@@ -41,6 +41,23 @@ test("crossWith", function() {
   ok(c.connections.length === (a.connections.length+1) &&
      c.connections.length === (b.connections.length+2),
     "SplitMutation && addOscillator adds correct number connections");
+  ok(_.reduce(c.nodes, function(result, val){
+    return result && (
+      _.some(a.nodes, {'id': val.id}) ||
+      _.some(b.nodes, {'id': val.id})
+    );
+  }, true), "C contains only nodes found in a and b");
+  ok(_.reduce(c.connections, function(result, val){
+    return result && (
+      _.some(a.connections, {'id': val.id}) ||
+      _.some(b.connections, {'id': val.id})
+    );
+  }, true), "C contains only connections found in a and b");
+
+  equal(c.nodes.length, _.uniq(c.nodes, true, 'id').length,
+    "C contains no duplicate nodes");
+  equal(c.connections.length, _.uniq(c.connections, true, 'id').length,
+    "C contains no duplicate connections");
 });
 
 test("split node", function() {
