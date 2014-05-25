@@ -58,10 +58,13 @@ Utils.randomBool = function() {
 
 /** 
   @param xs {array} [x1, x2,...]
+  @param notX An element in xs to not select
   @return A random element in xs, undefined if xs is empty
 */
-Utils.randomElementIn = function(xs) {
+Utils.randomElementIn = function(xs, notX) {
   if (xs.length===0) return;
+  if (notX)
+    return Utils.randomElementIn(_.reject(xs, notX));
 
   var index = Utils.randomIndexIn(0, xs.length);
   return xs[index];

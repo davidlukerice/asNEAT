@@ -10,6 +10,18 @@ test("randomIn", function() {
   }
 });
 
+test("randomElementIn", function() {
+  var xs = [];
+  equal(Utils.randomElementIn(xs), undefined, "empty returns undefined");
+  var x = {id:0};
+  equal(Utils.randomElementIn([x], x), undefined, "arr containing notX returns undefined");
+
+  xs = [1, 2];
+  var pick = Utils.randomElementIn(xs);
+  ok(pick == xs[0] || pick == xs[1], "Picks element in xs");
+  equal(Utils.randomElementIn(xs, 1), 2, "Doesn't pick notX");
+});
+
 test("clamp", function() {
   var min = -10,
       max = 10;
