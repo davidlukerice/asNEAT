@@ -6,7 +6,8 @@ var Utils = require('asNEAT/utils')['default'],
     Connection = require('asNEAT/connection')['default'],
     nodeTypes = require('asNEAT/asNEAT')['default'].nodeTypes,
     log = Utils.log,
-    name = "Network";
+    name = "Network",
+    globalOutNode = new OutNode();
 
 var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
@@ -18,13 +19,13 @@ var Network = function(parameters) {
     // Create a basic onscillator without any offset to start
     var osc = NoteOscillatorNode.random();
     osc.noteOffset = 0;
+    this.nodes.push(globalOutNode);
     this.nodes.push(osc);
-    this.nodes.push(new OutNode());
   }
   if (this.connections.length===0) {
     this.connections.push(new Connection({
-      sourceNode: this.nodes[0],
-      targetNode: this.nodes[1],
+      sourceNode: this.nodes[1],
+      targetNode: this.nodes[0],
       weight: 0.5
     }));
   }
@@ -62,6 +63,104 @@ Network.prototype.clone = function() {
     connections: clonedConnections,
     connectionMutationRate: this.connectionMutationRate,
     nodeMutationRate: this.nodeMutationRate
+  });
+};
+/**
+  Creates a child network from this and the passed in otherNetwork
+*/
+Network.prototype.crossWith = function(otherNetwork) {
+  var tNodes = this.nodes,
+      oNodes = otherNetwork.nodes,
+      tConnections = this.connections,
+      oConnections = otherNetwork.connections,
+      nodes = [], connections = [], tI, oI,
+      tLen, oLen, tItem, oItem;
+
+  // Copy over nodes in order of index
+  function pushTNode() {
+    nodes.push(tItem.clone());
+    tItem = tNodes[tI++];
+  }
+  function pushONode() {
+    nodes.push(oItem.clone());
+    oItem = oNodes[oI++];
+  }
+
+  tI = 0; oI=0;
+  tLen = tNodes.length;
+  oLen = oNodes.length;
+  tItem = tNodes[tI++];
+  oItem = oNodes[oI++];
+
+  while(tI <= tLen || oI <= oLen) {
+    if (tItem && !oItem)
+      pushTNode();
+    else if (!tItem && oItem)
+      pushONode();
+    else if (tItem.id === oItem.id) {
+      if (Utils.randomBool()) {
+        pushTNode();
+        oItem = oNodes[oI++];
+      }
+      else {
+        pushONode();
+        tItem = tNodes[tI++];
+      }
+    }
+    else if (tItem.id < oItem.id)
+      pushTNode();
+    // oItem.id < tItem.id
+    else
+      pushONode();
+  }
+
+  // Copy over connections, randomly picking if same id
+  function pushTConnection() {
+    var source = _.find(nodes, {id: tItem.sourceNode.id});
+    var target = _.find(nodes, {id: tItem.targetNode.id});
+    connections.push(tItem.clone(source, target));
+    tItem = tConnections[tI++];
+  }
+  function pushOConnection() {
+    var source = _.find(nodes, {id: oItem.sourceNode.id});
+    var target = _.find(nodes, {id: oItem.targetNode.id});
+    connections.push(oItem.clone(source, target));
+    oItem = oConnections[oI++];
+  }
+
+  tI=0; oI=0;
+  tLen = tConnections.length;
+  oLen = oConnections.length;
+  tItem = tConnections[tI++];
+  oItem = oConnections[oI++];
+
+  while (tI <= tLen || oI <= oLen) {
+    if (tItem && !oItem)
+      pushTConnection();
+    else if (!tItem && oItem)
+      pushOConnection();
+    else if (tItem.id === oItem.id) {
+      if (Utils.randomBool()) {
+        pushTConnection();
+        oItem = oConnections[oI++];
+      }
+      else {
+        pushOConnection();
+        tItem = tConnections[tI++];
+      }
+    }
+    else if (tItem.id < oItem.id)
+      pushTConnection();
+    // oItem.id < tItem.id
+    else
+      pushOConnection();
+  }
+
+  // TODO: Update last Mutation info object data thing?
+
+  return new Network({
+    nodes: nodes,
+    connections: connections,
   });
 };
 Network.prototype.play = function() {
@@ -125,6 +224,9 @@ Network.prototype.mutate = function() {
     {weight: 0.2, element: this.mutateConnectionWeights},
     {weight: 0.2, element: this.mutateNodeParameters}
   ];
+
+  // TODO: Check current generation for similar structural mutation
+  // and copy connection id/ids (innovation number)
   var mutation = Utils.weightedSelection(mutations);
   mutation.call(this);
   

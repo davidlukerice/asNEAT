@@ -1,11 +1,3 @@
-module("Sanity Check");
- 
-test("testing runner", function() {
-  ok(true, "true is truthy!");
-  equal(1, true, "1 is truthy");
-  notEqual(0, true, "0 is NOT truthy");
-});
-
 module("Util Tests");
 var Utils = require('asNEAT/utils')['default'];
 
@@ -86,53 +78,4 @@ test("frequencyOfStepsFromRootNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(0)), 440.00, '0');
   equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(1)), 466.16, '1');
   equal(Utils.roundTo2Places(Utils.frequencyOfStepsFromRootNote(2)), 493.88, '2');
-});
-
-module("Network Tests");
-var Network = require('asNEAT/network')['default'];
-
-test('network', function() {
-var a = new Network()
-  equal(a.connections.length, 1, "network starts with single connection");
-});
-
-test("Same default objects/arrays not referenced by multiple networks", function() {
-  var a = new Network();
-  var b = new Network();
-  notEqual(a.nodes, b.nodes, "Nodes not the same");
-});
-
-test("split node", function() {
-  var a = new Network(),
-      connection = a.connections[0];
-
-  a.splitMutation();
-  equal(a.connections.length, 3, "connections increased (1_old+2_new)");
-  ok(!connection.enabled, "old connection is disabled");
-});
-
-test("getNoteOscillatorNodes", function() {
-  var a = new Network(),
-      firstOscillator = a.nodes[0];
-
-  equal(firstOscillator, a.getNoteOscillatorNodes()[0], "gets first oscillator");
-  equal(a.getNoteOscillatorNodes().length, 1, "starts with one");
-  
-  a.addOscillator();
-  equal(a.getNoteOscillatorNodes().length, 2, "addOscillator inscreases to 2");
-});
-
-test("mutations update lastMutation", function() {
-  var a = new Network();
-  equal(a.lastMutation, null, "starts null");
-  testLastMutation(a.clone().splitMutation(), "splitMutation");
-  testLastMutation(a.clone().addOscillator(), "addOscillator");
-  testLastMutation(a.clone().addConnection(), "addConnection");
-  testLastMutation(a.clone().mutateConnectionWeights(), "mutateConnectionWeights");
-  testLastMutation(a.clone().mutateNodeParameters(), "mutateNodeParameters");
-
-  function testLastMutation(net, msg) {
-    ok(_.isArray(net.lastMutation.objectsChanged) &&
-       _.isString(net.lastMutation.changeDescription), msg);
-  }
 });

@@ -112,9 +112,7 @@ NoteOscillatorNode.random = function() {
       noteOffset = Utils.randomIndexIn(-20, 20);
 
   // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
-
   // Q - 1, with a nominal range of 0.0001 to 1000.
-
   // gain - 0, with a nominal range of -40 to 40.
 
   return new NoteOscillatorNode({
