@@ -25,9 +25,9 @@ ns.nodeTypes = [
   
   //'pannerNode' // Implemented, but doesn't do much without other mutations
   
-  'compressorNode'
+  'compressorNode',
+  'convolverNode'
 
-  //convolver // Not worth it atm
   //wave shaper node? // like distortion? eq?
 ];
 
