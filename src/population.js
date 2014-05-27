@@ -49,18 +49,32 @@ Population.prototype.toString = function() {
 */
 Population.generateFromParents = function(parents, params) {
   var newPopulation = new Population(params),
-      x, y;
+      x, y, isCrossed, tempLastMutation;
   while(newPopulation.networks.length < newPopulation.populationCount) {
+    isCrossed = false;
+
     x = Utils.randomElementIn(parents);
     if (parents.length >= 2 &&
         Utils.randomChance(newPopulation.crossoverRate))
     {
       y = Utils.randomElementIn(parents, x);
       x = x.crossWith(y);
+      isCrossed = true;
     }
     
-    if (Utils.randomChance(newPopulation.mutationRate))
+    if (Utils.randomChance(newPopulation.mutationRate)) {
+      if (isCrossed)
+        tempLastMutation = x.lastMutation;
+
       x = x.clone().mutate();
+
+      if (isCrossed) {
+        x.lastMutation.objectsChanged = tempLastMutation.objectsChanged.concat(
+          x.lastMutation.objectsChanged);
+        x.lastMutation.changeDescription = tempLastMutation.changeDescription+" & "+
+          x.lastMutation.changeDescription;
+      }
+    }
 
     newPopulation.networks.push(x);
   }
