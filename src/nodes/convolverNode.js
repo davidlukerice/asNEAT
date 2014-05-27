@@ -2,13 +2,13 @@
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context,
-    name = "GainNode";
+    name = "ConvolverNode";
 
 var ConvolverNode = function(parameters) {
   Node.call(this, parameters);
 
   // TODO: Different types of convolution instead of just noise
-  if (this.audioBuffer === null) {
+  if (this.audioBuffer === null && context.supported) {
     var noiseBuffer = context.createBuffer(2, 0.5 * context.sampleRate, context.sampleRate),
         left = noiseBuffer.getChannelData(0),
         right = noiseBuffer.getChannelData(1);
