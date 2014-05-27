@@ -21,6 +21,7 @@ ns.nodeTypes = [
   'gainNode',
   'filterNode',
   'delayNode',
+  'feedbackDelayNode',
   
   //'pannerNode' // Implemented, but doesn't do much without other mutations
   

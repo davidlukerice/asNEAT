@@ -1,4 +1,4 @@
-/* asNEAT 0.1.0 2014-05-25 */
+/* asNEAT 0.1.0 2014-05-27 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -26,6 +26,7 @@ define("asNEAT/asNEAT",
       'gainNode',
       'filterNode',
       'delayNode',
+      'feedbackDelayNode',
       
       //'pannerNode' // Implemented, but doesn't do much without other mutations
       
@@ -812,6 +813,75 @@ define("asNEAT/nodes/delayNode",
       // in seconds
       delayTime: 0,
     
+      parameterMutationChance: 0.1,
+      mutatableParameters: [
+        {
+          name: 'delayTime',
+          // doesn't make sense to change type by a delta
+          mutationDeltaChance: 0.8,
+          mutationDelta: {min: -0.5, max: 0.5},
+          randomMutationRange: {min: 0.0, max: 3.0}
+        }
+      ]
+    };
+    
+    DelayNode.prototype.clone = function() {
+      return new DelayNode({
+        id: this.id,
+        delayTime: this.delayTime,
+        parameterMutationChance: this.parameterMutationChance,
+        mutatableParameters: _.cloneDeep(this.mutatableParameters)
+      });
+    };
+    
+    // Refreshes the cached node to be played again
+    DelayNode.prototype.refresh = function() {
+      var delayNode = context.createDelay();
+      delayNode.delayTime.value = this.delayTime;
+      this.node = delayNode;
+    };
+    
+    DelayNode.prototype.getParameters = function() {
+      return {
+        name: name,
+        id: this.id,
+        delayTime: this.delayTime
+      };
+    };
+    
+    DelayNode.prototype.toString = function() {
+      return this.id+": DelayNode("+
+        this.delayTime.toFixed(2)+")";
+    };
+    
+    DelayNode.random = function() {
+      return new DelayNode({
+        delayTime: Utils.randomIn(0.0, 3.0)
+      });
+    };
+    
+    __exports__["default"] = DelayNode;
+  });
+define("asNEAT/nodes/feedbackDelayNode", 
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    
+    var Utils = require('asNEAT/utils')['default'],
+        Node = require('asNEAT/nodes/node')['default'],
+        context = require('asNEAT/asNEAT')['default'].context,
+        name = "FeedbackDelayNode";
+    
+    var FeedbackDelayNode = function(parameters) {
+      Node.call(this, parameters);
+    };
+    
+    FeedbackDelayNode.prototype = Object.create(Node.prototype);
+    FeedbackDelayNode.prototype.name = name;
+    FeedbackDelayNode.prototype.defaultParameters = {
+      // in seconds
+      delayTime: 0,
+    
       // [0,1], although >=1 is allowed... not advised
       feedbackRatio: 0.2,
     
@@ -834,8 +904,8 @@ define("asNEAT/nodes/delayNode",
       ]
     };
     
-    DelayNode.prototype.clone = function() {
-      return new DelayNode({
+    FeedbackDelayNode.prototype.clone = function() {
+      return new FeedbackDelayNode({
         id: this.id,
         delayTime: this.delayTime,
         feedbackRatio: this.feedbackRatio,
@@ -845,9 +915,9 @@ define("asNEAT/nodes/delayNode",
     };
     
     // Refreshes the cached node to be played again
-    DelayNode.prototype.refresh = function() {
+    FeedbackDelayNode.prototype.refresh = function() {
       var delayNode = context.createDelay();
-      delayNode.delayTime = this.delayTime;
+      delayNode.delayTime.value = this.delayTime;
     
       // add an additional gain node for 'delay' feedback
       var gainNode = context.createGain();
@@ -859,7 +929,7 @@ define("asNEAT/nodes/delayNode",
       this.node = delayNode;
     };
     
-    DelayNode.prototype.getParameters = function() {
+    FeedbackDelayNode.prototype.getParameters = function() {
       return {
         name: name,
         id: this.id,
@@ -868,20 +938,20 @@ define("asNEAT/nodes/delayNode",
       };
     };
     
-    DelayNode.prototype.toString = function() {
-      return this.id+": DelayNode("+
+    FeedbackDelayNode.prototype.toString = function() {
+      return this.id+": FeedbackDelayNode("+
         this.delayTime.toFixed(2)+","+
         this.feedbackRatio.toFixed(2)+")";
     };
     
-    DelayNode.random = function() {
-      return new DelayNode({
+    FeedbackDelayNode.random = function() {
+      return new FeedbackDelayNode({
         delayTime: Utils.randomIn(0.0, 3.0),
         feedbackRatio: Utils.randomIn(0, 0.6)
       });
     };
     
-    __exports__["default"] = DelayNode;
+    __exports__["default"] = FeedbackDelayNode;
   });
 define("asNEAT/nodes/filterNode", 
   ["exports"],
