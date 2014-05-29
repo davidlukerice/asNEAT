@@ -77,7 +77,8 @@ test("getNoteOscillatorNodes", function() {
   equal(a.getNoteOscillatorNodes().length, 1, "starts with one");
   
   a.addOscillator();
-  equal(a.getNoteOscillatorNodes().length, 2, "addOscillator inscreases to 2");
+  equal(a.getNoteOscillatorNodes().length +a.getOscillatorNodes().length, 2,
+    "addOscillator increases to 2");
 });
 
 test("mutations update lastMutation", function() {

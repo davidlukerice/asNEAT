@@ -16,6 +16,10 @@ Connection.prototype.name = name;
 Connection.prototype.defaultParameters = {
   sourceNode: null,
   targetNode: null,
+  
+  // null if connecting to audio input of targetNode
+  targetParameter: null,
+
   weight: 1.0,
   enabled: true,
 
@@ -51,7 +55,13 @@ Connection.prototype.connect = function() {
   this.gainNode = context.createGain();
   this.gainNode.gain.value = this.weight;
   this.sourceNode.node.connect(this.gainNode);
-  this.gainNode.connect(this.targetNode.node);
+
+  var param = this.targetParameter;
+  if (param === null)
+    this.gainNode.connect(this.targetNode.node);
+  else
+    this.gainNode.connect(this.targetNode.node[param]);
+
   return this;
 };
 
@@ -78,7 +88,8 @@ Connection.prototype.getParameters = function() {
     weight: this.weight,
     enabled: this.enabled,
     sourceNode: this.sourceNode.name,
-    targetNode: this.targetNode.name
+    targetNode: this.targetNode.name,
+    targetParameter: this.targetParameter
   };
 };
 

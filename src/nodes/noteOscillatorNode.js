@@ -47,6 +47,13 @@ NoteOscillatorNode.prototype.defaultParameters = {
       discreteMutation: true
     }
     // todo: detune?
+  ],
+
+  connectableParameters: [
+    {
+      name: "frequency",
+      amplitudeScaling: {min: -2000, max: 2000}
+    }
   ]
 };
 

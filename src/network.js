@@ -42,7 +42,10 @@ Network.prototype.defaultParameters = {
   nodes: [],
   connections: [],
   connectionMutationRate: 0.1,
-  nodeMutationRate: 0.1
+  nodeMutationRate: 0.1,
+  // percentage of addOscillatorMutations will
+  // generate a node for fm, as opposed to strict audio output
+  splitNodeFMMutationRate: 0.5
 };
 /*
   Creates a deep clone of this network
@@ -295,29 +298,53 @@ Network.prototype.splitMutation = function() {
   in one of the current nodes
  */
 Network.prototype.addOscillator = function() {
+  var oscillator, possibleTargets, target, connection;
 
-  // TODO: Pick whether an oscillator (FM) or a note oscillator (keyboard)
-  var oscillator = NoteOscillatorNode.random();
-  
-  // TODO: Allow FM connections (to node parameters)
-  // Pick a random non oscillator node
-  var possibleTargets = _.filter(this.nodes, function(node) {
-    return node.name !== "OscillatorNode" &&
-           node.name !== "NoteOscillatorNode";
-  });
+  // Add FM Oscillator or audio oscillator
+  if (Utils.randomChance(this.splitNodeFMMutationRate)) {
+    oscillator = OscillatorNode.random();
 
-  var target = Utils.randomElementIn(possibleTargets);
+    // Pick random node that's connectable to connect to
+    possibleTargets = _.filter(this.nodes, function(node) {
+      return node.connectableParameters &&
+             node.connectableParameters.length > 0;
+    });
+    target = Utils.randomElementIn(possibleTargets);
+    var targetParameter = Utils.randomElementIn(target.connectableParameters);
+    var ampMin = targetParameter.amplitudeScaling.min;
+    var ampMax = targetParameter.amplitudeScaling.max;
 
-  var connection = new Connection({
-    sourceNode: oscillator,
-    targetNode: target,
-    weight: 0.5
-  });
+    connection = new Connection({
+      sourceNode: oscillator,
+      targetNode: target,
+      targetParameter: targetParameter.name,
+      weight: Utils.randomIn(ampMin, ampMax),
+      mutationDelta: {min: ampMin/12, max: ampMin/12},
+      randomMutationRange: {min: ampMin, max: ampMax}
+    });
+
+    log('adding fm oscillator('+targetParameter.name+') '+oscillator.toString());
+  }
+  else {
+    oscillator = NoteOscillatorNode.random();
+    // Pick a random non oscillator node
+    possibleTargets = _.filter(this.nodes, function(node) {
+      return node.name !== "OscillatorNode" &&
+             node.name !== "NoteOscillatorNode";
+    });
+    target = Utils.randomElementIn(possibleTargets);
+
+    connection = new Connection({
+      sourceNode: oscillator,
+      targetNode: target,
+      weight: 0.5
+    });
+
+    log('adding audio oscillator '+oscillator.toString());
+  }
 
   this.nodes.push(oscillator);
   this.connections.push(connection);
-
-  log('adding oscillator '+oscillator.toString());
 
   //{objectsChanged [], changeDescription string}
   this.lastMutation = {
@@ -467,6 +494,12 @@ Network.prototype.getEnabledConnections = function() {
 
 Network.prototype.getNoteOscillatorNodes = function() {
   return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
+};
+/**
+ Gets the non noteOscillatorNode oscillator nodes
+*/
+Network.prototype.getOscillatorNodes = function() {
+  return _.filter(this.nodes, {name: 'OscillatorNode'});
 };
 
 Network.prototype.toString = function() {
