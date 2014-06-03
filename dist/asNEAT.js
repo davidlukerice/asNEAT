@@ -1,4 +1,4 @@
-/* asNEAT 0.1.0 2014-05-27 */
+/* asNEAT 0.2.0 2014-06-03 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -10,6 +10,8 @@ define("asNEAT/asNEAT",
       window.webkitAudioContext ||
       function() {this.supported = false;};
     ns.context = new window.AudioContext();
+    if (typeof ns.context.supported === 'undefined')
+      ns.context.supported = true;
     
     // only create the gain if context is found
     // (helps on tests)
@@ -60,6 +62,10 @@ define("asNEAT/connection",
     Connection.prototype.defaultParameters = {
       sourceNode: null,
       targetNode: null,
+      
+      // null if connecting to audio input of targetNode
+      targetParameter: null,
+    
       weight: 1.0,
       enabled: true,
     
@@ -79,6 +85,7 @@ define("asNEAT/connection",
       return new Connection({
         sourceNode: sourceNode,
         targetNode: targetNode,
+        targetParameter: this.targetParameter,
         weight: this.weight,
         enabled: this.enabled,
         mutationDeltaChance: this.mutationDeltaChance,
@@ -95,7 +102,13 @@ define("asNEAT/connection",
       this.gainNode = context.createGain();
       this.gainNode.gain.value = this.weight;
       this.sourceNode.node.connect(this.gainNode);
-      this.gainNode.connect(this.targetNode.node);
+    
+      var param = this.targetParameter;
+      if (param === null)
+        this.gainNode.connect(this.targetNode.node);
+      else
+        this.gainNode.connect(this.targetNode.node[param]);
+    
       return this;
     };
     
@@ -122,14 +135,16 @@ define("asNEAT/connection",
         weight: this.weight,
         enabled: this.enabled,
         sourceNode: this.sourceNode.name,
-        targetNode: this.targetNode.name
+        targetNode: this.targetNode.name,
+        targetParameter: this.targetParameter
       };
     };
     
     Connection.prototype.toString = function() {
       return (this.enabled? "" : "*") +
               "connection("+this.weight.toFixed(2)+")("+
-              this.sourceNode.id+" --> "+this.targetNode.id+")";
+              this.sourceNode.id+" --> "+this.targetNode.id+
+              (this.targetParameter ? (": "+this.targetParameter) : "" )+")";
     };
     
     __exports__["default"] = Connection;
@@ -182,7 +197,14 @@ define("asNEAT/network",
       nodes: [],
       connections: [],
       connectionMutationRate: 0.1,
-      nodeMutationRate: 0.1
+      nodeMutationRate: 0.1,
+      // percentage of addOscillatorMutations will
+      // generate a node for fm, as opposed to strict audio output
+      addOscillatorFMMutationRate: 0.5,
+    
+      // Percentage of addConnectionMutation will generate a connection
+      // for fm, as opposed to a strict audio connection
+      addConnectionFMMutationRate: 0.5
     };
     /*
       Creates a deep clone of this network
@@ -389,30 +411,37 @@ define("asNEAT/network",
           connsLen = connections.length,
           randomI = Utils.randomIndexIn(0, connsLen),
           conn = connections[randomI],
+          targetNode = conn.targetNode,
           typesLen = nodeTypes.length,
           typesI = Utils.randomIndexIn(0, typesLen),
           selectedType = nodeTypes[typesI],
-          Node = require('asNEAT/nodes/'+selectedType)['default'];
+          Node = require('asNEAT/nodes/'+selectedType)['default'],
+          newNode, inConnection, outConnection, targetParameter;
     
       // "The new connection leading into the new node receives a weight of 1,
       // and the new connection leading out receives the same weight as the old
       // connection." ~ Stanley
-      var newNode = Node.random(),
-          toConnection = new Connection({
-            sourceNode: conn.sourceNode,
-            targetNode: newNode,
-            weight: 1.0
-          }),
-          fromConnection = new Connection({
-            sourceNode: newNode,
-            targetNode: conn.targetNode,
-            weight: conn.weight
-          });
+      newNode = Node.random();
+    
+      inConnection = new Connection({
+        sourceNode: conn.sourceNode,
+        targetNode: newNode,
+        weight: 1.0
+      });
+    
+      outConnection = new Connection({
+        sourceNode: newNode,
+        targetNode: targetNode,
+        targetParameter: conn.targetParameter,
+        weight: conn.weight,
+        mutationDelta: _.cloneDeep(targetNode.mutationDelta),
+        randomMutationRange: _.cloneDeep(targetNode.randomMutationRange)
+      });
     
       conn.disable();
       this.nodes.push(newNode);
-      this.connections.push(toConnection);
-      this.connections.push(fromConnection);
+      this.connections.push(inConnection);
+      this.connections.push(outConnection);
     
       log('splitting conn '+conn.toString()+' with '+newNode.toString());
     
@@ -420,8 +449,8 @@ define("asNEAT/network",
       this.lastMutation = {
         objectsChanged: [
           newNode,
-          toConnection,
-          fromConnection
+          inConnection,
+          outConnection
         ],
     
         changeDescription: "Split Connection"
@@ -435,29 +464,53 @@ define("asNEAT/network",
       in one of the current nodes
      */
     Network.prototype.addOscillator = function() {
+      var oscillator, possibleTargets, target, connection;
     
-      // TODO: Pick whether an oscillator (FM) or a note oscillator (keyboard)
-      var oscillator = NoteOscillatorNode.random();
-      
-      // TODO: Allow FM connections (to node parameters)
-      // Pick a random non oscillator node
-      var possibleTargets = _.filter(this.nodes, function(node) {
-        return node.name !== "OscillatorNode" &&
-               node.name !== "NoteOscillatorNode";
-      });
+      // Add FM Oscillator or audio oscillator
+      if (Utils.randomChance(this.addOscillatorFMMutationRate)) {
+        oscillator = OscillatorNode.random();
     
-      var target = Utils.randomElementIn(possibleTargets);
+        // Pick random node that's connectable to connect to
+        possibleTargets = _.filter(this.nodes, function(node) {
+          return node.connectableParameters &&
+                 node.connectableParameters.length > 0;
+        });
+        target = Utils.randomElementIn(possibleTargets);
+        var targetParameter = Utils.randomElementIn(target.connectableParameters);
+        var ampMin = targetParameter.amplitudeScaling.min;
+        var ampMax = targetParameter.amplitudeScaling.max;
     
-      var connection = new Connection({
-        sourceNode: oscillator,
-        targetNode: target,
-        weight: 0.5
-      });
+        connection = new Connection({
+          sourceNode: oscillator,
+          targetNode: target,
+          targetParameter: targetParameter.name,
+          weight: Utils.randomIn(ampMin, ampMax),
+          mutationDelta: {min: ampMin/12, max: ampMin/12},
+          randomMutationRange: {min: ampMin, max: ampMax}
+        });
+    
+        log('adding fm oscillator('+targetParameter.name+') '+oscillator.toString());
+      }
+      else {
+        oscillator = NoteOscillatorNode.random();
+        // Pick a random non oscillator node
+        possibleTargets = _.filter(this.nodes, function(node) {
+          return node.name !== "OscillatorNode" &&
+                 node.name !== "NoteOscillatorNode";
+        });
+        target = Utils.randomElementIn(possibleTargets);
+    
+        connection = new Connection({
+          sourceNode: oscillator,
+          targetNode: target,
+          weight: 0.5
+        });
+    
+        log('adding audio oscillator '+oscillator.toString());
+      }
     
       this.nodes.push(oscillator);
       this.connections.push(connection);
-    
-      log('adding oscillator '+oscillator.toString());
     
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
@@ -473,12 +526,13 @@ define("asNEAT/network",
     };
     
     Network.prototype.addConnection = function() {
-      var possibleConns = this.getPossibleNewConnections();
+      var usingFM = Utils.randomChance(this.addConnectionFMMutationRate);
+      var possibleConns = this.getPossibleNewConnections(usingFM);
       if (possibleConns.length===0) {
         log('no possible Connections');
         this.lastMutation = {
           objectsChanged: [],
-          changeDescription: "No Mutation (No connections to add)"
+          changeDescription: "No Mutation (No "+(usingFM ? "FM ":"")+"connections to add)"
         };
         return this;
       }
@@ -497,12 +551,12 @@ define("asNEAT/network",
     
       return this;
     };
-      Network.prototype.getPossibleNewConnections = function() {
-        // TODO: Just build the potential connections when new nodes are added removed?
+      Network.prototype.getPossibleNewConnections = function(usingFM) {
+        // TODO: Just build the potential connections when new nodes are added/removed?
         //       perfomance hit when adding new nodes, but don't have to O(n^2) for adding a new connection.
         //       Would have to regenerate on copy though
     
-        // TODO: Allow connections to parameters for FM synthesis
+        // TODO: allow multiple connections to different parameters between same nodes for FM synthesis
         var self = this,
             connections = [];
     
@@ -513,8 +567,13 @@ define("asNEAT/network",
           // Create possible connection if it (or its inverse)
           // doesn't exist already
           _.forEach(self.nodes, function(targetNode) {
-            if (targetNode.name==="OscillatorNode" ||
-                targetNode.name==="NoteOscillatorNode")
+            if (usingFM && 
+                (!targetNode.connectableParameters ||
+                 targetNode.connectableParameters.length === 0))
+              return;
+            if (!usingFM &&
+                (targetNode.name==="OscillatorNode" ||
+                 targetNode.name==="NoteOscillatorNode"))
               return;
             if (sourceNode===targetNode)
               return;
@@ -525,13 +584,32 @@ define("asNEAT/network",
                      (conn.sourceNode === targetNode &&
                       conn.targetNode === sourceNode);
             });
-            if (!connExists)
+    
+            if (connExists)
+              return;
+    
+            if (usingFM) {
+              var targetParameter = Utils.randomElementIn(targetNode.connectableParameters);
+              var ampMin = targetParameter.amplitudeScaling.min;
+              var ampMax = targetParameter.amplitudeScaling.max;
+    
+              connections.push(new Connection({
+                sourceNode: sourceNode,
+                targetNode: targetNode,
+                targetParameter: targetParameter.name,
+                weight: Utils.randomIn(ampMin, ampMax),
+                mutationDelta: {min: ampMin/12, max: ampMin/12},
+                randomMutationRange: {min: ampMin, max: ampMax}
+              }));
+            }
+            else {
               connections.push(new Connection({
                 sourceNode: sourceNode,
                 targetNode: targetNode,
                 // less than one to decrease risk of harsh feedback
                 weight: 0.5
-              }));
+              }));          
+            }
           });
         });
           
@@ -607,6 +685,12 @@ define("asNEAT/network",
     
     Network.prototype.getNoteOscillatorNodes = function() {
       return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
+    };
+    /**
+     Gets the non noteOscillatorNode oscillator nodes
+    */
+    Network.prototype.getOscillatorNodes = function() {
+      return _.filter(this.nodes, {name: 'OscillatorNode'});
     };
     
     Network.prototype.toString = function() {
@@ -825,11 +909,8 @@ define("asNEAT/nodes/convolverNode",
     ConvolverNode.prototype = Object.create(Node.prototype);
     ConvolverNode.prototype.name = name;
     ConvolverNode.prototype.defaultParameters = {
-    
       audioBuffer: null,
-    
-      parameterMutationChance: 0.1,
-      mutatableParameters: []
+      parameterMutationChance: 0.1
     };
     
     ConvolverNode.prototype.clone = function() {
@@ -999,6 +1080,8 @@ define("asNEAT/nodes/feedbackDelayNode",
       var gainNode = context.createGain();
       gainNode.gain.value = this.feedbackRatio;
     
+    
+      // TODO: Add a base passthrough? or just allow that to evolve?
       delayNode.connect(gainNode);
       gainNode.connect(delayNode);
     
@@ -1037,7 +1120,13 @@ define("asNEAT/nodes/filterNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         context = require('asNEAT/asNEAT')['default'].context,
-        name = "FilterNode";
+        name = "FilterNode",
+        freqMin = 0,
+        freqMax = 1500,
+        qMin = 0.0001,
+        qMax = 20,
+        gainMin = -5,
+        gainMax = 5;
     
     var FilterNode = function(parameters) {
       Node.call(this, parameters);
@@ -1070,6 +1159,20 @@ define("asNEAT/nodes/filterNode",
           randomMutationRange: {min: 27.5, max: 1046.5}
         }
         // todo: other parameters
+      ],
+      connectableParameters: [
+        {
+          name: "frequency",
+          amplitudeScaling: {min: freqMin, max: freqMax}
+        },
+        {
+          name: "q",
+          amplitudeScaling: {min: qMin, max: qMin}
+        },
+        {
+          name: "gain",
+          amplitudeScaling: {min: gainMin, max: gainMax}
+        }
       ]
     };
     
@@ -1132,7 +1235,9 @@ define("asNEAT/nodes/filterNode",
     FilterNode.random = function() {
       var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),
           // A0 to C8
-          freq = Utils.randomIn(27.5, 1046.5);
+          freq = Utils.randomIn(freqMin, freqMax),
+          q = Utils.randomIn(qMin, qMax),
+          gain = Utils.randomIn(gainMin, gainMax);
     
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
       // Q - 1, with a nominal range of 0.0001 to 1000.
@@ -1142,9 +1247,9 @@ define("asNEAT/nodes/filterNode",
         type: FilterNode.TYPES[typeI],
         frequency: freq,
         // TODO: specefic ranges based on type
+        q: q,
+        gain: gain
         //detune: 0,
-        //q: 1,
-        //gain: 1
       });
     };
     
@@ -1158,7 +1263,9 @@ define("asNEAT/nodes/gainNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         context = require('asNEAT/asNEAT')['default'].context,
-        name = "GainNode";
+        name = "GainNode",
+        gainMin = 0.5,
+        gainMax = 1.5;
     
     var GainNode = function(parameters) {
       Node.call(this, parameters);
@@ -1183,6 +1290,12 @@ define("asNEAT/nodes/gainNode",
           mutationDelta: {min: -0.2, max: 0.2},
           // TODO: set global min?
           randomMutationRange: {min: -1, max: 1}
+        }
+      ],
+      connectableParameters: [
+        {
+          name: "gain",
+          amplitudeScaling: {min: -1*gainMax, max: gainMax}
         }
       ]
     };
@@ -1222,7 +1335,7 @@ define("asNEAT/nodes/gainNode",
     */
     GainNode.random = function() {
       var isInverse = Utils.randomBool(),
-          gain = Utils.randomIn(0.5, 1.5);
+          gain = Utils.randomIn(gainMin, gainMax);
       gain*= (isInverse? -1 : 1);
     
       return new GainNode({
@@ -1258,11 +1371,21 @@ define("asNEAT/nodes/node",
       mutatableParameters: [
       //  { see Utils.mutateParameter documentation
       //    name,
-      //    mutationDeltaChance,
-      //    mutationDelta,
-      //    randomMutationRange,
-      //    discreteMutation
+      //    mutationDeltaChance: chance for mutating by delta or by ranomd change,
+      //    mutationDelta: range that the parameter can be shifter by,
+      //    randomMutationRange: range parameter can be randomly changed to,
+      //    discreteMutation: if mutations should be integers
       //  }
+      ],
+    
+      connectableParameters: [
+        //{
+        //  name: "frequency", : must be able to osc.connect(node.name)
+        //  amplitudeScaling: {min: -2000, max: 2000} : range of allowed amplitude
+        //  modulating the parameter
+        //  // TODO: Handle snapping to carrier frequency multiple?
+        //  // http://greweb.me/2013/08/FM-audio-api/
+        //}
       ]
     }; 
     
@@ -1401,6 +1524,12 @@ define("asNEAT/nodes/noteOscillatorNode",
           discreteMutation: true
         }
         // todo: detune?
+      ],
+      connectableParameters: [
+        {
+          name: "frequency",
+          amplitudeScaling: {min: -2000, max: 2000}
+        }
       ]
     };
     
@@ -1521,6 +1650,12 @@ define("asNEAT/nodes/oscillatorNode",
           randomMutationRange: {min: A0, max: C6}
         }
         // todo: detune?
+      ],
+      connectableParameters: [
+        {
+          name: "frequency",
+          amplitudeScaling: {min: -2000, max: 2000}
+        }
       ]
     };
     
