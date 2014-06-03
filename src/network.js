@@ -45,7 +45,11 @@ Network.prototype.defaultParameters = {
   nodeMutationRate: 0.1,
   // percentage of addOscillatorMutations will
   // generate a node for fm, as opposed to strict audio output
-  splitNodeFMMutationRate: 0.5
+  addOscillatorFMMutationRate: 0.5,
+
+  // Percentage of addConnectionMutation will generate a connection
+  // for fm, as opposed to a strict audio connection
+  addConnectionFMMutationRate: 0.5
 };
 /*
   Creates a deep clone of this network
@@ -252,30 +256,37 @@ Network.prototype.splitMutation = function() {
       connsLen = connections.length,
       randomI = Utils.randomIndexIn(0, connsLen),
       conn = connections[randomI],
+      targetNode = conn.targetNode,
       typesLen = nodeTypes.length,
       typesI = Utils.randomIndexIn(0, typesLen),
       selectedType = nodeTypes[typesI],
-      Node = require('asNEAT/nodes/'+selectedType)['default'];
+      Node = require('asNEAT/nodes/'+selectedType)['default'],
+      newNode, inConnection, outConnection, targetParameter;
 
   // "The new connection leading into the new node receives a weight of 1,
   // and the new connection leading out receives the same weight as the old
   // connection." ~ Stanley
-  var newNode = Node.random(),
-      toConnection = new Connection({
-        sourceNode: conn.sourceNode,
-        targetNode: newNode,
-        weight: 1.0
-      }),
-      fromConnection = new Connection({
-        sourceNode: newNode,
-        targetNode: conn.targetNode,
-        weight: conn.weight
-      });
+  newNode = Node.random();
+
+  inConnection = new Connection({
+    sourceNode: conn.sourceNode,
+    targetNode: newNode,
+    weight: 1.0
+  });
+
+  outConnection = new Connection({
+    sourceNode: newNode,
+    targetNode: targetNode,
+    targetParameter: conn.targetParameter,
+    weight: conn.weight,
+    mutationDelta: _.cloneDeep(targetNode.mutationDelta),
+    randomMutationRange: _.cloneDeep(targetNode.randomMutationRange)
+  });
 
   conn.disable();
   this.nodes.push(newNode);
-  this.connections.push(toConnection);
-  this.connections.push(fromConnection);
+  this.connections.push(inConnection);
+  this.connections.push(outConnection);
 
   log('splitting conn '+conn.toString()+' with '+newNode.toString());
 
@@ -283,8 +294,8 @@ Network.prototype.splitMutation = function() {
   this.lastMutation = {
     objectsChanged: [
       newNode,
-      toConnection,
-      fromConnection
+      inConnection,
+      outConnection
     ],
 
     changeDescription: "Split Connection"
@@ -301,7 +312,7 @@ Network.prototype.addOscillator = function() {
   var oscillator, possibleTargets, target, connection;
 
   // Add FM Oscillator or audio oscillator
-  if (Utils.randomChance(this.splitNodeFMMutationRate)) {
+  if (Utils.randomChance(this.addOscillatorFMMutationRate)) {
     oscillator = OscillatorNode.random();
 
     // Pick random node that's connectable to connect to
@@ -360,12 +371,13 @@ Network.prototype.addOscillator = function() {
 };
 
 Network.prototype.addConnection = function() {
-  var possibleConns = this.getPossibleNewConnections();
+  var usingFM = Utils.randomChance(this.addConnectionFMMutationRate);
+  var possibleConns = this.getPossibleNewConnections(usingFM);
   if (possibleConns.length===0) {
     log('no possible Connections');
     this.lastMutation = {
       objectsChanged: [],
-      changeDescription: "No Mutation (No connections to add)"
+      changeDescription: "No Mutation (No "+(usingFM ? "FM ":"")+"connections to add)"
     };
     return this;
   }
@@ -384,12 +396,12 @@ Network.prototype.addConnection = function() {
 
   return this;
 };
-  Network.prototype.getPossibleNewConnections = function() {
-    // TODO: Just build the potential connections when new nodes are added removed?
+  Network.prototype.getPossibleNewConnections = function(usingFM) {
+    // TODO: Just build the potential connections when new nodes are added/removed?
     //       perfomance hit when adding new nodes, but don't have to O(n^2) for adding a new connection.
     //       Would have to regenerate on copy though
 
-    // TODO: Allow connections to parameters for FM synthesis
+    // TODO: allow multiple connections to different parameters between same nodes for FM synthesis
     var self = this,
         connections = [];
 
@@ -400,8 +412,13 @@ Network.prototype.addConnection = function() {
       // Create possible connection if it (or its inverse)
       // doesn't exist already
       _.forEach(self.nodes, function(targetNode) {
-        if (targetNode.name==="OscillatorNode" ||
-            targetNode.name==="NoteOscillatorNode")
+        if (usingFM && 
+            (!targetNode.connectableParameters ||
+             targetNode.connectableParameters.length === 0))
+          return;
+        if (!usingFM &&
+            (targetNode.name==="OscillatorNode" ||
+             targetNode.name==="NoteOscillatorNode"))
           return;
         if (sourceNode===targetNode)
           return;
@@ -412,13 +429,32 @@ Network.prototype.addConnection = function() {
                  (conn.sourceNode === targetNode &&
                   conn.targetNode === sourceNode);
         });
-        if (!connExists)
+
+        if (connExists)
+          return;
+
+        if (usingFM) {
+          var targetParameter = Utils.randomElementIn(targetNode.connectableParameters);
+          var ampMin = targetParameter.amplitudeScaling.min;
+          var ampMax = targetParameter.amplitudeScaling.max;
+
+          connections.push(new Connection({
+            sourceNode: sourceNode,
+            targetNode: targetNode,
+            targetParameter: targetParameter.name,
+            weight: Utils.randomIn(ampMin, ampMax),
+            mutationDelta: {min: ampMin/12, max: ampMin/12},
+            randomMutationRange: {min: ampMin, max: ampMax}
+          }));
+        }
+        else {
           connections.push(new Connection({
             sourceNode: sourceNode,
             targetNode: targetNode,
             // less than one to decrease risk of harsh feedback
             weight: 0.5
-          }));
+          }));          
+        }
       });
     });
       

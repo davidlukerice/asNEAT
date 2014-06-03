@@ -55,6 +55,8 @@ FeedbackDelayNode.prototype.refresh = function() {
   var gainNode = context.createGain();
   gainNode.gain.value = this.feedbackRatio;
 
+
+  // TODO: Add a base passthrough? or just allow that to evolve?
   delayNode.connect(gainNode);
   gainNode.connect(delayNode);
 
