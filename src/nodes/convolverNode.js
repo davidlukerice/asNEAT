@@ -26,11 +26,8 @@ var ConvolverNode = function(parameters) {
 ConvolverNode.prototype = Object.create(Node.prototype);
 ConvolverNode.prototype.name = name;
 ConvolverNode.prototype.defaultParameters = {
-
   audioBuffer: null,
-
-  parameterMutationChance: 0.1,
-  mutatableParameters: []
+  parameterMutationChance: 0.1
 };
 
 ConvolverNode.prototype.clone = function() {

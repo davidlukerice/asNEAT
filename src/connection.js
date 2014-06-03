@@ -39,6 +39,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
   return new Connection({
     sourceNode: sourceNode,
     targetNode: targetNode,
+    targetParameter: this.targetParameter,
     weight: this.weight,
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
