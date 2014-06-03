@@ -48,7 +48,6 @@ NoteOscillatorNode.prototype.defaultParameters = {
     }
     // todo: detune?
   ],
-
   connectableParameters: [
     {
       name: "frequency",

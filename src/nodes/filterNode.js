@@ -2,7 +2,13 @@
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context,
-    name = "FilterNode";
+    name = "FilterNode",
+    freqMin = 0,
+    freqMax = 1500,
+    qMin = 0.0001,
+    qMax = 20,
+    gainMin = -5,
+    gainMax = 5;
 
 var FilterNode = function(parameters) {
   Node.call(this, parameters);
@@ -35,6 +41,20 @@ FilterNode.prototype.defaultParameters = {
       randomMutationRange: {min: 27.5, max: 1046.5}
     }
     // todo: other parameters
+  ],
+  connectableParameters: [
+    {
+      name: "frequency",
+      amplitudeScaling: {min: freqMin, max: freqMax}
+    },
+    {
+      name: "q",
+      amplitudeScaling: {min: qMin, max: qMin}
+    },
+    {
+      name: "gain",
+      amplitudeScaling: {min: gainMin, max: gainMax}
+    }
   ]
 };
 
@@ -97,7 +117,9 @@ FilterNode.TYPES.nameFor = function(type) {
 FilterNode.random = function() {
   var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),
       // A0 to C8
-      freq = Utils.randomIn(27.5, 1046.5);
+      freq = Utils.randomIn(freqMin, freqMax),
+      q = Utils.randomIn(qMin, qMax),
+      gain = Utils.randomIn(gainMin, gainMax);
 
   // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
   // Q - 1, with a nominal range of 0.0001 to 1000.
@@ -107,9 +129,9 @@ FilterNode.random = function() {
     type: FilterNode.TYPES[typeI],
     frequency: freq,
     // TODO: specefic ranges based on type
+    q: q,
+    gain: gain
     //detune: 0,
-    //q: 1,
-    //gain: 1
   });
 };
 

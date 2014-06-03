@@ -37,6 +37,12 @@ OscillatorNode.prototype.defaultParameters = {
       randomMutationRange: {min: A0, max: C6}
     }
     // todo: detune?
+  ],
+  connectableParameters: [
+    {
+      name: "frequency",
+      amplitudeScaling: {min: -2000, max: 2000}
+    }
   ]
 };
 

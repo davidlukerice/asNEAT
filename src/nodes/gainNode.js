@@ -2,7 +2,9 @@
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context,
-    name = "GainNode";
+    name = "GainNode",
+    gainMin = 0.5,
+    gainMax = 1.5;
 
 var GainNode = function(parameters) {
   Node.call(this, parameters);
@@ -27,6 +29,12 @@ GainNode.prototype.defaultParameters = {
       mutationDelta: {min: -0.2, max: 0.2},
       // TODO: set global min?
       randomMutationRange: {min: -1, max: 1}
+    }
+  ],
+  connectableParameters: [
+    {
+      name: "gain",
+      amplitudeScaling: {min: -1*gainMax, max: gainMax}
     }
   ]
 };
@@ -66,7 +74,7 @@ GainNode.prototype.toString = function() {
 */
 GainNode.random = function() {
   var isInverse = Utils.randomBool(),
-      gain = Utils.randomIn(0.5, 1.5);
+      gain = Utils.randomIn(gainMin, gainMax);
   gain*= (isInverse? -1 : 1);
 
   return new GainNode({
