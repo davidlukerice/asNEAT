@@ -5,6 +5,8 @@ window.AudioContext = window.AudioContext ||
   window.webkitAudioContext ||
   function() {this.supported = false;};
 ns.context = new window.AudioContext();
+if (typeof ns.context.supported === 'undefined')
+  ns.context.supported = true;
 
 // only create the gain if context is found
 // (helps on tests)
