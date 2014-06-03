@@ -96,7 +96,8 @@ Connection.prototype.getParameters = function() {
 Connection.prototype.toString = function() {
   return (this.enabled? "" : "*") +
           "connection("+this.weight.toFixed(2)+")("+
-          this.sourceNode.id+" --> "+this.targetNode.id+")";
+          this.sourceNode.id+" --> "+this.targetNode.id+
+          (this.targetParameter ? (": "+this.targetParameter) : "" )+")";
 };
 
 export default Connection;
