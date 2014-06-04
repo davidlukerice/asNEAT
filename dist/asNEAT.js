@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-06-03 */
+/* asNEAT 0.2.0 2014-06-04 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -1073,19 +1073,23 @@ define("asNEAT/nodes/feedbackDelayNode",
     
     // Refreshes the cached node to be played again
     FeedbackDelayNode.prototype.refresh = function() {
+    
+      // base passthrough gain
+      var passthroughGain = context.createGain();
+      passthroughGain.gain.value = 1.0;
+    
       var delayNode = context.createDelay();
       delayNode.delayTime.value = this.delayTime;
     
       // add an additional gain node for 'delay' feedback
-      var gainNode = context.createGain();
-      gainNode.gain.value = this.feedbackRatio;
+      var feedbackGainNode = context.createGain();
+      feedbackGainNode.gain.value = this.feedbackRatio;
     
+      passthroughGain.connect(delayNode);
+      delayNode.connect(feedbackGainNode);
+      feedbackGainNode.connect(passthroughGain);
     
-      // TODO: Add a base passthrough? or just allow that to evolve?
-      delayNode.connect(gainNode);
-      gainNode.connect(delayNode);
-    
-      this.node = delayNode;
+      this.node = passthroughGain;
     };
     
     FeedbackDelayNode.prototype.getParameters = function() {
