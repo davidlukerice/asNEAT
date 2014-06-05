@@ -19,6 +19,7 @@ Connection.prototype.defaultParameters = {
   
   // null if connecting to audio input of targetNode
   targetParameter: null,
+  targetParameterNode: "node",
 
   weight: 1.0,
   enabled: true,
@@ -40,6 +41,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     sourceNode: sourceNode,
     targetNode: targetNode,
     targetParameter: this.targetParameter,
+    targetParameterNode: this.targetParameterNode,
     weight: this.weight,
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
@@ -60,8 +62,9 @@ Connection.prototype.connect = function() {
   var param = this.targetParameter;
   if (param === null)
     this.gainNode.connect(this.targetNode.node);
-  else
-    this.gainNode.connect(this.targetNode.node[param]);
+  else {
+    this.gainNode.connect(this.targetNode[this.targetParameterNode][param]);
+  }
 
   return this;
 };

@@ -30,6 +30,7 @@ Node.prototype.defaultParameters = {
   connectableParameters: [
     //{
     //  name: "frequency", : must be able to osc.connect(node.name)
+    //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
     //  amplitudeScaling: {min: -2000, max: 2000} : range of allowed amplitude
     //  modulating the parameter
     //  // TODO: Handle snapping to carrier frequency multiple?
