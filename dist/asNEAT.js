@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-06-04 */
+/* asNEAT 0.2.0 2014-06-05 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -65,6 +65,7 @@ define("asNEAT/connection",
       
       // null if connecting to audio input of targetNode
       targetParameter: null,
+      targetParameterNodeName: "node",
     
       weight: 1.0,
       enabled: true,
@@ -86,6 +87,7 @@ define("asNEAT/connection",
         sourceNode: sourceNode,
         targetNode: targetNode,
         targetParameter: this.targetParameter,
+        targetParameterNodeName: this.targetParameterNodeName,
         weight: this.weight,
         enabled: this.enabled,
         mutationDeltaChance: this.mutationDeltaChance,
@@ -106,8 +108,10 @@ define("asNEAT/connection",
       var param = this.targetParameter;
       if (param === null)
         this.gainNode.connect(this.targetNode.node);
-      else
-        this.gainNode.connect(this.targetNode.node[param]);
+      else {
+        var nodeName = this.targetParameterNodeName ? this.targetParameterNodeName : "node";
+        this.gainNode.connect(this.targetNode[nodeName][param]);
+      }
     
       return this;
     };
@@ -416,7 +420,8 @@ define("asNEAT/network",
           typesI = Utils.randomIndexIn(0, typesLen),
           selectedType = nodeTypes[typesI],
           Node = require('asNEAT/nodes/'+selectedType)['default'],
-          newNode, inConnection, outConnection, targetParameter;
+          newNode, inConnection, outConnection, targetParameter,
+          targetParameterNodeName;
     
       // "The new connection leading into the new node receives a weight of 1,
       // and the new connection leading out receives the same weight as the old
@@ -433,6 +438,7 @@ define("asNEAT/network",
         sourceNode: newNode,
         targetNode: targetNode,
         targetParameter: conn.targetParameter,
+        targetParameterNodeName: conn.targetParameterNodeName,
         weight: conn.weight,
         mutationDelta: _.cloneDeep(targetNode.mutationDelta),
         randomMutationRange: _.cloneDeep(targetNode.randomMutationRange)
@@ -484,6 +490,7 @@ define("asNEAT/network",
           sourceNode: oscillator,
           targetNode: target,
           targetParameter: targetParameter.name,
+          targetParameterNodeName: targetParameter.nodeName,
           weight: Utils.randomIn(ampMin, ampMax),
           mutationDelta: {min: ampMin/12, max: ampMin/12},
           randomMutationRange: {min: ampMin, max: ampMax}
@@ -597,6 +604,7 @@ define("asNEAT/network",
                 sourceNode: sourceNode,
                 targetNode: targetNode,
                 targetParameter: targetParameter.name,
+                targetParameterNodeName: targetParameter.nodeName,
                 weight: Utils.randomIn(ampMin, ampMax),
                 mutationDelta: {min: ampMin/12, max: ampMin/12},
                 randomMutationRange: {min: ampMin, max: ampMax}
@@ -1385,6 +1393,7 @@ define("asNEAT/nodes/node",
       connectableParameters: [
         //{
         //  name: "frequency", : must be able to osc.connect(node.name)
+        //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
         //  amplitudeScaling: {min: -2000, max: 2000} : range of allowed amplitude
         //  modulating the parameter
         //  // TODO: Handle snapping to carrier frequency multiple?
@@ -1509,6 +1518,17 @@ define("asNEAT/nodes/noteOscillatorNode",
       
       detune: 0,
       
+      // ADRS model
+      attackDuration: 0.2,
+      decayDuration: 0.4,
+      releaseDuration: 0.2,
+    
+      // For single playback
+      sustainDuration: 0.5,
+      
+      attackVolume: 1.1,
+      sustainVolume: 1.0,
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1532,6 +1552,7 @@ define("asNEAT/nodes/noteOscillatorNode",
       connectableParameters: [
         {
           name: "frequency",
+          nodeName: "oscNode",
           amplitudeScaling: {min: -2000, max: 2000}
         }
       ]
@@ -1543,6 +1564,12 @@ define("asNEAT/nodes/noteOscillatorNode",
         type: this.type,
         noteOffset: this.noteOffset,
         detune: this.detune,
+        attackDuration: this.attackDuration,
+        decayDuration: this.decayDuration,
+        releaseDuration: this.releaseDuration,
+        sustainDuration: this.sustainDuration,
+        attackVolume: this.attackVolume,
+        sustainVolume: this.sustainVolume,
         parameterMutationChance: this.parameterMutationChance,
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
@@ -1550,19 +1577,23 @@ define("asNEAT/nodes/noteOscillatorNode",
     
     // Refreshes the cached node to be played again
     NoteOscillatorNode.prototype.refresh = function() {
-      var node = context.createOscillator();
-      node.type = this.type;
-      node.frequency.value = Utils.frequencyOfStepsFromRootNote(
+      var oscillator = context.createOscillator();
+      oscillator.type = this.type;
+      oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
           this.stepFromRootNote + this.noteOffset);
-      // cache the current node?
-      this.node = node;
+      this.oscNode = oscillator;
+    
+      var gainNode = context.createGain();
+      this.node = gainNode;
+      oscillator.connect(gainNode);
     };
     NoteOscillatorNode.prototype.play = function() {
-      var node = this.node;
-      node.start(0);
+      var self = this,
+          waitTime = this.attackDuration + this.decayDuration + this.sustainDuration;
+      OscillatorNode.setupEnvelope.call(this);
       setTimeout(function() {
-        node.stop(0);
-      }, 500);
+        OscillatorNode.setupRelease.call(self);
+      }, waitTime * 1000);
     };
     
     /**
@@ -1570,10 +1601,11 @@ define("asNEAT/nodes/noteOscillatorNode",
       @return function stop
     **/
     NoteOscillatorNode.prototype.playHold = function() {
-      var node = this.node;
-      node.start(0);
+      var self = this;
+      OscillatorNode.setupEnvelope.call(this);
+    
       return function stop() {
-        node.stop(0);
+        OscillatorNode.setupRelease.call(self);
       };
     };
     
@@ -1596,7 +1628,11 @@ define("asNEAT/nodes/noteOscillatorNode",
     
     NoteOscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-          noteOffset = Utils.randomIndexIn(-20, 20);
+          noteOffset = Utils.randomIndexIn(-20, 20),
+          attackDuration = Utils.randomIn(0.01, 1.0),
+          decayDuration = Utils.randomIn(0.01, 1.0),
+          releaseDuration = Utils.randomIn(0.01, 1.0),
+          attackVolume = Utils.randomIn(0.5, 1.5);
     
       // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
       // Q - 1, with a nominal range of 0.0001 to 1000.
@@ -1604,8 +1640,11 @@ define("asNEAT/nodes/noteOscillatorNode",
     
       return new NoteOscillatorNode({
         type: OscillatorNode.TYPES[typeI],
-        noteOffset: noteOffset
-        //detune: 0
+        noteOffset: noteOffset,
+        attackDuration: attackDuration,
+        decayDuration: decayDuration,
+        releaseDuration: releaseDuration,
+        attackVolume: attackVolume
       });
     };
     
@@ -1620,6 +1659,7 @@ define("asNEAT/nodes/oscillatorNode",
         Node = require('asNEAT/nodes/node')['default'],
         context = require('asNEAT/asNEAT')['default'].context,
         name = "OscillatorNode",
+        utils = {},
         A0 = 27.5,
         C6 = 1046.5,
         C8 = 4186.0;
@@ -1636,6 +1676,14 @@ define("asNEAT/nodes/oscillatorNode",
       frequency: 1000,
       detune: 0,
       
+      // ADRS model
+      attackDuration: 0.2,
+      decayDuration: 0.4,
+      releaseDuration: 0.2,
+      sustainDuration: 0.5,
+      attackVolume: 1.1,
+      sustainVolume: 1.0,
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1658,6 +1706,7 @@ define("asNEAT/nodes/oscillatorNode",
       connectableParameters: [
         {
           name: "frequency",
+          nodeName: "oscNode",
           amplitudeScaling: {min: -2000, max: 2000}
         }
       ]
@@ -1669,6 +1718,12 @@ define("asNEAT/nodes/oscillatorNode",
         type: this.type,
         frequency: this.frequency,
         detune: this.detune,
+        attackDuration: this.attackDuration,
+        decayDuration: this.decayDuration,
+        releaseDuration: this.releaseDuration,
+        sustainDuration: this.sustainDuration,
+        attackVolume: this.attackVolume,
+        sustainVolume: this.sustainVolume,
         parameterMutationChance: this.parameterMutationChance,
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
@@ -1676,18 +1731,22 @@ define("asNEAT/nodes/oscillatorNode",
     
     // Refreshes the cached node to be played again
     OscillatorNode.prototype.refresh = function() {
-      var node = context.createOscillator();
-      node.type = this.type;
-      node.frequency.value = this.frequency;
-      // cache the current node?
-      this.node = node;
+      var oscillator = context.createOscillator();
+      oscillator.type = this.type;
+      oscillator.frequency.value = this.frequency;
+      this.oscNode = oscillator;
+    
+      var gainNode = context.createGain();
+      this.node = gainNode;
+      oscillator.connect(gainNode);
     };
     OscillatorNode.prototype.play = function() {
-      var node = this.node;
-      node.start(0);
+      var self = this,
+          waitTime = this.attackDuration + this.decayDuration + this.sustainDuration;
+      OscillatorNode.setupEnvelope.call(this);
       setTimeout(function() {
-        node.stop(0);
-      }, 500);
+        OscillatorNode.setupRelease.call(self);
+      }, waitTime * 1000);
     };
     
     /**
@@ -1695,10 +1754,11 @@ define("asNEAT/nodes/oscillatorNode",
       @return function stop
     **/
     OscillatorNode.prototype.playHold = function() {
-      var node = this.node;
-      node.start(0);
+      var self = this;
+      OscillatorNode.setupEnvelope.call(this);
+    
       return function stop() {
-        node.stop(0);
+        OscillatorNode.setupRelease.call(self);
       };
     };
     
@@ -1730,7 +1790,11 @@ define("asNEAT/nodes/oscillatorNode",
     };
     OscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-          freq = Utils.randomIn(A0, C6);
+          freq = Utils.randomIn(A0, C6),
+          attackDuration = Utils.randomIn(0.01, 1.0),
+          decayDuration = Utils.randomIn(0.01, 1.0),
+          releaseDuration = Utils.randomIn(0.01, 1.0),
+          attackVolume = Utils.randomIn(0.5, 1.5);
     
       // From w3 spec
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
@@ -1739,9 +1803,35 @@ define("asNEAT/nodes/oscillatorNode",
     
       return new OscillatorNode({
         type: OscillatorNode.TYPES[typeI],
-        frequency: freq
-        //detune: 0
+        frequency: freq,
+        attackDuration: attackDuration,
+        decayDuration: decayDuration,
+        releaseDuration: releaseDuration,
+        attackVolume: attackVolume
       });
+    };
+    
+    // meant for .call(this)
+    OscillatorNode.setupEnvelope = function() {
+      var gainNode = this.node,
+          oscNode = this.oscNode,
+          time = context.currentTime;
+      gainNode.gain.cancelScheduledValues(time);
+      gainNode.gain.value = 1.0;
+      gainNode.gain.setValueAtTime(0, time);
+      gainNode.gain.linearRampToValueAtTime(this.attackVolume, time + this.attackDuration);
+      gainNode.gain.linearRampToValueAtTime(this.sustainVolume, time + this.attackDuration +
+                                                                this.decayDuration);
+      oscNode.start(0);
+    };
+    OscillatorNode.setupRelease = function() {
+      var gainNode = this.node,
+          oscNode = this.oscNode,
+          time = context.currentTime;
+      gainNode.gain.cancelScheduledValues(0);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, time);
+      gainNode.gain.linearRampToValueAtTime(0, time + this.releaseDuration);
+      oscNode.stop(time + this.releaseDuration);
     };
     
     __exports__["default"] = OscillatorNode;

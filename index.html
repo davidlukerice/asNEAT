@@ -11,6 +11,7 @@
     
     <h2>Controls</h2>
     <button class='play'>play</button>
+    <button class='playHold'>playHold</button>
     <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
     <button class="addOscillator">add Oscillator</button>
@@ -47,7 +48,10 @@
           refresh();
 
           var stopFunc = null;
-          $('button.play').on('mousedown',function() {
+          $('button.play').click(function() {
+            network.play();
+          });
+          $('button.playHold').on('mousedown',function() {
             if (stopFunc != null)
               stopFunc();
             stopFunc = network.playHold();

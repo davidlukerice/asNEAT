@@ -261,7 +261,8 @@ Network.prototype.splitMutation = function() {
       typesI = Utils.randomIndexIn(0, typesLen),
       selectedType = nodeTypes[typesI],
       Node = require('asNEAT/nodes/'+selectedType)['default'],
-      newNode, inConnection, outConnection, targetParameter;
+      newNode, inConnection, outConnection, targetParameter,
+      targetParameterNodeName;
 
   // "The new connection leading into the new node receives a weight of 1,
   // and the new connection leading out receives the same weight as the old
@@ -278,6 +279,7 @@ Network.prototype.splitMutation = function() {
     sourceNode: newNode,
     targetNode: targetNode,
     targetParameter: conn.targetParameter,
+    targetParameterNodeName: conn.targetParameterNodeName,
     weight: conn.weight,
     mutationDelta: _.cloneDeep(targetNode.mutationDelta),
     randomMutationRange: _.cloneDeep(targetNode.randomMutationRange)
@@ -329,6 +331,7 @@ Network.prototype.addOscillator = function() {
       sourceNode: oscillator,
       targetNode: target,
       targetParameter: targetParameter.name,
+      targetParameterNodeName: targetParameter.nodeName,
       weight: Utils.randomIn(ampMin, ampMax),
       mutationDelta: {min: ampMin/12, max: ampMin/12},
       randomMutationRange: {min: ampMin, max: ampMax}
@@ -442,6 +445,7 @@ Network.prototype.addConnection = function() {
             sourceNode: sourceNode,
             targetNode: targetNode,
             targetParameter: targetParameter.name,
+            targetParameterNodeName: targetParameter.nodeName,
             weight: Utils.randomIn(ampMin, ampMax),
             mutationDelta: {min: ampMin/12, max: ampMin/12},
             randomMutationRange: {min: ampMin, max: ampMax}

@@ -28,6 +28,17 @@ NoteOscillatorNode.prototype.defaultParameters = {
   
   detune: 0,
   
+  // ADRS model
+  attackDuration: 0.2,
+  decayDuration: 0.4,
+  releaseDuration: 0.2,
+
+  // For single playback
+  sustainDuration: 0.5,
+  
+  attackVolume: 1.1,
+  sustainVolume: 1.0,
+
   parameterMutationChance: 0.1,
   mutatableParameters: [
     {
@@ -51,6 +62,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
   connectableParameters: [
     {
       name: "frequency",
+      nodeName: "oscNode",
       amplitudeScaling: {min: -2000, max: 2000}
     }
   ]
@@ -62,6 +74,12 @@ NoteOscillatorNode.prototype.clone = function() {
     type: this.type,
     noteOffset: this.noteOffset,
     detune: this.detune,
+    attackDuration: this.attackDuration,
+    decayDuration: this.decayDuration,
+    releaseDuration: this.releaseDuration,
+    sustainDuration: this.sustainDuration,
+    attackVolume: this.attackVolume,
+    sustainVolume: this.sustainVolume,
     parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
@@ -69,19 +87,23 @@ NoteOscillatorNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 NoteOscillatorNode.prototype.refresh = function() {
-  var node = context.createOscillator();
-  node.type = this.type;
-  node.frequency.value = Utils.frequencyOfStepsFromRootNote(
+  var oscillator = context.createOscillator();
+  oscillator.type = this.type;
+  oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
       this.stepFromRootNote + this.noteOffset);
-  // cache the current node?
-  this.node = node;
+  this.oscNode = oscillator;
+
+  var gainNode = context.createGain();
+  this.node = gainNode;
+  oscillator.connect(gainNode);
 };
 NoteOscillatorNode.prototype.play = function() {
-  var node = this.node;
-  node.start(0);
+  var self = this,
+      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration;
+  OscillatorNode.setupEnvelope.call(this);
   setTimeout(function() {
-    node.stop(0);
-  }, 500);
+    OscillatorNode.setupRelease.call(self);
+  }, waitTime * 1000);
 };
 
 /**
@@ -89,10 +111,11 @@ NoteOscillatorNode.prototype.play = function() {
   @return function stop
 **/
 NoteOscillatorNode.prototype.playHold = function() {
-  var node = this.node;
-  node.start(0);
+  var self = this;
+  OscillatorNode.setupEnvelope.call(this);
+
   return function stop() {
-    node.stop(0);
+    OscillatorNode.setupRelease.call(self);
   };
 };
 
@@ -115,7 +138,11 @@ NoteOscillatorNode.prototype.toString = function() {
 
 NoteOscillatorNode.random = function() {
   var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-      noteOffset = Utils.randomIndexIn(-20, 20);
+      noteOffset = Utils.randomIndexIn(-20, 20),
+      attackDuration = Utils.randomIn(0.01, 1.0),
+      decayDuration = Utils.randomIn(0.01, 1.0),
+      releaseDuration = Utils.randomIn(0.01, 1.0),
+      attackVolume = Utils.randomIn(0.5, 1.5);
 
   // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
   // Q - 1, with a nominal range of 0.0001 to 1000.
@@ -123,8 +150,11 @@ NoteOscillatorNode.random = function() {
 
   return new NoteOscillatorNode({
     type: OscillatorNode.TYPES[typeI],
-    noteOffset: noteOffset
-    //detune: 0
+    noteOffset: noteOffset,
+    attackDuration: attackDuration,
+    decayDuration: decayDuration,
+    releaseDuration: releaseDuration,
+    attackVolume: attackVolume
   });
 };
 

@@ -3,6 +3,7 @@ var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     context = require('asNEAT/asNEAT')['default'].context,
     name = "OscillatorNode",
+    utils = {},
     A0 = 27.5,
     C6 = 1046.5,
     C8 = 4186.0;
@@ -19,6 +20,14 @@ OscillatorNode.prototype.defaultParameters = {
   frequency: 1000,
   detune: 0,
   
+  // ADRS model
+  attackDuration: 0.2,
+  decayDuration: 0.4,
+  releaseDuration: 0.2,
+  sustainDuration: 0.5,
+  attackVolume: 1.1,
+  sustainVolume: 1.0,
+
   parameterMutationChance: 0.1,
   mutatableParameters: [
     {
@@ -41,6 +50,7 @@ OscillatorNode.prototype.defaultParameters = {
   connectableParameters: [
     {
       name: "frequency",
+      nodeName: "oscNode",
       amplitudeScaling: {min: -2000, max: 2000}
     }
   ]
@@ -52,6 +62,12 @@ OscillatorNode.prototype.clone = function() {
     type: this.type,
     frequency: this.frequency,
     detune: this.detune,
+    attackDuration: this.attackDuration,
+    decayDuration: this.decayDuration,
+    releaseDuration: this.releaseDuration,
+    sustainDuration: this.sustainDuration,
+    attackVolume: this.attackVolume,
+    sustainVolume: this.sustainVolume,
     parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
@@ -59,18 +75,22 @@ OscillatorNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 OscillatorNode.prototype.refresh = function() {
-  var node = context.createOscillator();
-  node.type = this.type;
-  node.frequency.value = this.frequency;
-  // cache the current node?
-  this.node = node;
+  var oscillator = context.createOscillator();
+  oscillator.type = this.type;
+  oscillator.frequency.value = this.frequency;
+  this.oscNode = oscillator;
+
+  var gainNode = context.createGain();
+  this.node = gainNode;
+  oscillator.connect(gainNode);
 };
 OscillatorNode.prototype.play = function() {
-  var node = this.node;
-  node.start(0);
+  var self = this,
+      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration;
+  OscillatorNode.setupEnvelope.call(this);
   setTimeout(function() {
-    node.stop(0);
-  }, 500);
+    OscillatorNode.setupRelease.call(self);
+  }, waitTime * 1000);
 };
 
 /**
@@ -78,10 +98,11 @@ OscillatorNode.prototype.play = function() {
   @return function stop
 **/
 OscillatorNode.prototype.playHold = function() {
-  var node = this.node;
-  node.start(0);
+  var self = this;
+  OscillatorNode.setupEnvelope.call(this);
+
   return function stop() {
-    node.stop(0);
+    OscillatorNode.setupRelease.call(self);
   };
 };
 
@@ -113,7 +134,11 @@ OscillatorNode.TYPES.nameFor = function(type) {
 };
 OscillatorNode.random = function() {
   var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
-      freq = Utils.randomIn(A0, C6);
+      freq = Utils.randomIn(A0, C6),
+      attackDuration = Utils.randomIn(0.01, 1.0),
+      decayDuration = Utils.randomIn(0.01, 1.0),
+      releaseDuration = Utils.randomIn(0.01, 1.0),
+      attackVolume = Utils.randomIn(0.5, 1.5);
 
   // From w3 spec
   // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
@@ -122,9 +147,35 @@ OscillatorNode.random = function() {
 
   return new OscillatorNode({
     type: OscillatorNode.TYPES[typeI],
-    frequency: freq
-    //detune: 0
+    frequency: freq,
+    attackDuration: attackDuration,
+    decayDuration: decayDuration,
+    releaseDuration: releaseDuration,
+    attackVolume: attackVolume
   });
+};
+
+// meant for .call(this)
+OscillatorNode.setupEnvelope = function() {
+  var gainNode = this.node,
+      oscNode = this.oscNode,
+      time = context.currentTime;
+  gainNode.gain.cancelScheduledValues(time);
+  gainNode.gain.value = 1.0;
+  gainNode.gain.setValueAtTime(0, time);
+  gainNode.gain.linearRampToValueAtTime(this.attackVolume, time + this.attackDuration);
+  gainNode.gain.linearRampToValueAtTime(this.sustainVolume, time + this.attackDuration +
+                                                            this.decayDuration);
+  oscNode.start(0);
+};
+OscillatorNode.setupRelease = function() {
+  var gainNode = this.node,
+      oscNode = this.oscNode,
+      time = context.currentTime;
+  gainNode.gain.cancelScheduledValues(0);
+  gainNode.gain.setValueAtTime(gainNode.gain.value, time);
+  gainNode.gain.linearRampToValueAtTime(0, time + this.releaseDuration);
+  oscNode.stop(time + this.releaseDuration);
 };
 
 export default OscillatorNode;
