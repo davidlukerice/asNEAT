@@ -46,8 +46,14 @@
 
           refresh();
 
-          $('button.play').click(function() {
-            network.play();
+          var stopFunc = null;
+          $('button.play').on('mousedown',function() {
+            if (stopFunc != null)
+              stopFunc();
+            stopFunc = network.playHold();
+          }).on('mouseup', function() {
+            stopFunc();
+            stopFunc = null;
           });
           $('button.playClone').click(function() {
             clonedNetwork.play();
