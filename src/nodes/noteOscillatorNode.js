@@ -28,7 +28,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
   
   detune: 0,
   
-  // ADRS model
+  // ADSR model
   attackDuration: 0.2,
   decayDuration: 0.4,
   releaseDuration: 0.2,
@@ -56,8 +56,31 @@ NoteOscillatorNode.prototype.defaultParameters = {
       // TODO: set global min?
       randomMutationRange: {min: -20, max: 20},
       discreteMutation: true
+    },{
+      name: 'attackDuration',
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.1, max: 0.1},
+      // TODO: set global min?
+      randomMutationRange: {min: 0.01, max: 1.0}
+    },{
+      name: 'decayDuration',
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.1, max: 0.1},
+      // TODO: set global min?
+      randomMutationRange: {min: 0.01, max: 1.0}
+    },{
+      name: 'releaseDuration',
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.1, max: 0.1},
+      // TODO: set global min?
+      randomMutationRange: {min: 0.01, max: 1.0}
+    },{
+      name: 'attackVolume',
+      mutationDeltaChance: 0.8,
+      mutationDelta: {min: -0.1, max: 0.1},
+      // TODO: set global min?
+      randomMutationRange: {min: 0.5, max: 1.5}
     }
-    // todo: detune?
   ],
   connectableParameters: [
     {
@@ -133,7 +156,11 @@ NoteOscillatorNode.prototype.getParameters = function() {
 };
 
 NoteOscillatorNode.prototype.toString = function() {
-  return this.id+": NoteOscillatorNode("+this.type+","+this.noteOffset+")";
+  return this.id+": NoteOscillatorNode("+this.type+","+this.noteOffset+
+    ", ADSR: "+this.attackDuration.toFixed(2)+" ("+this.attackVolume.toFixed(2)+"), "+
+             this.decayDuration.toFixed(2)+", "+
+             this.sustainDuration.toFixed(2)+" ("+this.sustainVolume.toFixed(2)+"), "+
+             this.releaseDuration.toFixed(2)+")";
 };
 
 NoteOscillatorNode.random = function() {
