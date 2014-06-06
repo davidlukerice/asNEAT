@@ -79,6 +79,9 @@ test("getNoteOscillatorNodes", function() {
   a.addOscillator();
   equal(a.getNoteOscillatorNodes().length +a.getOscillatorNodes().length, 2,
     "addOscillator increases to 2");
+  equal(a.getNoteOscillatorNodes().length +a.getOscillatorNodes().length,
+    a.getOscillatorAndNoteOscillatorNodes().length,
+    "getNoteOsc + getOsc === getOscAndNoteOsc");
 });
 
 test("mutations update lastMutation", function() {

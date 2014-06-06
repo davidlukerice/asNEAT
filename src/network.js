@@ -535,11 +535,18 @@ Network.prototype.getEnabledConnections = function() {
 Network.prototype.getNoteOscillatorNodes = function() {
   return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
 };
-/**
- Gets the non noteOscillatorNode oscillator nodes
-*/
 Network.prototype.getOscillatorNodes = function() {
   return _.filter(this.nodes, {name: 'OscillatorNode'});
+};
+
+/**
+ Gets the non noteOscillator and oscillator nodes
+*/
+Network.prototype.getOscillatorAndNoteOscillatorNodes = function() {
+  return _.filter(this.nodes, function(node) {
+    return node.name === 'OscillatorNode' ||
+           node.name === 'NoteOscillatorNode';
+  });
 };
 
 Network.prototype.toString = function() {
