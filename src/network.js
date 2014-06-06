@@ -161,7 +161,6 @@ Network.prototype.play = function() {
   playPrep.call(this);
 
   // play the oscillators
-  // TODO: Better way to access just the oscillator nodes
   _.forEach(this.nodes, function(node) {
     if (node.play)
       node.play();
@@ -180,7 +179,6 @@ Network.prototype.playHold = function() {
   var stopHandlers = [];
 
   // play the oscillators
-  // TODO: Better way to access just the oscillator nodes
   _.forEach(this.nodes, function(node) {
     if (node.playHold)
       stopHandlers.push(node.playHold());

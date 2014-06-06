@@ -320,7 +320,6 @@ define("asNEAT/network",
       playPrep.call(this);
     
       // play the oscillators
-      // TODO: Better way to access just the oscillator nodes
       _.forEach(this.nodes, function(node) {
         if (node.play)
           node.play();
@@ -339,7 +338,6 @@ define("asNEAT/network",
       var stopHandlers = [];
     
       // play the oscillators
-      // TODO: Better way to access just the oscillator nodes
       _.forEach(this.nodes, function(node) {
         if (node.playHold)
           stopHandlers.push(node.playHold());
