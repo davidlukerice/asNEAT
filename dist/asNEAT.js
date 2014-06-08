@@ -1934,6 +1934,14 @@ define("asNEAT/nodes/outNode",
     var OutNode = function(parameters) {
       Node.call(this, parameters);
       this.globalGain = asNEAT.globalGain;
+    
+      if (!context.supported)
+        return;
+    
+      var localGain = context.createGain();
+      localGain.gain.value = 1.0;
+      localGain.connect(this.globalGain);
+      this.node = localGain;
     };
     
     OutNode.prototype = Object.create(Node.prototype);
@@ -1945,10 +1953,6 @@ define("asNEAT/nodes/outNode",
       });
     };
     OutNode.prototype.refresh = function() {
-      var localGain = context.createGain();
-      localGain.gain.value = 1.0;
-      localGain.connect(this.globalGain);
-      this.node = localGain;
     };
     OutNode.prototype.getParameters = function() {
       return {
