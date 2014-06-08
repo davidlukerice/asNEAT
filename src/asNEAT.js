@@ -12,7 +12,7 @@ if (typeof ns.context.supported === 'undefined')
 // (helps on tests)
 if (ns.context.createGain) {
   ns.globalGain = ns.context.createGain();
-  ns.globalGain.gain.value = 1.0;
+  ns.globalGain.gain.value = 0.5;
   ns.globalGain.connect(ns.context.destination);
 }
 
