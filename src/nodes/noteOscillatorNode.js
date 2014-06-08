@@ -122,10 +122,18 @@ NoteOscillatorNode.prototype.refresh = function() {
 };
 NoteOscillatorNode.prototype.play = function() {
   var self = this,
-      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration;
-  OscillatorNode.setupEnvelope.call(this);
+      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
+      gainNode = this.node,
+      oscNode = this.oscNode,
+      attackVolume = this.attackVolume,
+      attackDuration = this.attackDuration,
+      sustainVolume = this.sustainVolume,
+      decayDuration = this.decayDuration,
+      releaseDuration = this.releaseDuration;
+  OscillatorNode.setupEnvelope(gainNode, oscNode,
+    attackVolume, attackDuration, sustainVolume, decayDuration);
   setTimeout(function() {
-    OscillatorNode.setupRelease.call(self);
+    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
   }, waitTime * 1000);
 };
 
@@ -134,11 +142,19 @@ NoteOscillatorNode.prototype.play = function() {
   @return function stop
 **/
 NoteOscillatorNode.prototype.playHold = function() {
-  var self = this;
-  OscillatorNode.setupEnvelope.call(this);
-
+  var self = this,
+      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
+      gainNode = this.node,
+      oscNode = this.oscNode,
+      attackVolume = this.attackVolume,
+      attackDuration = this.attackDuration,
+      sustainVolume = this.sustainVolume,
+      decayDuration = this.decayDuration,
+      releaseDuration = this.releaseDuration;
+  OscillatorNode.setupEnvelope(gainNode, oscNode,
+    attackVolume, attackDuration, sustainVolume, decayDuration);
   return function stop() {
-    OscillatorNode.setupRelease.call(self);
+    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
   };
 };
 
