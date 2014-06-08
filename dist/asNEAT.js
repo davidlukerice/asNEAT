@@ -1928,11 +1928,12 @@ define("asNEAT/nodes/outNode",
     
     var Node = require('asNEAT/nodes/node')['default'],
         asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
         name = "OutNode";
     
     var OutNode = function(parameters) {
       Node.call(this, parameters);
-      this.node = asNEAT.globalGain;
+      this.globalGain = asNEAT.globalGain;
     };
     
     OutNode.prototype = Object.create(Node.prototype);
@@ -1944,6 +1945,10 @@ define("asNEAT/nodes/outNode",
       });
     };
     OutNode.prototype.refresh = function() {
+      var localGain = context.createGain();
+      localGain.gain.value = 1.0;
+      localGain.connect(this.globalGain);
+      this.node = localGain;
     };
     OutNode.prototype.getParameters = function() {
       return {
