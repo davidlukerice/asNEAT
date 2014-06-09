@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-06-08 */
+/* asNEAT 0.2.0 2014-06-09 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -2087,6 +2087,9 @@ define("asNEAT/population",
     Population.prototype.name = name;
     Population.prototype.defaultParameters = {
       networks: [],
+      networkParameters: {},
+      numberOfMutationsPerGeneration: 1,
+      numberOfNewParentMutations: 3,
       populationCount: 9,
       crossoverRate: 0.3,
       mutationRate: 1.0
@@ -2102,6 +2105,9 @@ define("asNEAT/population",
       });
       return new Population({
         networks: clonedNetworks,
+        networkParameters: _.cloneDeep(this.networkParameters),
+        numberOfMutationsPerGeneration: this.numberOfMutationsPerGeneration,
+        numberOfNewParentMutations: this.numberOfNewParentMutations,
         populationCount: this.populationCount,
         crossoverRate: this.crossoverRate,
         mutationRate: this.mutationRate
@@ -2115,22 +2121,40 @@ define("asNEAT/population",
       return str;
     };
     
+    Population.prototype.GenerateNewRandomParent = function() {
+      var newParent = new Network(this.networkParameters),
+          i, num;
+      for (i=0, num=this.numberOfNewParentMutations; i<num; ++i)
+        newParent.mutate();
+      return newParent;
+    };
+    
     /**
-      @param parents an array of networks
+      @param parents an array of networks (can be empty)
       @param params defaultParameters for the population
       @return Population
     */
     Population.generateFromParents = function(parents, params) {
       var newPopulation = new Population(params),
-          x, y, isCrossed, tempLastMutation;
+          numMutations = newPopulation.numberOfMutationsPerGeneration,
+          networkParams = newPopulation.networkParameters,
+          hasAnyParents = parents.length > 0,
+          hasOnlyOneParent = parents.length === 1,
+          x, y, i, isCrossed, tempLastMutation;
       while(newPopulation.networks.length < newPopulation.populationCount) {
         isCrossed = false;
     
-        x = Utils.randomElementIn(parents);
-        if (parents.length >= 2 &&
-            Utils.randomChance(newPopulation.crossoverRate))
-        {
-          y = Utils.randomElementIn(parents, x);
+        if (hasAnyParents)
+          x = Utils.randomElementIn(parents);
+        else
+          x = newPopulation.GenerateNewRandomParent();
+    
+        if (Utils.randomChance(newPopulation.crossoverRate)) {
+          if (!hasAnyParents || hasOnlyOneParent)
+            y = newPopulation.GenerateNewRandomParent();
+          else
+            y = Utils.randomElementIn(parents, x);
+    
           x = x.crossWith(y);
           isCrossed = true;
         }
@@ -2139,7 +2163,9 @@ define("asNEAT/population",
           if (isCrossed)
             tempLastMutation = x.lastMutation;
     
-          x = x.clone().mutate();
+          x = x.clone();
+          for (i=0; i<numMutations; ++i)
+            x.mutate();
     
           if (isCrossed) {
             x.lastMutation.objectsChanged = tempLastMutation.objectsChanged.concat(
