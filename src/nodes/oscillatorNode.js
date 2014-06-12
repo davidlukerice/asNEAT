@@ -150,7 +150,13 @@ OscillatorNode.prototype.getParameters = function() {
     id: this.id,
     type: OscillatorNode.TYPES.nameFor(this.type),
     frequency: this.frequency,
-    detune: this.detune
+    detune: this.detune,
+    attackDuration: this.attackDuration,
+    decayDuration: this.decayDuration,
+    releaseDuration: this.releaseDuration,
+    sustainDuration: this.sustainDuration,
+    attackVolume: this.attackVolume,
+    sustainVolume: this.sustainVolume
   };
 };
 
