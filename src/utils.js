@@ -15,6 +15,13 @@ Utils.error = function(msg) {
   throw msg;
 };
 
+Utils.upperCaseFirstLetter = function(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+Utils.lowerCaseFirstLetter = function(str) {
+  return str.charAt(0).toLowerCase() + str.slice(1);
+};
+
 Utils.random = function() {
   return Math.random();
 };

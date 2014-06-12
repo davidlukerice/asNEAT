@@ -98,3 +98,11 @@ test("mutations update lastMutation", function() {
        _.isString(net.lastMutation.changeDescription), msg);
   }
 });
+
+test("createFromJSON", function() {
+  var a = new Network();
+  var json = a.toJSON();
+  var b = Network.createFromJSON(json);
+  equal(a.nodes.length, b.nodes.length, "Preserves number of nodes");
+  equal(a.connections.length, b.connections.length, "Preserves number of connections");
+});

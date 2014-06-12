@@ -122,11 +122,5 @@ Connection.prototype.toJSON = function() {
   };
   return JSON.stringify(json);
 };
-Connection.createFromJSON = function(json, nodes) {
-  var obj = JSON.parse(json);
-  
-  // TODO: 
-  return new Connection();
-};
 
 export default Connection;

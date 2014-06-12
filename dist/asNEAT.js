@@ -168,12 +168,6 @@ define("asNEAT/connection",
       };
       return JSON.stringify(json);
     };
-    Connection.createFromJSON = function(json, nodes) {
-      var obj = JSON.parse(json);
-      
-      // TODO: 
-      return new Connection();
-    };
     
     __exports__["default"] = Connection;
   });
@@ -250,7 +244,6 @@ define("asNEAT/network",
       _.forEach(this.connections, function(connection) {
         var clonedsourceNode = _.find(clonedNodes, {id: connection.sourceNode.id});
         var clonedtargetNode = _.find(clonedNodes, {id: connection.targetNode.id});
-    
         clonedConnections.push(connection.clone(clonedsourceNode, clonedtargetNode));
       });
     
@@ -748,11 +741,35 @@ define("asNEAT/network",
       return JSON.stringify(json);
     };
     Network.createFromJSON = function(json) {
-      var obj = JSON.parse(json);
-      // TODO: 
-      // TODO: Use a factory to select which node type to recreate?
-      // and just pass in the json obj to the constructor
-      return new Network();
+      var obj = JSON.parse(json),
+          createdNodes = [],
+          createdConnections = [];
+    
+      _.forEach(obj.nodes, function(json) {
+        var nodeParams = JSON.parse(json),
+            type = Utils.lowerCaseFirstLetter(nodeParams.name),
+            Node = require('asNEAT/nodes/'+type)['default'],
+            createdNode = new Node(nodeParams);
+        createdNodes.push(createdNode);
+      });
+      _.forEach(obj.connections, function(json) {
+        var connectionParams = JSON.parse(json),
+            sourceNodeId = connectionParams.sourceNode,
+            targetNodeId = connectionParams.targetNode,
+            sourceNode, targetNode, createdConnection;
+        sourceNode = _.find(createdNodes, {id: sourceNodeId});
+        targetNode = _.find(createdNodes, {id: targetNodeId});
+    
+        connectionParams.sourceNode = sourceNode;
+        connectionParams.targetNode = targetNode;
+    
+        createdConnection = new Connection(sourceNode, targetNode);
+        createdConnections.push(createdConnection);
+      });
+    
+      obj.nodes = createdNodes;
+      obj.connections = createdConnections;
+      return new Network(obj);
     };
     
     __exports__["default"] = Network;
@@ -2248,6 +2265,13 @@ define("asNEAT/utils",
     
     Utils.error = function(msg) {
       throw msg;
+    };
+    
+    Utils.upperCaseFirstLetter = function(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    };
+    Utils.lowerCaseFirstLetter = function(str) {
+      return str.charAt(0).toLowerCase() + str.slice(1);
     };
     
     Utils.random = function() {

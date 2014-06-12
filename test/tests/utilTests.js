@@ -1,6 +1,16 @@
 module("Util Tests");
 var Utils = require('asNEAT/utils')['default'];
 
+test('upperCaseFirstLetter', function() {
+  equal(Utils.upperCaseFirstLetter('arst'), 'Arst', 'capitalizes first letter');
+  equal(Utils.upperCaseFirstLetter('Arst'), 'Arst', 'keeps first letter capital');
+});
+
+test('lowerCaseFirstLetter', function() {
+  equal(Utils.lowerCaseFirstLetter('Arst'), 'arst', 'lowercases first letter');
+  equal(Utils.lowerCaseFirstLetter('arst'), 'arst', 'keeps first letter lowercase');
+});
+
 test("randomIn", function() {
   for (var i=0; i<20; ++i) {
     var min = Math.random()*100,
