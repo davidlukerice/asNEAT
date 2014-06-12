@@ -23,8 +23,13 @@
     <button class='playClone'>play Clone</button>
 
     <br>
-    <h2>Current Instrument</h2>
-    <div class="currentNetwork">
+    <h2>Current Instrument toString</h2>
+    <div class="currentNetworkToString">
+    </div>
+
+    <br>
+    <h2>Current Instrument toJSON</h2>
+    <div class="currentNetworkJSON">
     </div>
 
     <br>
@@ -90,7 +95,8 @@
 
           function refresh() {
             clonedNetwork = network.clone();
-            $('.currentNetwork').html(network.toString());
+            $('.currentNetworkToString').html(network.toString());
+            $('.currentNetworkJSON').html(network.toJSON());
           }
         });
       }();

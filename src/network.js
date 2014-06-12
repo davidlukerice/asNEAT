@@ -561,6 +561,28 @@ Network.prototype.toString = function() {
   return str;
 };
 
+Network.prototype.toJSON = function() {
+  var json = {
+    id: this.id,
+    nodes: [],
+    connections: []
+  };
+  _.forEach(this.nodes, function(node) {
+    json.nodes.push(node.toJSON());
+  });
+  _.forEach(this.connections, function(connection) {
+    json.connections.push(connection.toJSON());
+  });
+  return JSON.stringify(json);
+};
+Network.createFromJSON = function(json) {
+  var obj = JSON.parse(json);
+  // TODO: 
+  // TODO: Use a factory to select which node type to recreate?
+  // and just pass in the json obj to the constructor
+  return new Network();
+};
+
 Network.id=0;
 Network.getNextId = function() {
   return Network.id++;

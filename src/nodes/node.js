@@ -106,6 +106,11 @@ Node.prototype.mutate = function() {
   }
 };
 
+Node.prototype.toJSON = function() {
+  var json = this.getParameters();
+  return JSON.stringify(json);
+};
+
 Node.id=0;
 Node.getNextId = function() {
   return Node.id++;

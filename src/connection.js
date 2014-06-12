@@ -105,4 +105,23 @@ Connection.prototype.toString = function() {
           (this.targetParameter ? (": "+this.targetParameter) : "" )+")";
 };
 
+Connection.prototype.toJSON = function() {
+  var json = {
+    id: this.id,
+    sourceNode: this.sourceNode.id,
+    targetNode: this.targetNode.id,
+    targetParameter: this.targetParameter,
+    targetParameterNodeName: this.targetParameterNodeName,
+    weight: this.weight,
+    enabled: this.enabled
+  };
+  return JSON.stringify(json);
+};
+Connection.createFromJSON = function(json, nodes) {
+  var obj = JSON.parse(json);
+  
+  // TODO: 
+  return new Connection();
+};
+
 export default Connection;
