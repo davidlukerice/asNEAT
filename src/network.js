@@ -86,63 +86,52 @@ Network.prototype.crossWith = function(otherNetwork) {
       oNodes = otherNetwork.nodes,
       tConnections = this.connections,
       oConnections = otherNetwork.connections,
-      nodes = [], connections = [], tI, oI,
-      tLen, oLen, tItem, oItem, newNetwork;
+      nodes = [], connections = [],
+      newNetwork, tIndexes;
 
-  // Copy over nodes in order of index
-  function pushTNode() {
-    nodes.push(tItem.clone());
-    tItem = tNodes[tI++];
-  }
-  function pushONode() {
-    nodes.push(oItem.clone());
-    oItem = oNodes[oI++];
-  }
-  function pushTConnection() {
-    var source = _.find(nodes, {id: tItem.sourceNode.id});
-    var target = _.find(nodes, {id: tItem.targetNode.id});
-    connections.push(tItem.clone(source, target));
-    tItem = tConnections[tI++];
-  }
-  function pushOConnection() {
-    var source = _.find(nodes, {id: oItem.sourceNode.id});
-    var target = _.find(nodes, {id: oItem.targetNode.id});
-    connections.push(oItem.clone(source, target));
-    oItem = oConnections[oI++];
-  }
-
-  function mergeElements(tElements, oElements, pushTHandler, pushOHandler) {
-    tI = 0; oI=0;
-    tLen = tElements.length;
-    oLen = oElements.length;
-    tItem = tElements[tI++];
-    oItem = oElements[oI++];
-
-    while(tI <= tLen || oI <= oLen) {
-      if (tItem && !oItem)
-        pushTHandler();
-      else if (!tItem && oItem)
-        pushOHandler();
-      else if (tItem.id === oItem.id) {
-        if (Utils.randomBool()) {
-          pushTHandler();
-          oItem = oElements[oI++];
-        }
-        else {
-          pushOHandler();
-          tItem = tElements[tI++];
-        }
-      }
-      else if (tItem.id < oItem.id)
-        pushTHandler();
-      // oItem.id < tItem.id
-      else
-        pushOHandler();
+  function addNode(node, i) {
+    var newNode = node.clone();
+    if (typeof i === 'undefined') {
+      nodes.push(newNode);
+      tIndexes[node.id]=nodes.length-1;
     }
+    else
+      nodes[i] = newNode;
+  }
+  function addConnection(connection, i) {
+    var source = _.find(nodes, {id: connection.sourceNode.id}),
+        target = _.find(nodes, {id: connection.targetNode.id}),
+        newConn = connection.clone(source, target);
+    if (typeof i === 'undefined') {
+      connections.push(newConn);
+      tIndexes[connection.id]=connections.length-1;
+    }
+    else
+      connections[i] = newConn;
   }
 
-  mergeElements(tNodes, oNodes, pushTNode, pushONode);
-  mergeElements(tConnections, oConnections, pushTConnection, pushOConnection);
+  // Add all of tElements first, then loop through and add
+  // any oElements not in tElements or 50/50 chance.
+  // This destroys 'creation order' of the nodes/connections
+  // but doesn't matter
+  function addElements(tElements, oElements, addHandler) {
+    tIndexes = {};
+    _.forEach(tElements, function(element) {
+      addHandler(element);
+    });
+    _.forEach(oElements, function(element) {
+      var i = tIndexes[element.id];
+      // not found, then just push it in
+      if (typeof i === "undefined")
+        addHandler(element);
+      // otherwise, 50/50 of using oNode
+      else if (Utils.randomBool())
+        addHandler(element, i);
+    });
+  }
+
+  addElements(tNodes, oNodes, addNode);
+  addElements(tConnections, oConnections, addConnection);
 
   newNetwork = new Network({
     nodes: nodes,
