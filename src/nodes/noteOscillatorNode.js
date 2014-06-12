@@ -168,6 +168,12 @@ NoteOscillatorNode.prototype.getParameters = function() {
     //        Utils.frequencyOfStepsFromRootNote(
     //          this.noteOffset)),
     detune: this.detune,
+    attackDuration: this.attackDuration,
+    decayDuration: this.decayDuration,
+    releaseDuration: this.releaseDuration,
+    sustainDuration: this.sustainDuration,
+    attackVolume: this.attackVolume,
+    sustainVolume: this.sustainVolume
   };
 };
 
