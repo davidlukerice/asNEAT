@@ -6,6 +6,11 @@ var Node = require('asNEAT/nodes/node')['default'],
 
 var OutNode = function(parameters) {
   Node.call(this, parameters);
+
+  // force outNode to have an id of 0 so multiple
+  // unlike networks can still be crossed
+  this.id = 0;
+  
   this.globalGain = asNEAT.globalGain;
 
   if (!context.supported)

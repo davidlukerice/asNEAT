@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-06-09 */
+/* asNEAT 0.2.0 2014-06-12 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -55,7 +55,11 @@ define("asNEAT/connection",
       Utils.extend(this, this.defaultParameters, parameters);
       this.gainNode = null;
       this.hasChanged = false;
-      this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
+      // Only generate a new id if one isn't given in the parameters
+      if (parameters && typeof parameters.id !== 'undefined')
+        this.id = parameters.id;
+      else
+        this.id = Utils.createHash();
     };
     
     Connection.prototype.name = name;
@@ -84,6 +88,7 @@ define("asNEAT/connection",
       var sourceNode = clonedsourceNode || this.sourceNode.clone();
       var targetNode = clonedtargetNode || this.targetNode.clone();
       return new Connection({
+        id: this.id,
         sourceNode: sourceNode,
         targetNode: targetNode,
         targetParameter: this.targetParameter,
@@ -151,6 +156,25 @@ define("asNEAT/connection",
               (this.targetParameter ? (": "+this.targetParameter) : "" )+")";
     };
     
+    Connection.prototype.toJSON = function() {
+      var json = {
+        id: this.id,
+        sourceNode: this.sourceNode.id,
+        targetNode: this.targetNode.id,
+        targetParameter: this.targetParameter,
+        targetParameterNodeName: this.targetParameterNodeName,
+        weight: this.weight,
+        enabled: this.enabled
+      };
+      return JSON.stringify(json);
+    };
+    Connection.createFromJSON = function(json, nodes) {
+      var obj = JSON.parse(json);
+      
+      // TODO: 
+      return new Connection();
+    };
+    
     __exports__["default"] = Connection;
   });
 define("asNEAT/network", 
@@ -193,7 +217,7 @@ define("asNEAT/network",
       if (parameters && typeof parameters.id !== 'undefined')
         this.id = parameters.id;
       else
-        this.id = Network.getNextId();
+        this.id = Utils.createHash();
     };
     
     Network.prototype.name = name;
@@ -245,63 +269,52 @@ define("asNEAT/network",
           oNodes = otherNetwork.nodes,
           tConnections = this.connections,
           oConnections = otherNetwork.connections,
-          nodes = [], connections = [], tI, oI,
-          tLen, oLen, tItem, oItem, newNetwork;
+          nodes = [], connections = [],
+          newNetwork, tIndexes;
     
-      // Copy over nodes in order of index
-      function pushTNode() {
-        nodes.push(tItem.clone());
-        tItem = tNodes[tI++];
-      }
-      function pushONode() {
-        nodes.push(oItem.clone());
-        oItem = oNodes[oI++];
-      }
-      function pushTConnection() {
-        var source = _.find(nodes, {id: tItem.sourceNode.id});
-        var target = _.find(nodes, {id: tItem.targetNode.id});
-        connections.push(tItem.clone(source, target));
-        tItem = tConnections[tI++];
-      }
-      function pushOConnection() {
-        var source = _.find(nodes, {id: oItem.sourceNode.id});
-        var target = _.find(nodes, {id: oItem.targetNode.id});
-        connections.push(oItem.clone(source, target));
-        oItem = oConnections[oI++];
-      }
-    
-      function mergeElements(tElements, oElements, pushTHandler, pushOHandler) {
-        tI = 0; oI=0;
-        tLen = tElements.length;
-        oLen = oElements.length;
-        tItem = tElements[tI++];
-        oItem = oElements[oI++];
-    
-        while(tI <= tLen || oI <= oLen) {
-          if (tItem && !oItem)
-            pushTHandler();
-          else if (!tItem && oItem)
-            pushOHandler();
-          else if (tItem.id === oItem.id) {
-            if (Utils.randomBool()) {
-              pushTHandler();
-              oItem = oElements[oI++];
-            }
-            else {
-              pushOHandler();
-              tItem = tElements[tI++];
-            }
-          }
-          else if (tItem.id < oItem.id)
-            pushTHandler();
-          // oItem.id < tItem.id
-          else
-            pushOHandler();
+      function addNode(node, i) {
+        var newNode = node.clone();
+        if (typeof i === 'undefined') {
+          nodes.push(newNode);
+          tIndexes[node.id]=nodes.length-1;
         }
+        else
+          nodes[i] = newNode;
+      }
+      function addConnection(connection, i) {
+        var source = _.find(nodes, {id: connection.sourceNode.id}),
+            target = _.find(nodes, {id: connection.targetNode.id}),
+            newConn = connection.clone(source, target);
+        if (typeof i === 'undefined') {
+          connections.push(newConn);
+          tIndexes[connection.id]=connections.length-1;
+        }
+        else
+          connections[i] = newConn;
       }
     
-      mergeElements(tNodes, oNodes, pushTNode, pushONode);
-      mergeElements(tConnections, oConnections, pushTConnection, pushOConnection);
+      // Add all of tElements first, then loop through and add
+      // any oElements not in tElements or 50/50 chance.
+      // This destroys 'creation order' of the nodes/connections
+      // but doesn't matter
+      function addElements(tElements, oElements, addHandler) {
+        tIndexes = {};
+        _.forEach(tElements, function(element) {
+          addHandler(element);
+        });
+        _.forEach(oElements, function(element) {
+          var i = tIndexes[element.id];
+          // not found, then just push it in
+          if (typeof i === "undefined")
+            addHandler(element);
+          // otherwise, 50/50 of using oNode
+          else if (Utils.randomBool())
+            addHandler(element, i);
+        });
+      }
+    
+      addElements(tNodes, oNodes, addNode);
+      addElements(tConnections, oConnections, addConnection);
     
       newNetwork = new Network({
         nodes: nodes,
@@ -720,9 +733,26 @@ define("asNEAT/network",
       return str;
     };
     
-    Network.id=0;
-    Network.getNextId = function() {
-      return Network.id++;
+    Network.prototype.toJSON = function() {
+      var json = {
+        id: this.id,
+        nodes: [],
+        connections: []
+      };
+      _.forEach(this.nodes, function(node) {
+        json.nodes.push(node.toJSON());
+      });
+      _.forEach(this.connections, function(connection) {
+        json.connections.push(connection.toJSON());
+      });
+      return JSON.stringify(json);
+    };
+    Network.createFromJSON = function(json) {
+      var obj = JSON.parse(json);
+      // TODO: 
+      // TODO: Use a factory to select which node type to recreate?
+      // and just pass in the json obj to the constructor
+      return new Network();
     };
     
     __exports__["default"] = Network;
@@ -1379,7 +1409,7 @@ define("asNEAT/nodes/node",
       if (parameters && typeof parameters.id !== 'undefined')
         this.id = parameters.id;
       else
-        this.id = Node.getNextId();
+        this.id = Utils.createHash();
     };
     
     Node.prototype.name = name;
@@ -1474,9 +1504,9 @@ define("asNEAT/nodes/node",
       }
     };
     
-    Node.id=0;
-    Node.getNextId = function() {
-      return Node.id++;
+    Node.prototype.toJSON = function() {
+      var json = this.getParameters();
+      return JSON.stringify(json);
     };
     
     /**
@@ -1663,6 +1693,12 @@ define("asNEAT/nodes/noteOscillatorNode",
         //        Utils.frequencyOfStepsFromRootNote(
         //          this.noteOffset)),
         detune: this.detune,
+        attackDuration: this.attackDuration,
+        decayDuration: this.decayDuration,
+        releaseDuration: this.releaseDuration,
+        sustainDuration: this.sustainDuration,
+        attackVolume: this.attackVolume,
+        sustainVolume: this.sustainVolume
       };
     };
     
@@ -1854,7 +1890,13 @@ define("asNEAT/nodes/oscillatorNode",
         id: this.id,
         type: OscillatorNode.TYPES.nameFor(this.type),
         frequency: this.frequency,
-        detune: this.detune
+        detune: this.detune,
+        attackDuration: this.attackDuration,
+        decayDuration: this.decayDuration,
+        releaseDuration: this.releaseDuration,
+        sustainDuration: this.sustainDuration,
+        attackVolume: this.attackVolume,
+        sustainVolume: this.sustainVolume
       };
     };
     
@@ -1933,6 +1975,11 @@ define("asNEAT/nodes/outNode",
     
     var OutNode = function(parameters) {
       Node.call(this, parameters);
+    
+      // force outNode to have an id of 0 so multiple
+      // unlike networks can still be crossed
+      this.id = 0;
+      
       this.globalGain = asNEAT.globalGain;
     
       if (!context.supported)
@@ -2437,6 +2484,20 @@ define("asNEAT/utils",
     
     Utils.frequencyOfStepsFromRootNote = function(steps) {
       return A4 * Math.pow(TWELTH_ROOT, steps);
+    };
+    
+    var HashLength = 6;
+    var HashCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    Utils.createHash = function(len, chars) {
+      if (typeof len === "undefined") len = HashLength;
+      if (typeof chars === "undefined") chars = HashCharacters;
+    
+      var i = 0, hash=[];
+      for (; i<len; ++i) {
+        hash.push(chars.charAt(
+          Math.floor(Math.random() * chars.length)));
+      }
+      return hash.join("");
     };
     
     __exports__["default"] = Utils;

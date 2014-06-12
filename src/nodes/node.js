@@ -11,7 +11,7 @@ var Node = function(parameters) {
   if (parameters && typeof parameters.id !== 'undefined')
     this.id = parameters.id;
   else
-    this.id = Node.getNextId();
+    this.id = Utils.createHash();
 };
 
 Node.prototype.name = name;
@@ -109,11 +109,6 @@ Node.prototype.mutate = function() {
 Node.prototype.toJSON = function() {
   var json = this.getParameters();
   return JSON.stringify(json);
-};
-
-Node.id=0;
-Node.getNextId = function() {
-  return Node.id++;
 };
 
 /**

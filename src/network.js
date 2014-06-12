@@ -34,7 +34,7 @@ var Network = function(parameters) {
   if (parameters && typeof parameters.id !== 'undefined')
     this.id = parameters.id;
   else
-    this.id = Network.getNextId();
+    this.id = Utils.createHash();
 };
 
 Network.prototype.name = name;
@@ -570,11 +570,6 @@ Network.createFromJSON = function(json) {
   // TODO: Use a factory to select which node type to recreate?
   // and just pass in the json obj to the constructor
   return new Network();
-};
-
-Network.id=0;
-Network.getNextId = function() {
-  return Network.id++;
 };
 
 export default Network;

@@ -251,4 +251,18 @@ Utils.frequencyOfStepsFromRootNote = function(steps) {
   return A4 * Math.pow(TWELTH_ROOT, steps);
 };
 
+var HashLength = 6;
+var HashCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+Utils.createHash = function(len, chars) {
+  if (typeof len === "undefined") len = HashLength;
+  if (typeof chars === "undefined") chars = HashCharacters;
+
+  var i = 0, hash=[];
+  for (; i<len; ++i) {
+    hash.push(chars.charAt(
+      Math.floor(Math.random() * chars.length)));
+  }
+  return hash.join("");
+};
+
 export default Utils;

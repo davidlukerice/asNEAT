@@ -9,7 +9,11 @@ var Connection = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
   this.gainNode = null;
   this.hasChanged = false;
-  this.id = Utils.cantorPair(this.sourceNode.id, this.targetNode.id);
+  // Only generate a new id if one isn't given in the parameters
+  if (parameters && typeof parameters.id !== 'undefined')
+    this.id = parameters.id;
+  else
+    this.id = Utils.createHash();
 };
 
 Connection.prototype.name = name;
@@ -38,6 +42,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
   var sourceNode = clonedsourceNode || this.sourceNode.clone();
   var targetNode = clonedtargetNode || this.targetNode.clone();
   return new Connection({
+    id: this.id,
     sourceNode: sourceNode,
     targetNode: targetNode,
     targetParameter: this.targetParameter,
