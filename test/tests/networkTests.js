@@ -101,8 +101,25 @@ test("mutations update lastMutation", function() {
 
 test("createFromJSON", function() {
   var a = new Network();
+  a.mutate().mutate().mutate().mutate();
+  a.splitMutation();
+  a.addOscillator();
+  a.addConnection();
   var json = a.toJSON();
   var b = Network.createFromJSON(json);
   equal(a.nodes.length, b.nodes.length, "Preserves number of nodes");
   equal(a.connections.length, b.connections.length, "Preserves number of connections");
+
+  var inOriginal = true;
+  _.forEach(b.nodes, function(node) {
+      inOriginal = inOriginal && _.find(a.nodes, {id:node.id});
+  });
+  ok(inOriginal, "every node found in original");
+
+  inOriginal = true;
+  _.forEach(b.connections, function(connection) {
+      inOriginal = inOriginal && _.find(a.connections, {id:connection.id});
+  });
+  ok(inOriginal, "every connection found in original");
+
 });

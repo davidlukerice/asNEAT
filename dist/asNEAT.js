@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-06-12 */
+/* asNEAT 0.2.0 2014-06-13 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -763,7 +763,7 @@ define("asNEAT/network",
         connectionParams.sourceNode = sourceNode;
         connectionParams.targetNode = targetNode;
     
-        createdConnection = new Connection(sourceNode, targetNode);
+        createdConnection = new Connection(connectionParams);
         createdConnections.push(createdConnection);
       });
     

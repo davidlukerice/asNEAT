@@ -586,7 +586,7 @@ Network.createFromJSON = function(json) {
     connectionParams.sourceNode = sourceNode;
     connectionParams.targetNode = targetNode;
 
-    createdConnection = new Connection(sourceNode, targetNode);
+    createdConnection = new Connection(connectionParams);
     createdConnections.push(createdConnection);
   });
 
