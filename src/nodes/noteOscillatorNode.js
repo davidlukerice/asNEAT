@@ -1,7 +1,9 @@
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "NoteOscillatorNode";
 /**
   An OscillatorNode that clamps its frequency to an
@@ -120,11 +122,39 @@ NoteOscillatorNode.prototype.refresh = function() {
   this.node = gainNode;
   oscillator.connect(gainNode);
 };
+NoteOscillatorNode.prototype.offlineRefresh = function() {
+  var oscillator = offlineContext.createOscillator();
+  oscillator.type = this.type;
+  oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
+    this.stepFromRootNote + this.noteOffset);
+  this.offlineOscNode = oscillator;
+
+  var gainNode = offlineContext.createGain();
+  this.offlineNode = gainNode;
+};
+
 NoteOscillatorNode.prototype.play = function() {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       gainNode = this.node,
       oscNode = this.oscNode,
+      attackVolume = this.attackVolume,
+      attackDuration = this.attackDuration,
+      sustainVolume = this.sustainVolume,
+      decayDuration = this.decayDuration,
+      releaseDuration = this.releaseDuration;
+  OscillatorNode.setupEnvelope(gainNode, oscNode,
+    attackVolume, attackDuration, sustainVolume, decayDuration);
+  setTimeout(function() {
+    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
+  }, waitTime * 1000);
+};
+
+NoteOscillatorNode.prototype.offlinePlay = function() {
+  var self = this,
+      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
+      gainNode = this.offlineNode,
+      oscNode = this.offlineOscNode,
       attackVolume = this.attackVolume,
       attackDuration = this.attackDuration,
       sustainVolume = this.sustainVolume,

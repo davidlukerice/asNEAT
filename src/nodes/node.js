@@ -47,11 +47,21 @@ Node.prototype.clone = function() {
   throw "clone not implemented";
 };
 
+
+// TODO: Merge refresh and offline refresh?
+
 /**
   Refreshes any web audio context nodes
 */
 Node.prototype.refresh = function() {
   throw "refresh not implemented";
+};
+
+/**
+  Refreshes any web audio offline nodes
+*/
+Node.prototype.offlineRefresh = function() {
+  throw "offline refresh not implemented";
 };
 
 /**

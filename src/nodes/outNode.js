@@ -2,6 +2,7 @@
 var Node = require('asNEAT/nodes/node')['default'],
     asNEAT = require('asNEAT/asNEAT')['default'],
     context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "OutNode";
 
 var OutNode = function(parameters) {
@@ -12,6 +13,7 @@ var OutNode = function(parameters) {
   this.id = 0;
   
   this.globalGain = asNEAT.globalGain;
+  this.offlineGlobalGain = asNEAT.offlineGlobalGain;
 
   if (!context.supported)
     return;
@@ -20,6 +22,10 @@ var OutNode = function(parameters) {
   localGain.gain.value = 1.0;
   localGain.connect(this.globalGain);
   this.node = localGain;
+
+  var offlineLocalGain = offlineContext.createGain();
+  offlineLocalGain.gain.value = 1.0;
+  offlineLocalGain.connect(this.offlineGlobal);
 };
 
 OutNode.prototype = Object.create(Node.prototype);
@@ -31,6 +37,8 @@ OutNode.prototype.clone = function() {
   });
 };
 OutNode.prototype.refresh = function() {
+};
+OutNode.prototype.offlineRefresh = function() {
 };
 OutNode.prototype.getParameters = function() {
   return {
