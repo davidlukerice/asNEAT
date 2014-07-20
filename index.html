@@ -97,8 +97,9 @@
             refresh();
           });
           $('button.offlinePlay').click(function() {
-            network.offlineRefresh();
-            network.offlinePlay();
+            network.offlinePlay(function(data) {
+              log('offlinePlay with data: '+data);
+            });
           });
 
           function refresh() {

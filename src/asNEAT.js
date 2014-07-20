@@ -11,7 +11,7 @@ if (typeof ns.context.supported === 'undefined')
 window.OfflineAudioContext = window.OfflineAudioContext ||
   window.webkitOfflineAudioContext ||
   function() {this.supported = false;};
-ns.offlineContext = new window.OfflineAudioContext();
+ns.offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100);
 if (typeof ns.offlineContext.supported === 'undefined')
   ns.offlineContext.supported = true;
 
@@ -26,7 +26,7 @@ if (ns.context.supported) {
 if (ns.offlineContext.supported) {
   ns.offlineGlobalGain = ns.offlineContext.createGain();
   ns.offlineGlobalGain.gain.value = 0.5;
-  ns.offlineGlobalGain.connect(ns.OfflineAudioContext.destination);
+  ns.offlineGlobalGain.connect(ns.offlineContext.destination);
 }
 
 // All the registered usable nodes

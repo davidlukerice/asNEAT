@@ -178,16 +178,30 @@ Network.prototype.playHold = function() {
     });
   };
 };
-function playPrep() {
+
+/**
+  @param callback function(data)
+*/
+Network.prototype.offlinePlay = function(callback) {
+  playPrep.call(this, "offlineRefresh", "offlineConnect");
+
+  // TODO Play the actual thing
+  callback("todo: some real data?");
+};
+
+function playPrep(refreshHandlerName, connectHandlerName) {
+  refreshHandlerName = refreshHandlerName || "refresh";
+  connectHandlerName = connectHandlerName || "connect";
+
   // refresh all the nodes since each can only play 
   // once (note: changing in the current webAudio draft)
   _.forEach(this.nodes, function(node) {
-    node.refresh();
+    node[refreshHandlerName]();
   });
 
   // setup all the connections
   _.forEach(this.connections, function(connection) {
-    connection.connect();
+    connection[connectHandlerName]();
   });
 }
 

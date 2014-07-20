@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     log = Utils.log,
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "Connection";
 
 // TODO: Different kinds of connections?
@@ -56,24 +58,35 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
   });
 };
 Connection.prototype.connect = function() {
+  connect.call(this, context);
+};
+Connection.prototype.offlineConnect = function() {
+  connect.call(this, offlineContext, "offline");
+};
+
+function connect(context, accessorPrefix) {
   if (!this.enabled) return;
+
+  accessorPrefix = accessorPrefix || "";
+  var accessor = accessorPrefix + (accessorPrefix ? "Node" : "node");
 
   // The gainNode is what carries the connection's 
   // weight attribute
   this.gainNode = context.createGain();
   this.gainNode.gain.value = this.weight;
-  this.sourceNode.node.connect(this.gainNode);
+  this.sourceNode[accessor].connect(this.gainNode);
 
   var param = this.targetParameter;
   if (param === null)
-    this.gainNode.connect(this.targetNode.node);
+    this.gainNode.connect(this.targetNode[accessor]);
   else {
     var nodeName = this.targetParameterNodeName ? this.targetParameterNodeName : "node";
-    this.gainNode.connect(this.targetNode[nodeName][param]);
+    accessor = accessorPrefix + (accessorPrefix ? Utils.upperCaseFirstLetter(nodeName) : nodeName);
+    this.gainNode.connect(this.targetNode[accessor][param]);
   }
 
   return this;
-};
+}
 
 Connection.prototype.disable = function() {
   this.enabled = false;

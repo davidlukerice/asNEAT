@@ -25,7 +25,8 @@ var OutNode = function(parameters) {
 
   var offlineLocalGain = offlineContext.createGain();
   offlineLocalGain.gain.value = 1.0;
-  offlineLocalGain.connect(this.offlineGlobal);
+  offlineLocalGain.connect(this.offlineGlobalGain);
+  this.offlineNode = offlineLocalGain;
 };
 
 OutNode.prototype = Object.create(Node.prototype);
