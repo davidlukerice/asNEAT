@@ -1,27 +1,39 @@
-/* asNEAT 0.2.0 2014-07-19 */
+/* asNEAT 0.2.0 2014-07-20 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var ns = {};
-
+    
     window.AudioContext = window.AudioContext ||
       window.webkitAudioContext ||
       function() {this.supported = false;};
     ns.context = new window.AudioContext();
     if (typeof ns.context.supported === 'undefined')
       ns.context.supported = true;
-
+    
+    window.OfflineAudioContext = window.OfflineAudioContext ||
+      window.webkitOfflineAudioContext ||
+      function() {this.supported = false;};
+    ns.offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100);
+    if (typeof ns.offlineContext.supported === 'undefined')
+      ns.offlineContext.supported = true;
+    
     // only create the gain if context is found
     // (helps on tests)
-    if (ns.context.createGain) {
+    if (ns.context.supported) {
       ns.globalGain = ns.context.createGain();
       ns.globalGain.gain.value = 0.5;
       ns.globalGain.connect(ns.context.destination);
     }
-
-
+    
+    if (ns.offlineContext.supported) {
+      ns.offlineGlobalGain = ns.offlineContext.createGain();
+      ns.offlineGlobalGain.gain.value = 0.5;
+      ns.offlineGlobalGain.connect(ns.offlineContext.destination);
+    }
+    
     // All the registered usable nodes
     // TODO: Give weights for selection in mutation?
     ns.nodeTypes = [
@@ -34,22 +46,24 @@ define("asNEAT/asNEAT",
       
       'compressorNode',
       'convolverNode'
-
+    
       //wave shaper node? // like distortion? eq?
     ];
-
+    
     __exports__["default"] = ns;
   });
 define("asNEAT/connection", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         log = Utils.log,
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "Connection";
-
+    
     // TODO: Different kinds of connections?
     var Connection = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
@@ -61,7 +75,7 @@ define("asNEAT/connection",
       else
         this.id = Utils.createHash();
     };
-
+    
     Connection.prototype.name = name;
     Connection.prototype.defaultParameters = {
       sourceNode: null,
@@ -70,16 +84,16 @@ define("asNEAT/connection",
       // null if connecting to audio input of targetNode
       targetParameter: null,
       targetParameterNodeName: "node",
-
+    
       weight: 1.0,
       enabled: true,
-
+    
       mutationDeltaChance: 0.8,
       mutationDelta: {min: -0.2, max: 0.2},
       randomMutationRange: {min: 0.1, max: 1.5},
       discreteMutation: false
     };
-
+    
     /**
       @param clonedsourceNode {Node} (optional)
       @param clonedtargetNode {Node} (optional)
@@ -102,30 +116,41 @@ define("asNEAT/connection",
       });
     };
     Connection.prototype.connect = function() {
+      connect.call(this, context);
+    };
+    Connection.prototype.offlineConnect = function() {
+      connect.call(this, offlineContext, "offline");
+    };
+    
+    function connect(context, accessorPrefix) {
       if (!this.enabled) return;
-
+    
+      accessorPrefix = accessorPrefix || "";
+      var accessor = accessorPrefix + (accessorPrefix ? "Node" : "node");
+    
       // The gainNode is what carries the connection's 
       // weight attribute
       this.gainNode = context.createGain();
       this.gainNode.gain.value = this.weight;
-      this.sourceNode.node.connect(this.gainNode);
-
+      this.sourceNode[accessor].connect(this.gainNode);
+    
       var param = this.targetParameter;
       if (param === null)
-        this.gainNode.connect(this.targetNode.node);
+        this.gainNode.connect(this.targetNode[accessor]);
       else {
         var nodeName = this.targetParameterNodeName ? this.targetParameterNodeName : "node";
-        this.gainNode.connect(this.targetNode[nodeName][param]);
+        accessor = accessorPrefix + (accessorPrefix ? Utils.upperCaseFirstLetter(nodeName) : nodeName);
+        this.gainNode.connect(this.targetNode[accessor][param]);
       }
-
+    
       return this;
-    };
-
+    }
+    
     Connection.prototype.disable = function() {
       this.enabled = false;
       return this;
     };
-
+    
     Connection.prototype.mutate = function() {
       var mutationInfo = Utils.mutateParameter({
         obj: this,
@@ -136,7 +161,7 @@ define("asNEAT/connection",
       });
       return this;
     };
-
+    
     Connection.prototype.getParameters = function() {
       return {
         name: name,
@@ -148,14 +173,14 @@ define("asNEAT/connection",
         targetParameter: this.targetParameter
       };
     };
-
+    
     Connection.prototype.toString = function() {
       return (this.enabled? "" : "*") +
               "connection("+this.weight.toFixed(2)+")("+
               this.sourceNode.id+" --> "+this.targetNode.id+
               (this.targetParameter ? (": "+this.targetParameter) : "" )+")";
     };
-
+    
     Connection.prototype.toJSON = function() {
       var json = {
         id: this.id,
@@ -168,30 +193,32 @@ define("asNEAT/connection",
       };
       return JSON.stringify(json);
     };
-
+    
     __exports__["default"] = Connection;
   });
 define("asNEAT/network", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         NoteOscillatorNode = require('asNEAT/nodes/noteOscillatorNode')['default'],
         OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
         OutNode = require('asNEAT/nodes/outNode')['default'],
         Connection = require('asNEAT/connection')['default'],
-        nodeTypes = require('asNEAT/asNEAT')['default'].nodeTypes,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        offlineContext = asNEAT.offlineContext,
+        nodeTypes = asNEAT.nodeTypes,
         log = Utils.log,
         name = "Network",
         globalOutNode = new OutNode();
-
+    
     var Network = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
-
+    
       // {objectsChanged [], changeDescription string}
       this.lastMutation = null;
-
+    
       if (this.nodes.length===0) {
         // Create a basic onscillator without any offset to start
         var osc = NoteOscillatorNode.random();
@@ -206,14 +233,14 @@ define("asNEAT/network",
           weight: 0.5
         }));
       }
-
+    
       // Only generate a new id if one isn't given in the parameters
       if (parameters && typeof parameters.id !== 'undefined')
         this.id = parameters.id;
       else
         this.id = Utils.createHash();
     };
-
+    
     Network.prototype.name = name;
     Network.prototype.defaultParameters = {
       nodes: [],
@@ -223,7 +250,7 @@ define("asNEAT/network",
       // percentage of addOscillatorMutations will
       // generate a node for fm, as opposed to strict audio output
       addOscillatorFMMutationRate: 0.5,
-
+    
       // Percentage of addConnectionMutation will generate a connection
       // for fm, as opposed to a strict audio connection
       addConnectionFMMutationRate: 0.5
@@ -232,13 +259,13 @@ define("asNEAT/network",
       Creates a deep clone of this network
      */
     Network.prototype.clone = function() {
-
+    
       // Clone each node
       var clonedNodes = [];
       _.forEach(this.nodes, function(node) {
         clonedNodes.push(node.clone());
       });
-
+    
       // Clone each connection
       var clonedConnections = [];
       _.forEach(this.connections, function(connection) {
@@ -246,7 +273,7 @@ define("asNEAT/network",
         var clonedtargetNode = _.find(clonedNodes, {id: connection.targetNode.id});
         clonedConnections.push(connection.clone(clonedsourceNode, clonedtargetNode));
       });
-
+    
       return new Network({
         nodes: clonedNodes,
         connections: clonedConnections,
@@ -264,7 +291,7 @@ define("asNEAT/network",
           oConnections = otherNetwork.connections,
           nodes = [], connections = [],
           newNetwork, tIndexes;
-
+    
       function addNode(node, i) {
         var newNode = node.clone();
         if (typeof i === 'undefined') {
@@ -285,7 +312,7 @@ define("asNEAT/network",
         else
           connections[i] = newConn;
       }
-
+    
       // Add all of tElements first, then loop through and add
       // any oElements not in tElements or 50/50 chance.
       // This destroys 'creation order' of the nodes/connections
@@ -305,10 +332,10 @@ define("asNEAT/network",
             addHandler(element, i);
         });
       }
-
+    
       addElements(tNodes, oNodes, addNode);
       addElements(tConnections, oConnections, addConnection);
-
+    
       newNetwork = new Network({
         nodes: nodes,
         connections: connections,
@@ -319,55 +346,77 @@ define("asNEAT/network",
         changeDescription: "Crossed instruments "+this.id+" & "+otherNetwork.id
       };
       updateObjectsInMutation(newNetwork.lastMutation);
-
+    
       return newNetwork;
     };
     Network.prototype.play = function() {
       playPrep.call(this);
-
+    
       // play the oscillators
       _.forEach(this.nodes, function(node) {
         if (node.play)
           node.play();
       });
-
+    
       return this;
     };
-
+    
     /**
       Plays the network until the return handler is called
       @return function stop
     **/
     Network.prototype.playHold = function() {
       playPrep.call(this);
-
+    
       var stopHandlers = [];
-
+    
       // play the oscillators
       _.forEach(this.nodes, function(node) {
         if (node.playHold)
           stopHandlers.push(node.playHold());
       });
-
+    
       return function stop() {
         _.forEach(stopHandlers, function(handler) {
           handler();
         });
       };
     };
-    function playPrep() {
+    
+    /**
+      @param callback function(AudioBuffer)
+    */
+    Network.prototype.offlinePlay = function(callback) {
+      playPrep.call(this, "offlineRefresh", "offlineConnect");
+      // play the offline oscillators
+      _.forEach(this.nodes, function(node) {
+        if (node.offlinePlay)
+          node.offlinePlay();
+      });
+    
+      offlineContext.oncomplete = function(e) {
+        callback(e.renderedBuffer);
+      };
+      // TODO: Change to promise once implemented in browsers
+      offlineContext.startRendering();
+    };
+    
+    function playPrep(refreshHandlerName, connectHandlerName) {
+      refreshHandlerName = refreshHandlerName || "refresh";
+      connectHandlerName = connectHandlerName || "connect";
+    
       // refresh all the nodes since each can only play 
       // once (note: changing in the current webAudio draft)
       _.forEach(this.nodes, function(node) {
-        node.refresh();
+        node[refreshHandlerName]();
       });
-
+    
       // setup all the connections
       _.forEach(this.connections, function(connection) {
-        connection.connect();
+        connection[connectHandlerName]();
       });
     }
-
+    
     /**
       Randomly mutates the network based on weighted probabilities.
       @note Each one updates lastMutation
@@ -381,7 +430,7 @@ define("asNEAT/network",
         {weight: 0.2, element: this.mutateConnectionWeights},
         {weight: 0.2, element: this.mutateNodeParameters}
       ];
-
+    
       // TODO: Check current generation for similar structural mutation
       // and copy connection id/ids (innovation number)
       var mutation = Utils.weightedSelection(mutations);
@@ -394,22 +443,22 @@ define("asNEAT/network",
       _.forEach(this.connections, function(connection) {
         connection.hasChanged = false;
       });
-
+    
       updateObjectsInMutation(this.lastMutation);
-
+    
       return this;
     };
-
+    
     // Update newly changed objects
     function updateObjectsInMutation(lastMutation) {
       if (lastMutation == null)
         throw "no last mutation from mutate";
-
+    
       _.forEach(lastMutation.objectsChanged, function(objects) {
         objects.hasChanged = true;
       });
     }
-
+    
     /*
       Randomly select a connection to split in two
     */
@@ -426,18 +475,18 @@ define("asNEAT/network",
           Node = require('asNEAT/nodes/'+selectedType)['default'],
           newNode, inConnection, outConnection, targetParameter,
           targetParameterNodeName;
-
+    
       // "The new connection leading into the new node receives a weight of 1,
       // and the new connection leading out receives the same weight as the old
       // connection." ~ Stanley
       newNode = Node.random();
-
+    
       inConnection = new Connection({
         sourceNode: conn.sourceNode,
         targetNode: newNode,
         weight: 1.0
       });
-
+    
       outConnection = new Connection({
         sourceNode: newNode,
         targetNode: targetNode,
@@ -447,14 +496,14 @@ define("asNEAT/network",
         mutationDelta: _.cloneDeep(targetNode.mutationDelta),
         randomMutationRange: _.cloneDeep(targetNode.randomMutationRange)
       });
-
+    
       conn.disable();
       this.nodes.push(newNode);
       this.connections.push(inConnection);
       this.connections.push(outConnection);
-
+    
       log('splitting conn '+conn.toString()+' with '+newNode.toString());
-
+    
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: [
@@ -462,24 +511,24 @@ define("asNEAT/network",
           inConnection,
           outConnection
         ],
-
+    
         changeDescription: "Split Connection"
       };
-
+    
       return this;
     };
-
+    
     /*
       Adds a single oscillator and connects it to a random input
       in one of the current nodes
      */
     Network.prototype.addOscillator = function() {
       var oscillator, possibleTargets, target, connection;
-
+    
       // Add FM Oscillator or audio oscillator
       if (Utils.randomChance(this.addOscillatorFMMutationRate)) {
         oscillator = OscillatorNode.random();
-
+    
         // Pick random node that's connectable to connect to
         possibleTargets = _.filter(this.nodes, function(node) {
           return node.connectableParameters &&
@@ -489,7 +538,7 @@ define("asNEAT/network",
         var targetParameter = Utils.randomElementIn(target.connectableParameters);
         var ampMin = targetParameter.amplitudeScaling.min;
         var ampMax = targetParameter.amplitudeScaling.max;
-
+    
         connection = new Connection({
           sourceNode: oscillator,
           targetNode: target,
@@ -499,7 +548,7 @@ define("asNEAT/network",
           mutationDelta: {min: ampMin/12, max: ampMin/12},
           randomMutationRange: {min: ampMin, max: ampMax}
         });
-
+    
         log('adding fm oscillator('+targetParameter.name+') '+oscillator.toString());
       }
       else {
@@ -510,32 +559,32 @@ define("asNEAT/network",
                  node.name !== "NoteOscillatorNode";
         });
         target = Utils.randomElementIn(possibleTargets);
-
+    
         connection = new Connection({
           sourceNode: oscillator,
           targetNode: target,
           weight: 0.5
         });
-
+    
         log('adding audio oscillator '+oscillator.toString());
       }
-
+    
       this.nodes.push(oscillator);
       this.connections.push(connection);
-
+    
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: [
           oscillator,
           connection
         ],
-
+    
         changeDescription: "Added Oscillator"
       };
-
+    
       return this;
     };
-
+    
     Network.prototype.addConnection = function() {
       var usingFM = Utils.randomChance(this.addConnectionFMMutationRate);
       var possibleConns = this.getPossibleNewConnections(usingFM);
@@ -547,11 +596,11 @@ define("asNEAT/network",
         };
         return this;
       }
-
+    
       var newConnection = Utils.randomElementIn(possibleConns);
       this.connections.push(newConnection);
       log('new connection: '+newConnection.toString());
-
+    
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: [
@@ -559,18 +608,18 @@ define("asNEAT/network",
         ],
         changeDescription: "Added Connection"
       };
-
+    
       return this;
     };
       Network.prototype.getPossibleNewConnections = function(usingFM) {
         // TODO: Just build the potential connections when new nodes are added/removed?
         //       perfomance hit when adding new nodes, but don't have to O(n^2) for adding a new connection.
         //       Would have to regenerate on copy though
-
+    
         // TODO: allow multiple connections to different parameters between same nodes for FM synthesis
         var self = this,
             connections = [];
-
+    
         // Loop through all non output nodes
         _.forEach(this.nodes, function(sourceNode) {
           if (sourceNode.name==="OutNode") 
@@ -588,22 +637,22 @@ define("asNEAT/network",
               return;
             if (sourceNode===targetNode)
               return;
-
+    
             var connExists = _.find(self.connections, function(conn) {
               return (conn.sourceNode === sourceNode &&
                       conn.targetNode === targetNode) ||
                      (conn.sourceNode === targetNode &&
                       conn.targetNode === sourceNode);
             });
-
+    
             if (connExists)
               return;
-
+    
             if (usingFM) {
               var targetParameter = Utils.randomElementIn(targetNode.connectableParameters);
               var ampMin = targetParameter.amplitudeScaling.min;
               var ampMax = targetParameter.amplitudeScaling.max;
-
+    
               connections.push(new Connection({
                 sourceNode: sourceNode,
                 targetNode: targetNode,
@@ -627,14 +676,14 @@ define("asNEAT/network",
           
         return connections;
       };
-
+    
     /*
       For each connection, mutate based on the given probability
       @param forceMutation {bool} (default: true) Makes at least one connection mutate
     */
     Network.prototype.mutateConnectionWeights = function(forceMutation) {
       if (typeof(forceMutation)==='undefined') forceMutation = true;
-
+    
       var mutationRate = this.connectionMutationRate,
           anyMutations = false,
           objectsChanged = [];
@@ -644,7 +693,7 @@ define("asNEAT/network",
           anyMutations = true;
         }
       });
-
+    
       // If no connections were mutated and forcing a mutation
       // mutate a random one
       if (!anyMutations && forceMutation) {
@@ -652,19 +701,19 @@ define("asNEAT/network",
         var conn = Utils.randomElementIn(this.connections);
         objectsChanged.push(conn.mutate());
       }
-
+    
       //{objectsChanged [], changeDescription string}
       this.lastMutation = {
         objectsChanged: objectsChanged,
         changeDescription: "Mutated connection gain"
       };
-
+    
       return this;
     };
-
+    
     Network.prototype.mutateNodeParameters = function(forceMutation) {
       if (typeof(forceMutation)==='undefined') forceMutation = true;
-
+    
       var mutationRate = this.nodeMutationRate,
           anyMutations = false,
           objectsChanged = [];
@@ -674,7 +723,7 @@ define("asNEAT/network",
           anyMutations = true;
         }
       });
-
+    
       // If no nodes were mutated and forcing a mutation
       // mutate a random one
       if (!anyMutations && forceMutation) {
@@ -687,21 +736,21 @@ define("asNEAT/network",
         objectsChanged: objectsChanged,
         changeDescription: "Mutated Node Parameters"
       };
-
+    
       return this;
     };
-
+    
     Network.prototype.getEnabledConnections = function() {
       return _.filter(this.connections, 'enabled');
     };
-
+    
     Network.prototype.getNoteOscillatorNodes = function() {
       return _.filter(this.nodes, {name: 'NoteOscillatorNode'});
     };
     Network.prototype.getOscillatorNodes = function() {
       return _.filter(this.nodes, {name: 'OscillatorNode'});
     };
-
+    
     /**
      Gets the non noteOscillator and oscillator nodes
     */
@@ -711,21 +760,21 @@ define("asNEAT/network",
                node.name === 'NoteOscillatorNode';
       });
     };
-
+    
     Network.prototype.toString = function() {
       var str = "Nodes:<br>";
       _.forEach(this.nodes, function(ele) {
         str+=ele.toString()+"<br>";
       });
-
+    
       str += "<br>Connections:<br>";
       _.forEach(this.connections, function(ele) {
         str+=ele.toString()+"<br>";
       });
-
+    
       return str;
     };
-
+    
     Network.prototype.toJSON = function() {
       var json = {
         id: this.id,
@@ -744,7 +793,7 @@ define("asNEAT/network",
       var obj = JSON.parse(json),
           createdNodes = [],
           createdConnections = [];
-
+    
       _.forEach(obj.nodes, function(json) {
         var nodeParams = JSON.parse(json),
             type = Utils.lowerCaseFirstLetter(nodeParams.name),
@@ -759,65 +808,67 @@ define("asNEAT/network",
             sourceNode, targetNode, createdConnection;
         sourceNode = _.find(createdNodes, {id: sourceNodeId});
         targetNode = _.find(createdNodes, {id: targetNodeId});
-
+    
         connectionParams.sourceNode = sourceNode;
         connectionParams.targetNode = targetNode;
-
+    
         createdConnection = new Connection(connectionParams);
         createdConnections.push(createdConnection);
       });
-
+    
       obj.nodes = createdNodes;
       obj.connections = createdConnections;
       return new Network(obj);
     };
-
+    
     __exports__["default"] = Network;
   });
 define("asNEAT/nodes/compressorNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "CompressorNode";
-
+    
     var CompressorNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     CompressorNode.prototype = Object.create(Node.prototype);
     CompressorNode.prototype.name = name;
     CompressorNode.prototype.defaultParameters = {
       // The decibel value above which the compression will start taking effect.
       // Its default value is -24, with a nominal range of -100 to 0.
       threshold: 0,
-
+    
       // A decibel value representing the range above the threshold where the curve
       // smoothly transitions to the "ratio" portion. Its default value is 30, with
       // a nominal range of 0 to 40.
       knee: 0,
-
+    
       // The amount of dB change in input for a 1 dB change in output. Its default
       // value is 12, with a nominal range of 1 to 20.
       ratio: 0,
-
+    
       // A read-only decibel value for metering purposes, representing the current
       // amount of gain reduction that the compressor is applying to the signal.
       // If fed no signal the value will be 0 (no gain reduction). The nominal range
       // is -20 to 0.
       reduction: 0,
-
+    
       // The amount of time (in seconds) to reduce the gain by 10dB. Its default
       // value is 0.003, with a nominal range of 0 to 1.
       attack: 0,
-
+    
       // The amount of time (in seconds) to increase the gain by 10dB. Its default
       // value is 0.250, with a nominal range of 0 to 1.
       release: 0,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -865,7 +916,7 @@ define("asNEAT/nodes/compressorNode",
         }
       ]
     };
-
+    
     CompressorNode.prototype.clone = function() {
       return new CompressorNode({
         id: this.id,
@@ -879,9 +930,17 @@ define("asNEAT/nodes/compressorNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     CompressorNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    CompressorNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var node = context.createDynamicsCompressor();
       node.threshold.value = this.threshold;
       node.knee.value = this.knee;
@@ -889,11 +948,11 @@ define("asNEAT/nodes/compressorNode",
       node.reduction.value = this.reduction;
       node.attack.value = this.attack;
       node.release.value = this.release;
-
-      // cache the current node?
-      this.node = node;
-    };
-
+    
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = node;
+    }
+    
     CompressorNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -906,7 +965,7 @@ define("asNEAT/nodes/compressorNode",
         release: this.release
       };
     };
-
+    
     CompressorNode.prototype.toString = function() {
       return this.id+": CompressorNode("+
         this.threshold.toFixed(2)+","+
@@ -916,7 +975,7 @@ define("asNEAT/nodes/compressorNode",
         this.attack.toFixed(2)+","+
         this.release.toFixed(2)+")";
     };
-
+    
     CompressorNode.random = function() {
       var threshold = Utils.randomIn(-50, 10),
           knee = Utils.randomIn(20, 40),
@@ -924,7 +983,7 @@ define("asNEAT/nodes/compressorNode",
           reduction = Utils.randomIn(-10, 0),
           attack = Utils.randomIn(0, 0.1),
           release = Utils.randomIn(0, 0.1);
-
+    
       return new CompressorNode({
         threshold: threshold,
         knee: knee,
@@ -934,45 +993,47 @@ define("asNEAT/nodes/compressorNode",
         release: release
       });
     };
-
+    
     __exports__["default"] = CompressorNode;
   });
 define("asNEAT/nodes/convolverNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "ConvolverNode";
-
+    
     var ConvolverNode = function(parameters) {
       Node.call(this, parameters);
-
+    
       // TODO: Different types of convolution instead of just noise
       if (this.audioBuffer === null && context.supported) {
         var noiseBuffer = context.createBuffer(2, 0.5 * context.sampleRate, context.sampleRate),
             left = noiseBuffer.getChannelData(0),
             right = noiseBuffer.getChannelData(1);
-
+    
         for (var i = 0; i < noiseBuffer.length; i++) {
             left[i] = Math.random() * 2 - 1;
             right[i] = Math.random() * 2 - 1;
         }
-
+    
         this.audioBuffer = noiseBuffer;    
       }
-
+    
     };
-
+    
     ConvolverNode.prototype = Object.create(Node.prototype);
     ConvolverNode.prototype.name = name;
     ConvolverNode.prototype.defaultParameters = {
       audioBuffer: null,
       parameterMutationChance: 0.1
     };
-
+    
     ConvolverNode.prototype.clone = function() {
       return new ConvolverNode({
         id: this.id,
@@ -981,55 +1042,67 @@ define("asNEAT/nodes/convolverNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
-
+    
+    
     // Refreshes the cached node to be played again
     ConvolverNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    ConvolverNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var node = context.createConvolver();
       node.buffer = this.audioBuffer;
-      this.node = node;
-    };
-
+    
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = node;
+    }
+    
     ConvolverNode.prototype.getParameters = function() {
       return {
         name: name,
         id: this.id
       };
     };
-
+    
     ConvolverNode.prototype.toString = function() {
       return this.id+": ConvolverNode()";
     };
-
+    
     /*
       @return a ConvolverNode
     */
     ConvolverNode.random = function() {
       return new ConvolverNode();
     };
-
+    
     __exports__["default"] = ConvolverNode;
   });
 define("asNEAT/nodes/delayNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "DelayNode";
-
+    
     var DelayNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     DelayNode.prototype = Object.create(Node.prototype);
     DelayNode.prototype.name = name;
     DelayNode.prototype.defaultParameters = {
       // in seconds
       delayTime: 0,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1041,7 +1114,7 @@ define("asNEAT/nodes/delayNode",
         }
       ]
     };
-
+    
     DelayNode.prototype.clone = function() {
       return new DelayNode({
         id: this.id,
@@ -1050,14 +1123,23 @@ define("asNEAT/nodes/delayNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     DelayNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    DelayNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var delayNode = context.createDelay();
       delayNode.delayTime.value = this.delayTime;
-      this.node = delayNode;
-    };
-
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = delayNode;
+    }
+    
     DelayNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1065,43 +1147,45 @@ define("asNEAT/nodes/delayNode",
         delayTime: this.delayTime
       };
     };
-
+    
     DelayNode.prototype.toString = function() {
       return this.id+": DelayNode("+
         this.delayTime.toFixed(2)+")";
     };
-
+    
     DelayNode.random = function() {
       return new DelayNode({
         delayTime: Utils.randomIn(0.0, 3.0)
       });
     };
-
+    
     __exports__["default"] = DelayNode;
   });
 define("asNEAT/nodes/feedbackDelayNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "FeedbackDelayNode";
-
+    
     var FeedbackDelayNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     FeedbackDelayNode.prototype = Object.create(Node.prototype);
     FeedbackDelayNode.prototype.name = name;
     FeedbackDelayNode.prototype.defaultParameters = {
       // in seconds
       delayTime: 0,
-
+    
       // [0,1], although >=1 is allowed... not advised
       feedbackRatio: 0.2,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1120,7 +1204,7 @@ define("asNEAT/nodes/feedbackDelayNode",
         }
       ]
     };
-
+    
     FeedbackDelayNode.prototype.clone = function() {
       return new FeedbackDelayNode({
         id: this.id,
@@ -1130,28 +1214,37 @@ define("asNEAT/nodes/feedbackDelayNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     FeedbackDelayNode.prototype.refresh = function() {
-
+      refresh.call(this, context);
+    };
+    
+    FeedbackDelayNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       // base passthrough gain
       var passthroughGain = context.createGain();
       passthroughGain.gain.value = 1.0;
-
+    
       var delayNode = context.createDelay();
       delayNode.delayTime.value = this.delayTime;
-
+    
       // add an additional gain node for 'delay' feedback
       var feedbackGainNode = context.createGain();
       feedbackGainNode.gain.value = this.feedbackRatio;
-
+    
       passthroughGain.connect(delayNode);
       delayNode.connect(feedbackGainNode);
       feedbackGainNode.connect(passthroughGain);
-
-      this.node = passthroughGain;
-    };
-
+    
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = passthroughGain;
+    }
+    
+    
     FeedbackDelayNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1160,30 +1253,32 @@ define("asNEAT/nodes/feedbackDelayNode",
         feedbackRatio: this.feedbackRatio
       };
     };
-
+    
     FeedbackDelayNode.prototype.toString = function() {
       return this.id+": FeedbackDelayNode("+
         this.delayTime.toFixed(2)+","+
         this.feedbackRatio.toFixed(2)+")";
     };
-
+    
     FeedbackDelayNode.random = function() {
       return new FeedbackDelayNode({
         delayTime: Utils.randomIn(0.0, 3.0),
         feedbackRatio: Utils.randomIn(0, 0.6)
       });
     };
-
+    
     __exports__["default"] = FeedbackDelayNode;
   });
 define("asNEAT/nodes/filterNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "FilterNode",
         freqMin = 0,
         freqMax = 1500,
@@ -1191,11 +1286,11 @@ define("asNEAT/nodes/filterNode",
         qMax = 20,
         gainMin = -5,
         gainMax = 5;
-
+    
     var FilterNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     FilterNode.prototype = Object.create(Node.prototype);
     FilterNode.prototype.name = name;
     FilterNode.prototype.defaultParameters = {
@@ -1204,7 +1299,7 @@ define("asNEAT/nodes/filterNode",
       detune: 0,
       q: 1,
       gain: 1,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1239,7 +1334,7 @@ define("asNEAT/nodes/filterNode",
         }
       ]
     };
-
+    
     FilterNode.prototype.clone = function() {
       return new FilterNode({
         id: this.id,
@@ -1252,20 +1347,28 @@ define("asNEAT/nodes/filterNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     FilterNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    FilterNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var node = context.createBiquadFilter();
       node.type = this.type;
       node.frequency.value = this.frequency;
       node.detune.value = this.detune;
       node.Q.value = this.q;
       node.gain.value = this.gain;
-
-      // cache the current node?
-      this.node = node;
-    };
-
+    
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = node;
+    }
+    
     FilterNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1277,11 +1380,11 @@ define("asNEAT/nodes/filterNode",
         gain: this.gain,
       };
     };
-
+    
     FilterNode.prototype.toString = function() {
       return this.id+": FilterNode("+this.type+","+this.frequency.toFixed(2)+")";
     };
-
+    
     FilterNode.TYPES = [
       "lowpass",
       "highpass",
@@ -1302,11 +1405,11 @@ define("asNEAT/nodes/filterNode",
           freq = Utils.randomIn(freqMin, freqMax),
           q = Utils.randomIn(qMin, qMax),
           gain = Utils.randomIn(gainMin, gainMax);
-
+    
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
       // Q - 1, with a nominal range of 0.0001 to 1000.
       // gain - 0, with a nominal range of -40 to 40.
-
+    
       return new FilterNode({
         type: FilterNode.TYPES[typeI],
         frequency: freq,
@@ -1316,25 +1419,27 @@ define("asNEAT/nodes/filterNode",
         //detune: 0,
       });
     };
-
+    
     __exports__["default"] = FilterNode;
   });
 define("asNEAT/nodes/gainNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "GainNode",
         gainMin = 0.5,
         gainMax = 1.5;
-
+    
     var GainNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     GainNode.prototype = Object.create(Node.prototype);
     GainNode.prototype.name = name;
     GainNode.prototype.defaultParameters = {
@@ -1344,7 +1449,7 @@ define("asNEAT/nodes/gainNode",
       // higher values are allowed (no exception thrown).This parameter
       // is a-rate
       gain: 1,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1363,7 +1468,7 @@ define("asNEAT/nodes/gainNode",
         }
       ]
     };
-
+    
     GainNode.prototype.clone = function() {
       return new GainNode({
         id: this.id,
@@ -1372,15 +1477,24 @@ define("asNEAT/nodes/gainNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
-
+    
+    
     // Refreshes the cached node to be played again
     GainNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    GainNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var node = context.createGain();
       node.gain.value = this.gain;
-      this.node = node;
-    };
-
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = node;
+    }
+    
     GainNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1388,12 +1502,12 @@ define("asNEAT/nodes/gainNode",
         gain: this.gain
       };
     };
-
+    
     GainNode.prototype.toString = function() {
       return this.id+": GainNode("+
         this.gain.toFixed(2)+")";
     };
-
+    
     /*
       @return a GainNode with a gain of [0.5, 1.5) || (-1.5, -5.1]
     */
@@ -1401,34 +1515,34 @@ define("asNEAT/nodes/gainNode",
       var isInverse = Utils.randomBool(),
           gain = Utils.randomIn(gainMin, gainMax);
       gain*= (isInverse? -1 : 1);
-
+    
       return new GainNode({
         gain: gain
       });
     };
-
+    
     __exports__["default"] = GainNode;
   });
 define("asNEAT/nodes/node", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         name = "Node";
-
+    
     var Node = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
-
+    
       this.hasChanged = false;
-
+    
       // Only generate a new id if one isn't given in the parameters
       if (parameters && typeof parameters.id !== 'undefined')
         this.id = parameters.id;
       else
         this.id = Utils.createHash();
     };
-
+    
     Node.prototype.name = name;
     Node.prototype.defaultParameters = {
       parameterMutationChance: 0.1,
@@ -1441,7 +1555,7 @@ define("asNEAT/nodes/node",
       //    discreteMutation: if mutations should be integers
       //  }
       ],
-
+    
       connectableParameters: [
         //{
         //  name: "frequency", : must be able to osc.connect(node.name)
@@ -1453,7 +1567,7 @@ define("asNEAT/nodes/node",
         //}
       ]
     }; 
-
+    
     /**
       Creates a cloned node
       @return Node
@@ -1461,25 +1575,35 @@ define("asNEAT/nodes/node",
     Node.prototype.clone = function() {
       throw "clone not implemented";
     };
-
+    
+    
+    // TODO: Merge refresh and offline refresh?
+    
     /**
       Refreshes any web audio context nodes
     */
     Node.prototype.refresh = function() {
       throw "refresh not implemented";
     };
-
+    
+    /**
+      Refreshes any web audio offline nodes
+    */
+    Node.prototype.offlineRefresh = function() {
+      throw "offline refresh not implemented";
+    };
+    
     /**
       Gets the various parameters characterizing this node
     */
     Node.prototype.getParameters = function() {
       throw "getParameters not implemented";
     };
-
+    
     Node.prototype.toString = function() {
       throw "toString not implemented";
     };
-
+    
     /**
       Mutates at least one parameter
       @return this Node
@@ -1489,7 +1613,7 @@ define("asNEAT/nodes/node",
           chance = this.parameterMutationChance,
           parameters = this.mutatableParameters,
           mutated = false;
-
+    
       if (!parameters || parameters.length===0) {
         Utils.log('no mutation parameters');
         return this;
@@ -1500,14 +1624,14 @@ define("asNEAT/nodes/node",
         mutate(param);
         mutated = true;
       });
-
+    
       if (!mutated) {
         var param = Utils.randomElementIn(parameters);
         mutate(param);
       }
-
+    
       return this;
-
+    
       function mutate(param) {
         Utils.mutateParameter({
           obj: self,
@@ -1520,12 +1644,12 @@ define("asNEAT/nodes/node",
         }, this);
       }
     };
-
+    
     Node.prototype.toJSON = function() {
       var json = this.getParameters();
       return JSON.stringify(json);
     };
-
+    
     /**
       Creates a random node
       @return Node
@@ -1533,7 +1657,7 @@ define("asNEAT/nodes/node",
     Node.random = function() {
       throw "static random not implemented";
     };
-
+    
     __exports__["default"] = Node;
   });
 define("asNEAT/nodes/noteOscillatorNode", 
@@ -1543,7 +1667,9 @@ define("asNEAT/nodes/noteOscillatorNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "NoteOscillatorNode";
     /**
       An OscillatorNode that clamps its frequency to an
@@ -1552,14 +1678,14 @@ define("asNEAT/nodes/noteOscillatorNode",
     var NoteOscillatorNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     NoteOscillatorNode.prototype = Object.create(Node.prototype);
     NoteOscillatorNode.prototype.name = name;
     NoteOscillatorNode.prototype.defaultParameters = {
       name: name,
-
+    
       type: 0,
-
+    
       // Offset from root (currently A4=440) to play
       // @note This parameter isn't evolved but is useful when
       // playing a set note from either an onscreen or MIDI keyboard
@@ -1574,13 +1700,13 @@ define("asNEAT/nodes/noteOscillatorNode",
       attackDuration: 0.2,
       decayDuration: 0.4,
       releaseDuration: 0.2,
-
+    
       // For single playback
       sustainDuration: 0.5,
       
       attackVolume: 1.1,
       sustainVolume: 1.0,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1632,7 +1758,7 @@ define("asNEAT/nodes/noteOscillatorNode",
         }
       ]
     };
-
+    
     NoteOscillatorNode.prototype.clone = function() {
       return new NoteOscillatorNode({
         id: this.id,
@@ -1649,24 +1775,44 @@ define("asNEAT/nodes/noteOscillatorNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     NoteOscillatorNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    NoteOscillatorNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var oscillator = context.createOscillator();
       oscillator.type = this.type;
       oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
           this.stepFromRootNote + this.noteOffset);
-      this.oscNode = oscillator;
-
       var gainNode = context.createGain();
-      this.node = gainNode;
       oscillator.connect(gainNode);
-    };
+    
+      var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
+      var nodeName = prefix ? (prefix + 'Node') : 'node';
+      this[oscName] = oscillator;
+      this[nodeName] = gainNode;
+    }
+    
     NoteOscillatorNode.prototype.play = function() {
+      var gainNode = this.node,
+          oscNode = this.oscNode;
+      play.call(this, gainNode, oscNode);
+    };
+    
+    NoteOscillatorNode.prototype.offlinePlay = function() {
+      var gainNode = this.offlineNode,
+          oscNode = this.offlineOscNode;
+      play.call(this, gainNode, oscNode);
+    };
+    
+    function play(gainNode, oscNode) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-          gainNode = this.node,
-          oscNode = this.oscNode,
           attackVolume = this.attackVolume,
           attackDuration = this.attackDuration,
           sustainVolume = this.sustainVolume,
@@ -1677,8 +1823,8 @@ define("asNEAT/nodes/noteOscillatorNode",
       setTimeout(function() {
         OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
       }, waitTime * 1000);
-    };
-
+    }
+    
     /**
       Plays a note until the return handler is called
       @return function stop
@@ -1699,7 +1845,7 @@ define("asNEAT/nodes/noteOscillatorNode",
         OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
       };
     };
-
+    
     NoteOscillatorNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1718,7 +1864,7 @@ define("asNEAT/nodes/noteOscillatorNode",
         sustainVolume: this.sustainVolume
       };
     };
-
+    
     NoteOscillatorNode.prototype.toString = function() {
       return this.id+": NoteOscillatorNode("+this.type+","+this.noteOffset+
         ", ADSR: "+this.attackDuration.toFixed(2)+" ("+this.attackVolume.toFixed(2)+"), "+
@@ -1726,7 +1872,7 @@ define("asNEAT/nodes/noteOscillatorNode",
                  this.sustainDuration.toFixed(2)+" ("+this.sustainVolume.toFixed(2)+"), "+
                  this.releaseDuration.toFixed(2)+")";
     };
-
+    
     NoteOscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
           noteOffset = Utils.randomIndexIn(-20, 20),
@@ -1734,11 +1880,11 @@ define("asNEAT/nodes/noteOscillatorNode",
           decayDuration = Utils.randomIn(0.01, 1.0),
           releaseDuration = Utils.randomIn(0.01, 1.0),
           attackVolume = Utils.randomIn(0.5, 1.5);
-
+    
       // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
       // Q - 1, with a nominal range of 0.0001 to 1000.
       // gain - 0, with a nominal range of -40 to 40.
-
+    
       return new NoteOscillatorNode({
         type: OscillatorNode.TYPES[typeI],
         noteOffset: noteOffset,
@@ -1748,30 +1894,32 @@ define("asNEAT/nodes/noteOscillatorNode",
         attackVolume: attackVolume
       });
     };
-
+    
     __exports__["default"] = NoteOscillatorNode;
   });
 define("asNEAT/nodes/oscillatorNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "OscillatorNode",
         utils = {},
         A0 = 27.5,
         C6 = 1046.5,
         C8 = 4186.0;
-
+    
     var OscillatorNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     OscillatorNode.prototype = Object.create(Node.prototype);
     OscillatorNode.prototype.name = name;
-
+    
     OscillatorNode.prototype.defaultParameters = {
       type: 0,
       frequency: 1000,
@@ -1784,7 +1932,7 @@ define("asNEAT/nodes/oscillatorNode",
       sustainDuration: 0.5,
       attackVolume: 1.1,
       sustainVolume: 1.0,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -1834,7 +1982,7 @@ define("asNEAT/nodes/oscillatorNode",
         }
       ]
     };
-
+    
     OscillatorNode.prototype.clone = function() {
       return new OscillatorNode({
         id: this.id,
@@ -1851,23 +1999,43 @@ define("asNEAT/nodes/oscillatorNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     OscillatorNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    OscillatorNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var oscillator = context.createOscillator();
       oscillator.type = this.type;
       oscillator.frequency.value = this.frequency;
-      this.oscNode = oscillator;
-
       var gainNode = context.createGain();
-      this.node = gainNode;
       oscillator.connect(gainNode);
-    };
+    
+      var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
+      var nodeName = prefix ? (prefix + 'Node') : 'node';
+      this[oscName] = oscillator;
+      this[nodeName] = gainNode;
+    }
+    
     OscillatorNode.prototype.play = function() {
+      var gainNode = this.node,
+          oscNode = this.oscNode;
+      play.call(this, gainNode, oscNode);
+    };
+    OscillatorNode.prototype.offlinePlay = function() {
+      var gainNode = this.offlineNode,
+          oscNode = this.offlineOscNode;
+      play.call(this, gainNode, oscNode);
+    };
+    
+    function play(gainNode, oscNode) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-          gainNode = this.node,
-          oscNode = this.oscNode,
           attackVolume = this.attackVolume,
           attackDuration = this.attackDuration,
           sustainVolume = this.sustainVolume,
@@ -1878,8 +2046,8 @@ define("asNEAT/nodes/oscillatorNode",
       setTimeout(function() {
         OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
       }, waitTime * 1000);
-    };
-
+    }
+    
     /**
       Plays a note until the return handler is called
       @return function stop
@@ -1900,7 +2068,7 @@ define("asNEAT/nodes/oscillatorNode",
         OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
       };
     };
-
+    
     OscillatorNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -1916,7 +2084,7 @@ define("asNEAT/nodes/oscillatorNode",
         sustainVolume: this.sustainVolume
       };
     };
-
+    
     OscillatorNode.prototype.toString = function() {
       return this.id+": OscillatorNode(t:"+this.type+", f:"+this.frequency.toFixed(2)+
         ", ADSR: "+this.attackDuration.toFixed(2)+" ("+this.attackVolume.toFixed(2)+"), "+
@@ -1924,8 +2092,8 @@ define("asNEAT/nodes/oscillatorNode",
                  this.sustainDuration.toFixed(2)+" ("+this.sustainVolume.toFixed(2)+"), "+
                  this.releaseDuration.toFixed(2)+")";
     };
-
-
+    
+    
     OscillatorNode.TYPES = [
       "sine",
       "square",
@@ -1944,12 +2112,12 @@ define("asNEAT/nodes/oscillatorNode",
           decayDuration = Utils.randomIn(0.01, 1.0),
           releaseDuration = Utils.randomIn(0.01, 1.0),
           attackVolume = Utils.randomIn(0.5, 1.5);
-
+    
       // From w3 spec
       // frequency - 350Hz, with a nominal range of 10 to the Nyquist frequency (half the sample-rate).
       // Q - 1, with a nominal range of 0.0001 to 1000.
       // gain - 0, with a nominal range of -40 to 40.
-
+    
       return new OscillatorNode({
         type: OscillatorNode.TYPES[typeI],
         frequency: freq,
@@ -1959,7 +2127,7 @@ define("asNEAT/nodes/oscillatorNode",
         attackVolume: attackVolume
       });
     };
-
+    
     // All params passed in in case the calling oscillator has changed its parameters before releasing the osc
     OscillatorNode.setupEnvelope = function(gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
       var time = context.currentTime;
@@ -1977,37 +2145,44 @@ define("asNEAT/nodes/oscillatorNode",
       gainNode.gain.linearRampToValueAtTime(0, time + releaseDuration);
       oscNode.stop(time + releaseDuration);
     };
-
+    
     __exports__["default"] = OscillatorNode;
   });
 define("asNEAT/nodes/outNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Node = require('asNEAT/nodes/node')['default'],
         asNEAT = require('asNEAT/asNEAT')['default'],
         context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "OutNode";
-
+    
     var OutNode = function(parameters) {
       Node.call(this, parameters);
-
+    
       // force outNode to have an id of 0 so multiple
       // unlike networks can still be crossed
       this.id = 0;
       
       this.globalGain = asNEAT.globalGain;
-
+      this.offlineGlobalGain = asNEAT.offlineGlobalGain;
+    
       if (!context.supported)
         return;
-
+    
       var localGain = context.createGain();
       localGain.gain.value = 1.0;
       localGain.connect(this.globalGain);
       this.node = localGain;
+    
+      var offlineLocalGain = offlineContext.createGain();
+      offlineLocalGain.gain.value = 1.0;
+      offlineLocalGain.connect(this.offlineGlobalGain);
+      this.offlineNode = offlineLocalGain;
     };
-
+    
     OutNode.prototype = Object.create(Node.prototype);
     OutNode.prototype.name = name;
     OutNode.prototype.defaultParameters = {};
@@ -2016,8 +2191,8 @@ define("asNEAT/nodes/outNode",
         id: this.id
       });
     };
-    OutNode.prototype.refresh = function() {
-    };
+    OutNode.prototype.refresh = function() {};
+    OutNode.prototype.offlineRefresh = function() {};
     OutNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -2027,23 +2202,25 @@ define("asNEAT/nodes/outNode",
     OutNode.prototype.toString = function() {
       return this.id+": OutNode";
     };
-
+    
     __exports__["default"] = OutNode;
   });
 define("asNEAT/nodes/pannerNode", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        context = require('asNEAT/asNEAT')['default'].context,
+        asNEAT = require('asNEAT/asNEAT')['default'],
+        context = asNEAT.context,
+        offlineContext = asNEAT.offlineContext,
         name = "PannerNode";
-
+    
     var PannerNode = function(parameters) {
       Node.call(this, parameters);
     };
-
+    
     PannerNode.prototype = Object.create(Node.prototype);
     PannerNode.prototype.name = name;
     PannerNode.prototype.defaultParameters = {
@@ -2051,7 +2228,7 @@ define("asNEAT/nodes/pannerNode",
       x: 0,
       y: 0,
       z: 0,
-
+    
       parameterMutationChance: 0.1,
       mutatableParameters: [
         {
@@ -2078,7 +2255,7 @@ define("asNEAT/nodes/pannerNode",
         }
       ]
     };
-
+    
     PannerNode.prototype.clone = function() {
       return new PannerNode({
         id: this.id,
@@ -2089,19 +2266,27 @@ define("asNEAT/nodes/pannerNode",
         mutatableParameters: _.cloneDeep(this.mutatableParameters)
       });
     };
-
+    
     // Refreshes the cached node to be played again
     PannerNode.prototype.refresh = function() {
+      refresh.call(this, context);
+    };
+    
+    PannerNode.prototype.offlineRefresh = function() {
+      refresh.call(this, offlineContext, "offline");
+    };
+    
+    function refresh(context, prefix) {
       var node = context.createPanner();
       node.setPosition(this.x, this.y, this.z);
       //node.setVelocity
       //node.setOrientation
       //other parameters: distance model, sound cone, &c...
-
-      // cache the current node?
-      this.node = node;
-    };
-
+    
+      var nodeName = prefix ? (prefix+'Node') : 'node';
+      this[nodeName] = node;
+    }
+    
     PannerNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -2111,43 +2296,43 @@ define("asNEAT/nodes/pannerNode",
         z: this.z.toFixed(2)
       };
     };
-
+    
     PannerNode.prototype.toString = function() {
       return this.id+": PannerNode("+this.x.toFixed(2)+
         ", "+this.y.toFixed(2)+", "+this.z.toFixed(2)+")";
     };
-
+    
     PannerNode.random = function() {
       var x = Utils.randomIn(-5.0, 5.0),
           y = Utils.randomIn(-5.0, 5.0),
           z = Utils.randomIn(-5.0, 5.0);
-
+    
       return new PannerNode({
         x:x,
         y:y,
         z:z
       });
     };
-
+    
     __exports__["default"] = PannerNode;
   });
 define("asNEAT/population", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = require('asNEAT/utils')['default'],
         Network = require('asNEAT/network')['default'],
         log = Utils.log,
         name = "Population";
-
+    
     /**
       A collection of instruments
     */
     var Population = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
     };
-
+    
     Population.prototype.name = name;
     Population.prototype.defaultParameters = {
       networks: [],
@@ -2158,7 +2343,7 @@ define("asNEAT/population",
       crossoverRate: 0.3,
       mutationRate: 1.0
     };
-
+    
     /*
       Creates a deep clone of this Population
      */
@@ -2177,14 +2362,14 @@ define("asNEAT/population",
         mutationRate: this.mutationRate
       });
     };
-
+    
     Population.prototype.toString = function() {
       var str = "Networks["+this.networks.length+"]:<br>";
       str+= "crossoverRate: "+this.crossoverRate+"<br>";
       str+= "mutationRate: "+this.mutationRate+"<br>";
       return str;
     };
-
+    
     Population.prototype.GenerateNewRandomParent = function() {
       var newParent = new Network(this.networkParameters),
           i, num;
@@ -2192,7 +2377,7 @@ define("asNEAT/population",
         newParent.mutate();
       return newParent;
     };
-
+    
     /**
       @param parents an array of networks (can be empty)
       @param params defaultParameters for the population
@@ -2207,18 +2392,18 @@ define("asNEAT/population",
           x, y, i, isCrossed, tempLastMutation;
       while(newPopulation.networks.length < newPopulation.populationCount) {
         isCrossed = false;
-
+    
         if (hasAnyParents)
           x = Utils.randomElementIn(parents);
         else
           x = newPopulation.GenerateNewRandomParent();
-
+    
         if (Utils.randomChance(newPopulation.crossoverRate)) {
           if (!hasAnyParents || hasOnlyOneParent)
             y = newPopulation.GenerateNewRandomParent();
           else
             y = Utils.randomElementIn(parents, x);
-
+    
           x = x.crossWith(y);
           isCrossed = true;
         }
@@ -2226,11 +2411,11 @@ define("asNEAT/population",
         if (Utils.randomChance(newPopulation.mutationRate)) {
           if (isCrossed)
             tempLastMutation = x.lastMutation;
-
+    
           x = x.clone();
           for (i=0; i<numMutations; ++i)
             x.mutate();
-
+    
           if (isCrossed) {
             x.lastMutation.objectsChanged = tempLastMutation.objectsChanged.concat(
               x.lastMutation.objectsChanged);
@@ -2238,23 +2423,23 @@ define("asNEAT/population",
               x.lastMutation.changeDescription;
           }
         }
-
+    
         newPopulation.networks.push(x);
       }
       return newPopulation;
     };
-
+    
     __exports__["default"] = Population;
   });
 define("asNEAT/utils", 
   ["exports"],
   function(__exports__) {
     "use strict";
-
+    
     var Utils = {};
-
+    
     Utils.IS_DEBUG = true;
-
+    
     Utils.log = function(msg) {
       if (!Utils.IS_DEBUG) return;
       
@@ -2262,22 +2447,22 @@ define("asNEAT/utils",
       if (typeof $ !== "undefined")
         $('.log').prepend('<div>'+msg+'</div>');
     };
-
+    
     Utils.error = function(msg) {
       throw msg;
     };
-
+    
     Utils.upperCaseFirstLetter = function(str) {
       return str.charAt(0).toUpperCase() + str.slice(1);
     };
     Utils.lowerCaseFirstLetter = function(str) {
       return str.charAt(0).toLowerCase() + str.slice(1);
     };
-
+    
     Utils.random = function() {
       return Math.random();
     };
-
+    
     /*
       @params (min, max) or ({min, max})
     */
@@ -2288,7 +2473,7 @@ define("asNEAT/utils",
       }
       return Math.random()*(max-min) + min;
     };
-
+    
     /*
       @params (min, max) or ({min, max})
       @param min
@@ -2302,7 +2487,7 @@ define("asNEAT/utils",
       }
       return Math.floor(Utils.randomIn(min, max));
     };
-
+    
     /*
       @param chance {number} [0,1]
       @return If a random number was generated less than the chance
@@ -2310,11 +2495,11 @@ define("asNEAT/utils",
     Utils.randomChance = function(chance) {
       return Utils.random() <= chance;
     };
-
+    
     Utils.randomBool = function() {
       return !!Math.round(Math.random());
     };
-
+    
     /** 
       @param xs {array} [x1, x2,...]
       @param notX An element in xs to not select
@@ -2324,11 +2509,11 @@ define("asNEAT/utils",
       if (xs.length===0) return;
       if (notX)
         return Utils.randomElementIn(_.reject(xs, notX));
-
+    
       var index = Utils.randomIndexIn(0, xs.length);
       return xs[index];
     };
-
+    
     /**
      * Clamps the given number to the min or max
      * @param x 
@@ -2343,7 +2528,7 @@ define("asNEAT/utils",
         return min;
       return x;
     };
-
+    
     //+ Jonas Raoni Soares Silva
     //@ http://jsfromhell.com/array/shuffle [rev. #1]
     Utils.shuffle = function(v) {
@@ -2355,7 +2540,7 @@ define("asNEAT/utils",
           v[j] = x);
       return v;
     };
-
+    
     /*
       @param xs [{weight, element},...] with sum(weights)===1.0
     */
@@ -2371,7 +2556,7 @@ define("asNEAT/utils",
       });
       return element;
     };
-
+    
     /*
       Mutates the given
       @param params
@@ -2379,7 +2564,7 @@ define("asNEAT/utils",
      */
     Utils.mutateParameter = function(params, target) {
       var delta, range, newParam;
-
+    
       _.defaults(params, {
         obj: null,
         parameter: 'param',
@@ -2388,7 +2573,7 @@ define("asNEAT/utils",
         // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
         mutationDeltaChance: 0.8,
         mutationDelta: {min: -0.2, max: 0.2},
-
+    
         mutateDelta: function() {
           if (params.discreteMutation)
             delta = Utils.randomIndexIn(params.mutationDelta);
@@ -2396,28 +2581,28 @@ define("asNEAT/utils",
             delta = Utils.randomIn(params.mutationDelta);
           Utils.log('mutating by delta '+delta.toFixed(3));
           params.obj[params.parameter]+=delta;
-
+    
           return {
             mutatedParameter: params.parameter,
             changeDescription: "by delta "+delta.toFixed(3)
           };
         },
-
+    
         // note: the inverse is also possible (ex (-max, -min]) when
         // allowInverse is true
         randomMutationRange: {min: 0.1, max: 1.5},
-
+    
         mutateRandom: function() {
           range = params.randomMutationRange;
           if (params.discreteMutation)
             newParam = Utils.randomIndexIn(range);
           else
             newParam = Utils.randomIn(range);
-
+    
           // 50% chance of negative
           if (params.allowInverse && Utils.randomBool())
             newParam*=-1;
-
+    
           Utils.log('mutating with new param '+newParam);
           params.obj[params.parameter] = newParam;
           return {
@@ -2425,17 +2610,17 @@ define("asNEAT/utils",
             changeDescription: "to "+newParam
           };
         },
-
+    
         allowInverse: true,
         // true if only integers are allowed (ie for an index), otherwise
         // uses floating point
         discreteMutation: false
       });
-
+    
       Utils.log('mutating('+params.parameter+') '+params.obj);
-
+    
       
-
+    
       // Only change the weight by a given delta
       if (Utils.randomChance(params.mutationDeltaChance))
         return params.mutateDelta.call(target);
@@ -2443,7 +2628,7 @@ define("asNEAT/utils",
       else
         return params.mutateRandom.call(target);
     };
-
+    
     /*
       Generates a reversible unique number from two numbers
     */
@@ -2456,7 +2641,7 @@ define("asNEAT/utils",
       var y = z - t*(t+1)/2;
       return {x:x, y:y};
     };
-
+    
     /**
       extend function that clones the default parameters
       @param arguments
@@ -2466,11 +2651,11 @@ define("asNEAT/utils",
       // multiple objects
       _.assign(self, _.cloneDeep(defaultParameters), parameters);
     };
-
+    
     Utils.roundTo2Places = function(num) {
       return +(Math.round(num + "e+2")  + "e-2");
     };
-
+    
     var TWELTH_ROOT = Math.pow(2,1/12);
     var A4 = 440;
     var DISTANCE_FROM_A = {
@@ -2485,7 +2670,7 @@ define("asNEAT/utils",
       var steps = Utils.stepsFromRootNote(note);
       return Utils.frequencyOfStepsFromRootNote(steps);
     };
-
+    
     Utils.stepsFromRootNote = function(note) {
       note = note.toLowerCase().split('');
       var letter = note[0],
@@ -2496,26 +2681,26 @@ define("asNEAT/utils",
         ++steps;
       else if (modifier==='b')
         --steps;
-
+    
       steps+= 12 * (octave-4);
       return steps;
     };
-
+    
     Utils.noteForFrequency = function() {
       // TODO: reverse frequencyForNote
       // TODO: Tests for frequencyForNote(noteForFrequency(x))===x
     };
-
+    
     Utils.frequencyOfStepsFromRootNote = function(steps) {
       return A4 * Math.pow(TWELTH_ROOT, steps);
     };
-
+    
     var HashLength = 6;
     var HashCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     Utils.createHash = function(len, chars) {
       if (typeof len === "undefined") len = HashLength;
       if (typeof chars === "undefined") chars = HashCharacters;
-
+    
       var i = 0, hash=[];
       for (; i<len; ++i) {
         hash.push(chars.charAt(
@@ -2523,7 +2708,7 @@ define("asNEAT/utils",
       }
       return hash.join("");
     };
-
+    
     __exports__["default"] = Utils;
   });
 //# sourceMappingURL=asNEAT.js.map
