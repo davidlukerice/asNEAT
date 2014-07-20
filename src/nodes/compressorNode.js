@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "CompressorNode";
 
 var CompressorNode = function(parameters) {
@@ -102,6 +104,14 @@ CompressorNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 CompressorNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
+
+CompressorNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   var node = context.createDynamicsCompressor();
   node.threshold.value = this.threshold;
   node.knee.value = this.knee;
@@ -110,9 +120,9 @@ CompressorNode.prototype.refresh = function() {
   node.attack.value = this.attack;
   node.release.value = this.release;
 
-  // cache the current node?
-  this.node = node;
-};
+  var nodeName = prefix ? (prefix+'Node') : 'node';
+  this[nodeName] = node;
+}
 
 CompressorNode.prototype.getParameters = function() {
   return {

@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "ConvolverNode";
 
 var ConvolverNode = function(parameters) {
@@ -42,10 +44,20 @@ ConvolverNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 ConvolverNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
+
+ConvolverNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   var node = context.createConvolver();
   node.buffer = this.audioBuffer;
-  this.node = node;
-};
+
+  var nodeName = prefix ? (prefix+'Node') : 'node';
+  this[nodeName] = node;
+}
 
 ConvolverNode.prototype.getParameters = function() {
   return {

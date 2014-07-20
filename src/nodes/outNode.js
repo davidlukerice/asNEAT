@@ -37,10 +37,8 @@ OutNode.prototype.clone = function() {
     id: this.id
   });
 };
-OutNode.prototype.refresh = function() {
-};
-OutNode.prototype.offlineRefresh = function() {
-};
+OutNode.prototype.refresh = function() {};
+OutNode.prototype.offlineRefresh = function() {};
 OutNode.prototype.getParameters = function() {
   return {
     name: name,

@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "OscillatorNode",
     utils = {},
     A0 = 27.5,
@@ -97,20 +99,40 @@ OscillatorNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 OscillatorNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
+
+OscillatorNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   var oscillator = context.createOscillator();
   oscillator.type = this.type;
   oscillator.frequency.value = this.frequency;
-  this.oscNode = oscillator;
-
   var gainNode = context.createGain();
-  this.node = gainNode;
   oscillator.connect(gainNode);
-};
+
+  var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
+  var nodeName = prefix ? (prefix + 'Node') : 'node';
+  this[oscName] = oscillator;
+  this[nodeName] = gainNode;
+}
+
 OscillatorNode.prototype.play = function() {
+  var gainNode = this.node,
+      oscNode = this.oscNode;
+  play.call(this, gainNode, oscNode);
+};
+OscillatorNode.prototype.offlinePlay = function() {
+  var gainNode = this.offlineNode,
+      oscNode = this.offlineOscNode;
+  play.call(this, gainNode, oscNode);
+};
+
+function play(gainNode, oscNode) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-      gainNode = this.node,
-      oscNode = this.oscNode,
       attackVolume = this.attackVolume,
       attackDuration = this.attackDuration,
       sustainVolume = this.sustainVolume,
@@ -121,7 +143,7 @@ OscillatorNode.prototype.play = function() {
   setTimeout(function() {
     OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
   }, waitTime * 1000);
-};
+}
 
 /**
   Plays a note until the return handler is called

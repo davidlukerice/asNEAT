@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "FeedbackDelayNode";
 
 var FeedbackDelayNode = function(parameters) {
@@ -48,7 +50,14 @@ FeedbackDelayNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 FeedbackDelayNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
 
+FeedbackDelayNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   // base passthrough gain
   var passthroughGain = context.createGain();
   passthroughGain.gain.value = 1.0;
@@ -64,8 +73,10 @@ FeedbackDelayNode.prototype.refresh = function() {
   delayNode.connect(feedbackGainNode);
   feedbackGainNode.connect(passthroughGain);
 
-  this.node = passthroughGain;
-};
+  var nodeName = prefix ? (prefix+'Node') : 'node';
+  this[nodeName] = passthroughGain;
+}
+
 
 FeedbackDelayNode.prototype.getParameters = function() {
   return {

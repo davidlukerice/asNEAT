@@ -1,7 +1,9 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    context = asNEAT.context,
+    offlineContext = asNEAT.offlineContext,
     name = "FilterNode",
     freqMin = 0,
     freqMax = 1500,
@@ -73,6 +75,14 @@ FilterNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 FilterNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
+
+FilterNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   var node = context.createBiquadFilter();
   node.type = this.type;
   node.frequency.value = this.frequency;
@@ -80,9 +90,9 @@ FilterNode.prototype.refresh = function() {
   node.Q.value = this.q;
   node.gain.value = this.gain;
 
-  // cache the current node?
-  this.node = node;
-};
+  var nodeName = prefix ? (prefix+'Node') : 'node';
+  this[nodeName] = node;
+}
 
 FilterNode.prototype.getParameters = function() {
   return {

@@ -112,49 +112,41 @@ NoteOscillatorNode.prototype.clone = function() {
 
 // Refreshes the cached node to be played again
 NoteOscillatorNode.prototype.refresh = function() {
+  refresh.call(this, context);
+};
+NoteOscillatorNode.prototype.offlineRefresh = function() {
+  refresh.call(this, offlineContext, "offline");
+};
+
+function refresh(context, prefix) {
   var oscillator = context.createOscillator();
   oscillator.type = this.type;
   oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
       this.stepFromRootNote + this.noteOffset);
-  this.oscNode = oscillator;
-
   var gainNode = context.createGain();
-  this.node = gainNode;
   oscillator.connect(gainNode);
-};
-NoteOscillatorNode.prototype.offlineRefresh = function() {
-  var oscillator = offlineContext.createOscillator();
-  oscillator.type = this.type;
-  oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
-    this.stepFromRootNote + this.noteOffset);
-  this.offlineOscNode = oscillator;
 
-  var gainNode = offlineContext.createGain();
-  this.offlineNode = gainNode;
-};
+  var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
+  var nodeName = prefix ? (prefix + 'Node') : 'node';
+  this[oscName] = oscillator;
+  this[nodeName] = gainNode;
+}
 
 NoteOscillatorNode.prototype.play = function() {
-  var self = this,
-      waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-      gainNode = this.node,
-      oscNode = this.oscNode,
-      attackVolume = this.attackVolume,
-      attackDuration = this.attackDuration,
-      sustainVolume = this.sustainVolume,
-      decayDuration = this.decayDuration,
-      releaseDuration = this.releaseDuration;
-  OscillatorNode.setupEnvelope(gainNode, oscNode,
-    attackVolume, attackDuration, sustainVolume, decayDuration);
-  setTimeout(function() {
-    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-  }, waitTime * 1000);
+  var gainNode = this.node,
+      oscNode = this.oscNode;
+  play.call(this, gainNode, oscNode);
 };
 
 NoteOscillatorNode.prototype.offlinePlay = function() {
+  var gainNode = this.offlineNode,
+      oscNode = this.offlineOscNode;
+  play.call(this, gainNode, oscNode);
+};
+
+function play(gainNode, oscNode) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-      gainNode = this.offlineNode,
-      oscNode = this.offlineOscNode,
       attackVolume = this.attackVolume,
       attackDuration = this.attackDuration,
       sustainVolume = this.sustainVolume,
@@ -165,7 +157,7 @@ NoteOscillatorNode.prototype.offlinePlay = function() {
   setTimeout(function() {
     OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
   }, waitTime * 1000);
-};
+}
 
 /**
   Plays a note until the return handler is called
