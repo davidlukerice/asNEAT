@@ -48,7 +48,7 @@ FilterNode.prototype.defaultParameters = {
       amplitudeScaling: {min: freqMin, max: freqMax}
     },
     {
-      name: "q",
+      name: "Q",
       amplitudeScaling: {min: qMin, max: qMin}
     },
     {
