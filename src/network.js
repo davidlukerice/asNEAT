@@ -4,7 +4,9 @@ var Utils = require('asNEAT/utils')['default'],
     OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
     OutNode = require('asNEAT/nodes/outNode')['default'],
     Connection = require('asNEAT/connection')['default'],
-    nodeTypes = require('asNEAT/asNEAT')['default'].nodeTypes,
+    asNEAT = require('asNEAT/asNEAT')['default'],
+    offlineContext = asNEAT.offlineContext,
+    nodeTypes = asNEAT.nodeTypes,
     log = Utils.log,
     name = "Network",
     globalOutNode = new OutNode();
@@ -180,13 +182,21 @@ Network.prototype.playHold = function() {
 };
 
 /**
-  @param callback function(data)
+  @param callback function(AudioBuffer)
 */
 Network.prototype.offlinePlay = function(callback) {
   playPrep.call(this, "offlineRefresh", "offlineConnect");
+  // play the offline oscillators
+  _.forEach(this.nodes, function(node) {
+    if (node.offlinePlay)
+      node.offlinePlay();
+  });
 
-  // TODO Play the actual thing
-  callback("todo: some real data?");
+  offlineContext.oncomplete = function(e) {
+    callback(e.renderedBuffer);
+  };
+  // TODO: Change to promise once implemented in browsers
+  offlineContext.startRendering();
 };
 
 function playPrep(refreshHandlerName, connectHandlerName) {
