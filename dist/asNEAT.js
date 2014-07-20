@@ -395,7 +395,8 @@ define("asNEAT/network",
       });
     
       offlineContext.oncomplete = function(e) {
-        callback(e.renderedBuffer);
+        if (typeof callback === "function")
+          callback(e.renderedBuffer);
       };
       // TODO: Change to promise once implemented in browsers
       offlineContext.startRendering();
