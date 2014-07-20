@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-07-14 */
+/* asNEAT 0.2.0 2014-07-19 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -13,26 +13,14 @@ define("asNEAT/asNEAT",
     if (typeof ns.context.supported === 'undefined')
       ns.context.supported = true;
 
-    window.OfflineAudioContext = window.OfflineAudioContext ||
-      window.webkitOfflineAudioContext ||
-      function() {this.supported = false;};
-    ns.offlineContext = new window.OfflineAudioContext();
-    if (typeof ns.offlineContext.supported === 'undefined')
-      ns.offlineContext.supported = true;
-
     // only create the gain if context is found
     // (helps on tests)
-    if (ns.context.supported) {
+    if (ns.context.createGain) {
       ns.globalGain = ns.context.createGain();
       ns.globalGain.gain.value = 0.5;
       ns.globalGain.connect(ns.context.destination);
     }
 
-    if (ns.offlineContext.supported) {
-      ns.offlineGlobalGain = ns.offlineContext.createGain();
-      ns.offlineGlobalGain.gain.value = 0.5;
-      ns.offlineGlobalGain.connect(ns.OfflineAudioContext.destination);
-    }
 
     // All the registered usable nodes
     // TODO: Give weights for selection in mutation?
@@ -1242,7 +1230,7 @@ define("asNEAT/nodes/filterNode",
           amplitudeScaling: {min: freqMin, max: freqMax}
         },
         {
-          name: "q",
+          name: "Q",
           amplitudeScaling: {min: qMin, max: qMin}
         },
         {
@@ -1474,21 +1462,11 @@ define("asNEAT/nodes/node",
       throw "clone not implemented";
     };
 
-
-    // TODO: Merge refresh and offline refresh?
-
     /**
       Refreshes any web audio context nodes
     */
     Node.prototype.refresh = function() {
       throw "refresh not implemented";
-    };
-
-    /**
-      Refreshes any web audio offline nodes
-    */
-    Node.prototype.offlineRefresh = function() {
-      throw "offline refresh not implemented";
     };
 
     /**
@@ -1565,9 +1543,7 @@ define("asNEAT/nodes/noteOscillatorNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
+        context = require('asNEAT/asNEAT')['default'].context,
         name = "NoteOscillatorNode";
     /**
       An OscillatorNode that clamps its frequency to an
@@ -1686,39 +1662,11 @@ define("asNEAT/nodes/noteOscillatorNode",
       this.node = gainNode;
       oscillator.connect(gainNode);
     };
-    NoteOscillatorNode.prototype.offlineRefresh = function() {
-      var oscillator = offlineContext.createOscillator();
-      oscillator.type = this.type;
-      oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
-        this.stepFromRootNote + this.noteOffset);
-      this.offlineOscNode = oscillator;
-
-      var gainNode = offlineContext.createGain();
-      this.offlineNode = gainNode;
-    };
-
     NoteOscillatorNode.prototype.play = function() {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           gainNode = this.node,
           oscNode = this.oscNode,
-          attackVolume = this.attackVolume,
-          attackDuration = this.attackDuration,
-          sustainVolume = this.sustainVolume,
-          decayDuration = this.decayDuration,
-          releaseDuration = this.releaseDuration;
-      OscillatorNode.setupEnvelope(gainNode, oscNode,
-        attackVolume, attackDuration, sustainVolume, decayDuration);
-      setTimeout(function() {
-        OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-      }, waitTime * 1000);
-    };
-
-    NoteOscillatorNode.prototype.offlinePlay = function() {
-      var self = this,
-          waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
-          gainNode = this.offlineNode,
-          oscNode = this.offlineOscNode,
           attackVolume = this.attackVolume,
           attackDuration = this.attackDuration,
           sustainVolume = this.sustainVolume,
@@ -2040,7 +1988,6 @@ define("asNEAT/nodes/outNode",
     var Node = require('asNEAT/nodes/node')['default'],
         asNEAT = require('asNEAT/asNEAT')['default'],
         context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "OutNode";
 
     var OutNode = function(parameters) {
@@ -2051,7 +1998,6 @@ define("asNEAT/nodes/outNode",
       this.id = 0;
       
       this.globalGain = asNEAT.globalGain;
-      this.offlineGlobalGain = asNEAT.offlineGlobalGain;
 
       if (!context.supported)
         return;
@@ -2060,10 +2006,6 @@ define("asNEAT/nodes/outNode",
       localGain.gain.value = 1.0;
       localGain.connect(this.globalGain);
       this.node = localGain;
-
-      var offlineLocalGain = offlineContext.createGain();
-      offlineLocalGain.gain.value = 1.0;
-      offlineLocalGain.connect(this.offlineGlobal);
     };
 
     OutNode.prototype = Object.create(Node.prototype);
@@ -2075,8 +2017,6 @@ define("asNEAT/nodes/outNode",
       });
     };
     OutNode.prototype.refresh = function() {
-    };
-    OutNode.prototype.offlineRefresh = function() {
     };
     OutNode.prototype.getParameters = function() {
       return {
@@ -2586,3 +2526,4 @@ define("asNEAT/utils",
 
     __exports__["default"] = Utils;
   });
+//# sourceMappingURL=asNEAT.js.map
