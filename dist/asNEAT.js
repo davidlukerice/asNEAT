@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-07-20 */
+/* asNEAT 0.2.0 2014-07-21 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -16,9 +16,6 @@ define("asNEAT/asNEAT",
     window.OfflineAudioContext = window.OfflineAudioContext ||
       window.webkitOfflineAudioContext ||
       function() {this.supported = false;};
-    ns.offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100);
-    if (typeof ns.offlineContext.supported === 'undefined')
-      ns.offlineContext.supported = true;
     
     // only create the gain if context is found
     // (helps on tests)
@@ -28,11 +25,27 @@ define("asNEAT/asNEAT",
       ns.globalGain.connect(ns.context.destination);
     }
     
-    if (ns.offlineContext.supported) {
-      ns.offlineGlobalGain = ns.offlineContext.createGain();
-      ns.offlineGlobalGain.gain.value = 0.5;
-      ns.offlineGlobalGain.connect(ns.offlineContext.destination);
-    }
+    /**
+      Get a new usable offlineContext since you can only
+      render a single time for each one (aka, can't reuse)
+    */
+    ns.createOfflineContextAndGain = function() {
+      var offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100),
+          offlineGlobalGain;
+      if (typeof offlineContext.supported === 'undefined')
+        offlineContext.supported = true;
+    
+      if (offlineContext.supported) {
+        offlineGlobalGain = offlineContext.createGain();
+        offlineGlobalGain.gain.value = ns.globalGain.value;
+        offlineGlobalGain.connect(offlineContext.destination);
+      }
+    
+      return {
+        context: offlineContext,
+        globalGain: offlineGlobalGain
+      };
+    };
     
     // All the registered usable nodes
     // TODO: Give weights for selection in mutation?
@@ -115,14 +128,14 @@ define("asNEAT/connection",
         discreteMutation: this.discreteMutation
       });
     };
-    Connection.prototype.connect = function() {
-      connect.call(this, context);
+    Connection.prototype.connect = function(contextPair) {
+      connect.call(this, contextPair);
     };
-    Connection.prototype.offlineConnect = function() {
-      connect.call(this, offlineContext, "offline");
+    Connection.prototype.offlineConnect = function(contextPair) {
+      connect.call(this, contextPair, "offline");
     };
     
-    function connect(context, accessorPrefix) {
+    function connect(contextPair, accessorPrefix) {
       if (!this.enabled) return;
     
       accessorPrefix = accessorPrefix || "";
@@ -130,7 +143,7 @@ define("asNEAT/connection",
     
       // The gainNode is what carries the connection's 
       // weight attribute
-      this.gainNode = context.createGain();
+      this.gainNode = contextPair.context.createGain();
       this.gainNode.gain.value = this.weight;
       this.sourceNode[accessor].connect(this.gainNode);
     
@@ -207,7 +220,6 @@ define("asNEAT/network",
         OutNode = require('asNEAT/nodes/outNode')['default'],
         Connection = require('asNEAT/connection')['default'],
         asNEAT = require('asNEAT/asNEAT')['default'],
-        offlineContext = asNEAT.offlineContext,
         nodeTypes = asNEAT.nodeTypes,
         log = Utils.log,
         name = "Network",
@@ -350,12 +362,13 @@ define("asNEAT/network",
       return newNetwork;
     };
     Network.prototype.play = function() {
+      var context = asNEAT.context;
       playPrep.call(this);
     
       // play the oscillators
       _.forEach(this.nodes, function(node) {
         if (node.play)
-          node.play();
+          node.play(context);
       });
     
       return this;
@@ -366,6 +379,7 @@ define("asNEAT/network",
       @return function stop
     **/
     Network.prototype.playHold = function() {
+      var context = asNEAT.context;
       playPrep.call(this);
     
       var stopHandlers = [];
@@ -373,7 +387,7 @@ define("asNEAT/network",
       // play the oscillators
       _.forEach(this.nodes, function(node) {
         if (node.playHold)
-          stopHandlers.push(node.playHold());
+          stopHandlers.push(node.playHold(context));
       });
     
       return function stop() {
@@ -387,34 +401,44 @@ define("asNEAT/network",
       @param callback function(AudioBuffer)
     */
     Network.prototype.offlinePlay = function(callback) {
-      playPrep.call(this, "offlineRefresh", "offlineConnect");
+      var contextPair = asNEAT.createOfflineContextAndGain();
+      playPrep.call(this, contextPair, "offlineRefresh", "offlineConnect");
       // play the offline oscillators
       _.forEach(this.nodes, function(node) {
         if (node.offlinePlay)
-          node.offlinePlay();
+          node.offlinePlay(contextPair.context);
       });
     
-      offlineContext.oncomplete = function(e) {
+      contextPair.context.oncomplete = function(e) {
         if (typeof callback === "function")
           callback(e.renderedBuffer);
       };
       // TODO: Change to promise once implemented in browsers
-      offlineContext.startRendering();
+      contextPair.context.startRendering();
     };
     
-    function playPrep(refreshHandlerName, connectHandlerName) {
+    /**
+      @param contextPair {context, globalGain}
+      @param refreshHandlerName string
+      @param connectHandlerName string
+    */
+    function playPrep(contextPair, refreshHandlerName, connectHandlerName) {
+      contextPair = contextPair || {
+        context: asNEAT.context,
+        globalGain: asNEAT.globalGain
+      };
       refreshHandlerName = refreshHandlerName || "refresh";
       connectHandlerName = connectHandlerName || "connect";
     
       // refresh all the nodes since each can only play 
       // once (note: changing in the current webAudio draft)
       _.forEach(this.nodes, function(node) {
-        node[refreshHandlerName]();
+        node[refreshHandlerName](contextPair);
       });
     
       // setup all the connections
       _.forEach(this.connections, function(connection) {
-        connection[connectHandlerName]();
+        connection[connectHandlerName](contextPair);
       });
     }
     
@@ -831,9 +855,6 @@ define("asNEAT/nodes/compressorNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "CompressorNode";
     
     var CompressorNode = function(parameters) {
@@ -933,16 +954,16 @@ define("asNEAT/nodes/compressorNode",
     };
     
     // Refreshes the cached node to be played again
-    CompressorNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    CompressorNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    CompressorNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    CompressorNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var node = context.createDynamicsCompressor();
+    function refresh(contextPair, prefix) {
+      var node = contextPair.context.createDynamicsCompressor();
       node.threshold.value = this.threshold;
       node.knee.value = this.knee;
       node.ratio.value = this.ratio;
@@ -1004,9 +1025,7 @@ define("asNEAT/nodes/convolverNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
+        context = require('asNEAT/asNEAT')['default'].context,
         name = "ConvolverNode";
     
     var ConvolverNode = function(parameters) {
@@ -1045,17 +1064,16 @@ define("asNEAT/nodes/convolverNode",
     };
     
     
-    // Refreshes the cached node to be played again
-    ConvolverNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    ConvolverNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    ConvolverNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    ConvolverNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var node = context.createConvolver();
+    function refresh(contextPair, prefix) {
+      var node = contextPair.context.createConvolver();
       node.buffer = this.audioBuffer;
     
       var nodeName = prefix ? (prefix+'Node') : 'node';
@@ -1089,9 +1107,6 @@ define("asNEAT/nodes/delayNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "DelayNode";
     
     var DelayNode = function(parameters) {
@@ -1126,16 +1141,16 @@ define("asNEAT/nodes/delayNode",
     };
     
     // Refreshes the cached node to be played again
-    DelayNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    DelayNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    DelayNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    DelayNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var delayNode = context.createDelay();
+    function refresh(contextPair, prefix) {
+      var delayNode = contextPair.context.createDelay();
       delayNode.delayTime.value = this.delayTime;
       var nodeName = prefix ? (prefix+'Node') : 'node';
       this[nodeName] = delayNode;
@@ -1169,9 +1184,6 @@ define("asNEAT/nodes/feedbackDelayNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "FeedbackDelayNode";
     
     var FeedbackDelayNode = function(parameters) {
@@ -1216,25 +1228,24 @@ define("asNEAT/nodes/feedbackDelayNode",
       });
     };
     
-    // Refreshes the cached node to be played again
-    FeedbackDelayNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    FeedbackDelayNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    FeedbackDelayNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    FeedbackDelayNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
+    function refresh(contextPair, prefix) {
       // base passthrough gain
-      var passthroughGain = context.createGain();
+      var passthroughGain = contextPair.context.createGain();
       passthroughGain.gain.value = 1.0;
     
-      var delayNode = context.createDelay();
+      var delayNode = contextPair.context.createDelay();
       delayNode.delayTime.value = this.delayTime;
     
       // add an additional gain node for 'delay' feedback
-      var feedbackGainNode = context.createGain();
+      var feedbackGainNode = contextPair.context.createGain();
       feedbackGainNode.gain.value = this.feedbackRatio;
     
       passthroughGain.connect(delayNode);
@@ -1277,9 +1288,6 @@ define("asNEAT/nodes/filterNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "FilterNode",
         freqMin = 0,
         freqMax = 1500,
@@ -1350,16 +1358,16 @@ define("asNEAT/nodes/filterNode",
     };
     
     // Refreshes the cached node to be played again
-    FilterNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    FilterNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    FilterNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    FilterNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var node = context.createBiquadFilter();
+    function refresh(contextPair, prefix) {
+      var node = contextPair.context.createBiquadFilter();
       node.type = this.type;
       node.frequency.value = this.frequency;
       node.detune.value = this.detune;
@@ -1430,9 +1438,6 @@ define("asNEAT/nodes/gainNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "GainNode",
         gainMin = 0.5,
         gainMax = 1.5;
@@ -1481,16 +1486,16 @@ define("asNEAT/nodes/gainNode",
     
     
     // Refreshes the cached node to be played again
-    GainNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    GainNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    GainNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    GainNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var node = context.createGain();
+    function refresh(contextPair, prefix) {
+      var node = contextPair.context.createGain();
       node.gain.value = this.gain;
       var nodeName = prefix ? (prefix+'Node') : 'node';
       this[nodeName] = node;
@@ -1582,15 +1587,17 @@ define("asNEAT/nodes/node",
     
     /**
       Refreshes any web audio context nodes
+      @param contextPair {context, globalGain}
     */
-    Node.prototype.refresh = function() {
+    Node.prototype.refresh = function(contextPair) {
       throw "refresh not implemented";
     };
     
     /**
       Refreshes any web audio offline nodes
+      @param contextPair {context, globalGain}
     */
-    Node.prototype.offlineRefresh = function() {
+    Node.prototype.offlineRefresh = function(contextPair) {
       throw "offline refresh not implemented";
     };
     
@@ -1668,9 +1675,6 @@ define("asNEAT/nodes/noteOscillatorNode",
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
         OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "NoteOscillatorNode";
     /**
       An OscillatorNode that clamps its frequency to an
@@ -1777,20 +1781,19 @@ define("asNEAT/nodes/noteOscillatorNode",
       });
     };
     
-    // Refreshes the cached node to be played again
-    NoteOscillatorNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    NoteOscillatorNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
-    NoteOscillatorNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    NoteOscillatorNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var oscillator = context.createOscillator();
+    function refresh(contextPair, prefix) {
+      var oscillator = contextPair.context.createOscillator();
       oscillator.type = this.type;
       oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
           this.stepFromRootNote + this.noteOffset);
-      var gainNode = context.createGain();
+      var gainNode = contextPair.context.createGain();
       oscillator.connect(gainNode);
     
       var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
@@ -1799,19 +1802,19 @@ define("asNEAT/nodes/noteOscillatorNode",
       this[nodeName] = gainNode;
     }
     
-    NoteOscillatorNode.prototype.play = function() {
+    NoteOscillatorNode.prototype.play = function(context) {
       var gainNode = this.node,
           oscNode = this.oscNode;
-      play.call(this, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode);
     };
     
-    NoteOscillatorNode.prototype.offlinePlay = function() {
+    NoteOscillatorNode.prototype.offlinePlay = function(context) {
       var gainNode = this.offlineNode,
           oscNode = this.offlineOscNode;
-      play.call(this, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode);
     };
     
-    function play(gainNode, oscNode) {
+    function play(context, gainNode, oscNode) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           attackVolume = this.attackVolume,
@@ -1819,18 +1822,18 @@ define("asNEAT/nodes/noteOscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
-      OscillatorNode.setupEnvelope(gainNode, oscNode,
+      OscillatorNode.setupEnvelope(context, gainNode, oscNode,
         attackVolume, attackDuration, sustainVolume, decayDuration);
-      setTimeout(function() {
-        OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-      }, waitTime * 1000);
+    
+      var timeToRelease = context.currentTime + waitTime;
+      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
     }
     
     /**
       Plays a note until the return handler is called
       @return function stop
     **/
-    NoteOscillatorNode.prototype.playHold = function() {
+    NoteOscillatorNode.prototype.playHold = function(context) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           gainNode = this.node,
@@ -1840,10 +1843,11 @@ define("asNEAT/nodes/noteOscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
-      OscillatorNode.setupEnvelope(gainNode, oscNode,
+      OscillatorNode.setupEnvelope(context, gainNode, oscNode,
         attackVolume, attackDuration, sustainVolume, decayDuration);
       return function stop() {
-        OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
+        var timeToRelease = context.currentTime;
+        OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
       };
     };
     
@@ -1905,9 +1909,6 @@ define("asNEAT/nodes/oscillatorNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "OscillatorNode",
         utils = {},
         A0 = 27.5,
@@ -2002,19 +2003,19 @@ define("asNEAT/nodes/oscillatorNode",
     };
     
     // Refreshes the cached node to be played again
-    OscillatorNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    OscillatorNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    OscillatorNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    OscillatorNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var oscillator = context.createOscillator();
+    function refresh(contextPair, prefix) {
+      var oscillator = contextPair.context.createOscillator();
       oscillator.type = this.type;
       oscillator.frequency.value = this.frequency;
-      var gainNode = context.createGain();
+      var gainNode = contextPair.context.createGain();
       oscillator.connect(gainNode);
     
       var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';
@@ -2023,18 +2024,18 @@ define("asNEAT/nodes/oscillatorNode",
       this[nodeName] = gainNode;
     }
     
-    OscillatorNode.prototype.play = function() {
+    OscillatorNode.prototype.play = function(context) {
       var gainNode = this.node,
           oscNode = this.oscNode;
-      play.call(this, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode);
     };
-    OscillatorNode.prototype.offlinePlay = function() {
+    OscillatorNode.prototype.offlinePlay = function(context) {
       var gainNode = this.offlineNode,
           oscNode = this.offlineOscNode;
-      play.call(this, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode);
     };
     
-    function play(gainNode, oscNode) {
+    function play(context, gainNode, oscNode) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           attackVolume = this.attackVolume,
@@ -2042,18 +2043,18 @@ define("asNEAT/nodes/oscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
-      OscillatorNode.setupEnvelope(gainNode, oscNode,
+      OscillatorNode.setupEnvelope(context, gainNode, oscNode,
         attackVolume, attackDuration, sustainVolume, decayDuration);
-      setTimeout(function() {
-        OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-      }, waitTime * 1000);
+      
+      var timeToRelease = context.currentTime + waitTime;
+      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
     }
     
     /**
       Plays a note until the return handler is called
       @return function stop
     **/
-    OscillatorNode.prototype.playHold = function() {
+    OscillatorNode.prototype.playHold = function(context) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           gainNode = this.node,
@@ -2063,10 +2064,11 @@ define("asNEAT/nodes/oscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
-      OscillatorNode.setupEnvelope(gainNode, oscNode,
+      OscillatorNode.setupEnvelope(context, gainNode, oscNode,
         attackVolume, attackDuration, sustainVolume, decayDuration);
       return function stop() {
-        OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
+        var timeToRelease = context.currentTime;
+        OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
       };
     };
     
@@ -2130,7 +2132,7 @@ define("asNEAT/nodes/oscillatorNode",
     };
     
     // All params passed in in case the calling oscillator has changed its parameters before releasing the osc
-    OscillatorNode.setupEnvelope = function(gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
+    OscillatorNode.setupEnvelope = function(context, gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
       var time = context.currentTime;
       gainNode.gain.cancelScheduledValues(time);
       gainNode.gain.value = 1.0;
@@ -2139,12 +2141,22 @@ define("asNEAT/nodes/oscillatorNode",
       gainNode.gain.linearRampToValueAtTime(sustainVolume, time + attackDuration + decayDuration);
       oscNode.start(0);
     };
-    OscillatorNode.setupRelease = function(gainNode, oscNode, releaseDuration) {
-      var time = context.currentTime;
-      gainNode.gain.cancelScheduledValues(0);
-      gainNode.gain.setValueAtTime(gainNode.gain.value, time);
-      gainNode.gain.linearRampToValueAtTime(0, time + releaseDuration);
-      oscNode.stop(time + releaseDuration);
+    
+    /**
+      @param context
+      @param releaseTime (in seconds)
+      @Param gainNode
+      @param oscNode
+      @param releaseDuration
+    */
+    OscillatorNode.setupRelease = function(context, releaseTime, gainNode, oscNode, releaseDuration) {
+      var currentTime = context.currentTime;
+      if (releaseTime <= currentTime)
+        gainNode.gain.cancelScheduledValues(0);
+    
+      gainNode.gain.setValueAtTime(gainNode.gain.value, releaseTime);
+      gainNode.gain.linearRampToValueAtTime(0, releaseTime + releaseDuration);
+      oscNode.stop(releaseTime + releaseDuration);
     };
     
     __exports__["default"] = OscillatorNode;
@@ -2155,9 +2167,6 @@ define("asNEAT/nodes/outNode",
     "use strict";
     
     var Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "OutNode";
     
     var OutNode = function(parameters) {
@@ -2166,22 +2175,6 @@ define("asNEAT/nodes/outNode",
       // force outNode to have an id of 0 so multiple
       // unlike networks can still be crossed
       this.id = 0;
-      
-      this.globalGain = asNEAT.globalGain;
-      this.offlineGlobalGain = asNEAT.offlineGlobalGain;
-    
-      if (!context.supported)
-        return;
-    
-      var localGain = context.createGain();
-      localGain.gain.value = 1.0;
-      localGain.connect(this.globalGain);
-      this.node = localGain;
-    
-      var offlineLocalGain = offlineContext.createGain();
-      offlineLocalGain.gain.value = 1.0;
-      offlineLocalGain.connect(this.offlineGlobalGain);
-      this.offlineNode = offlineLocalGain;
     };
     
     OutNode.prototype = Object.create(Node.prototype);
@@ -2192,8 +2185,21 @@ define("asNEAT/nodes/outNode",
         id: this.id
       });
     };
-    OutNode.prototype.refresh = function() {};
-    OutNode.prototype.offlineRefresh = function() {};
+    
+    OutNode.prototype.refresh = function(contextPair) {
+      var localGain = contextPair.context.createGain();
+      localGain.gain.value = 1.0;
+      localGain.connect(contextPair.globalGain);
+      this.node = localGain;
+    };
+    
+    OutNode.prototype.offlineRefresh = function(contextPair) {
+      var offlineLocalGain = contextPair.context.createGain();
+      offlineLocalGain.gain.value = 1.0;
+      offlineLocalGain.connect(contextPair.globalGain);
+      this.offlineNode = offlineLocalGain;
+    };
+    
     OutNode.prototype.getParameters = function() {
       return {
         name: name,
@@ -2213,9 +2219,6 @@ define("asNEAT/nodes/pannerNode",
     
     var Utils = require('asNEAT/utils')['default'],
         Node = require('asNEAT/nodes/node')['default'],
-        asNEAT = require('asNEAT/asNEAT')['default'],
-        context = asNEAT.context,
-        offlineContext = asNEAT.offlineContext,
         name = "PannerNode";
     
     var PannerNode = function(parameters) {
@@ -2269,16 +2272,16 @@ define("asNEAT/nodes/pannerNode",
     };
     
     // Refreshes the cached node to be played again
-    PannerNode.prototype.refresh = function() {
-      refresh.call(this, context);
+    PannerNode.prototype.refresh = function(contextPair) {
+      refresh.call(this, contextPair);
     };
     
-    PannerNode.prototype.offlineRefresh = function() {
-      refresh.call(this, offlineContext, "offline");
+    PannerNode.prototype.offlineRefresh = function(contextPair) {
+      refresh.call(this, contextPair, "offline");
     };
     
-    function refresh(context, prefix) {
-      var node = context.createPanner();
+    function refresh(contextPair, prefix) {
+      var node = contextPair.context.createPanner();
       node.setPosition(this.x, this.y, this.z);
       //node.setVelocity
       //node.setOrientation
