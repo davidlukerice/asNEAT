@@ -1,7 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    context = require('asNEAT/asNEAT')['default'].context,
     name = "OscillatorNode",
     utils = {},
     A0 = 27.5,
@@ -117,18 +116,18 @@ function refresh(contextPair, prefix) {
   this[nodeName] = gainNode;
 }
 
-OscillatorNode.prototype.play = function() {
+OscillatorNode.prototype.play = function(context) {
   var gainNode = this.node,
       oscNode = this.oscNode;
-  play.call(this, gainNode, oscNode);
+  play.call(this, context, gainNode, oscNode);
 };
-OscillatorNode.prototype.offlinePlay = function() {
+OscillatorNode.prototype.offlinePlay = function(context) {
   var gainNode = this.offlineNode,
       oscNode = this.offlineOscNode;
-  play.call(this, gainNode, oscNode);
+  play.call(this, context, gainNode, oscNode);
 };
 
-function play(gainNode, oscNode) {
+function play(context, gainNode, oscNode) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       attackVolume = this.attackVolume,
@@ -136,18 +135,18 @@ function play(gainNode, oscNode) {
       sustainVolume = this.sustainVolume,
       decayDuration = this.decayDuration,
       releaseDuration = this.releaseDuration;
-  OscillatorNode.setupEnvelope(gainNode, oscNode,
+  OscillatorNode.setupEnvelope(context, gainNode, oscNode,
     attackVolume, attackDuration, sustainVolume, decayDuration);
-  setTimeout(function() {
-    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-  }, waitTime * 1000);
+  
+  var timeToRelease = context.currentTime + waitTime;
+  OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
 }
 
 /**
   Plays a note until the return handler is called
   @return function stop
 **/
-OscillatorNode.prototype.playHold = function() {
+OscillatorNode.prototype.playHold = function(context) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       gainNode = this.node,
@@ -157,10 +156,11 @@ OscillatorNode.prototype.playHold = function() {
       sustainVolume = this.sustainVolume,
       decayDuration = this.decayDuration,
       releaseDuration = this.releaseDuration;
-  OscillatorNode.setupEnvelope(gainNode, oscNode,
+  OscillatorNode.setupEnvelope(context, gainNode, oscNode,
     attackVolume, attackDuration, sustainVolume, decayDuration);
   return function stop() {
-    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
+    var timeToRelease = context.currentTime;
+    OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
   };
 };
 
@@ -224,7 +224,7 @@ OscillatorNode.random = function() {
 };
 
 // All params passed in in case the calling oscillator has changed its parameters before releasing the osc
-OscillatorNode.setupEnvelope = function(gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
+OscillatorNode.setupEnvelope = function(context, gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
   var time = context.currentTime;
   gainNode.gain.cancelScheduledValues(time);
   gainNode.gain.value = 1.0;
@@ -233,12 +233,22 @@ OscillatorNode.setupEnvelope = function(gainNode, oscNode, attackVolume, attackD
   gainNode.gain.linearRampToValueAtTime(sustainVolume, time + attackDuration + decayDuration);
   oscNode.start(0);
 };
-OscillatorNode.setupRelease = function(gainNode, oscNode, releaseDuration) {
-  var time = context.currentTime;
-  gainNode.gain.cancelScheduledValues(0);
-  gainNode.gain.setValueAtTime(gainNode.gain.value, time);
-  gainNode.gain.linearRampToValueAtTime(0, time + releaseDuration);
-  oscNode.stop(time + releaseDuration);
+
+/**
+  @param context
+  @param releaseTime (in seconds)
+  @Param gainNode
+  @param oscNode
+  @param releaseDuration
+*/
+OscillatorNode.setupRelease = function(context, releaseTime, gainNode, oscNode, releaseDuration) {
+  var currentTime = context.currentTime;
+  if (releaseTime <= currentTime)
+    gainNode.gain.cancelScheduledValues(0);
+
+  gainNode.gain.setValueAtTime(gainNode.gain.value, releaseTime);
+  gainNode.gain.linearRampToValueAtTime(0, releaseTime + releaseDuration);
+  oscNode.stop(releaseTime + releaseDuration);
 };
 
 export default OscillatorNode;

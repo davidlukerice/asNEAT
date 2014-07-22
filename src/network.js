@@ -5,7 +5,6 @@ var Utils = require('asNEAT/utils')['default'],
     OutNode = require('asNEAT/nodes/outNode')['default'],
     Connection = require('asNEAT/connection')['default'],
     asNEAT = require('asNEAT/asNEAT')['default'],
-    offlineContext = asNEAT.offlineContext,
     nodeTypes = asNEAT.nodeTypes,
     log = Utils.log,
     name = "Network",
@@ -148,12 +147,13 @@ Network.prototype.crossWith = function(otherNetwork) {
   return newNetwork;
 };
 Network.prototype.play = function() {
+  var context = asNEAT.context;
   playPrep.call(this);
 
   // play the oscillators
   _.forEach(this.nodes, function(node) {
     if (node.play)
-      node.play();
+      node.play(context);
   });
 
   return this;
@@ -164,6 +164,7 @@ Network.prototype.play = function() {
   @return function stop
 **/
 Network.prototype.playHold = function() {
+  var context = asNEAT.context;
   playPrep.call(this);
 
   var stopHandlers = [];
@@ -171,7 +172,7 @@ Network.prototype.playHold = function() {
   // play the oscillators
   _.forEach(this.nodes, function(node) {
     if (node.playHold)
-      stopHandlers.push(node.playHold());
+      stopHandlers.push(node.playHold(context));
   });
 
   return function stop() {
@@ -190,7 +191,7 @@ Network.prototype.offlinePlay = function(callback) {
   // play the offline oscillators
   _.forEach(this.nodes, function(node) {
     if (node.offlinePlay)
-      node.offlinePlay();
+      node.offlinePlay(contextPair.context);
   });
 
   contextPair.context.oncomplete = function(e) {

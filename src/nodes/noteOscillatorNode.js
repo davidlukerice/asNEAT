@@ -128,19 +128,19 @@ function refresh(contextPair, prefix) {
   this[nodeName] = gainNode;
 }
 
-NoteOscillatorNode.prototype.play = function() {
+NoteOscillatorNode.prototype.play = function(context) {
   var gainNode = this.node,
       oscNode = this.oscNode;
-  play.call(this, gainNode, oscNode);
+  play.call(this, context, gainNode, oscNode);
 };
 
-NoteOscillatorNode.prototype.offlinePlay = function() {
+NoteOscillatorNode.prototype.offlinePlay = function(context) {
   var gainNode = this.offlineNode,
       oscNode = this.offlineOscNode;
-  play.call(this, gainNode, oscNode);
+  play.call(this, context, gainNode, oscNode);
 };
 
-function play(gainNode, oscNode) {
+function play(context, gainNode, oscNode) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       attackVolume = this.attackVolume,
@@ -148,18 +148,18 @@ function play(gainNode, oscNode) {
       sustainVolume = this.sustainVolume,
       decayDuration = this.decayDuration,
       releaseDuration = this.releaseDuration;
-  OscillatorNode.setupEnvelope(gainNode, oscNode,
+  OscillatorNode.setupEnvelope(context, gainNode, oscNode,
     attackVolume, attackDuration, sustainVolume, decayDuration);
-  setTimeout(function() {
-    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
-  }, waitTime * 1000);
+
+  var timeToRelease = context.currentTime + waitTime;
+  OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
 }
 
 /**
   Plays a note until the return handler is called
   @return function stop
 **/
-NoteOscillatorNode.prototype.playHold = function() {
+NoteOscillatorNode.prototype.playHold = function(context) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       gainNode = this.node,
@@ -169,10 +169,11 @@ NoteOscillatorNode.prototype.playHold = function() {
       sustainVolume = this.sustainVolume,
       decayDuration = this.decayDuration,
       releaseDuration = this.releaseDuration;
-  OscillatorNode.setupEnvelope(gainNode, oscNode,
+  OscillatorNode.setupEnvelope(context, gainNode, oscNode,
     attackVolume, attackDuration, sustainVolume, decayDuration);
   return function stop() {
-    OscillatorNode.setupRelease(gainNode, oscNode, releaseDuration);
+    var timeToRelease = context.currentTime;
+    OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
   };
 };
 
