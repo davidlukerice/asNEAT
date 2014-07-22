@@ -238,7 +238,7 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
   });
 
   if (typeof afterPrepHandler === "function")
-    afterPrepHandler();
+    afterPrepHandler(contextPair);
 }
 
 /**

@@ -453,7 +453,7 @@ define("asNEAT/network",
       });
     
       if (typeof afterPrepHandler === "function")
-        afterPrepHandler();
+        afterPrepHandler(contextPair);
     }
     
     /**
