@@ -2180,7 +2180,8 @@ define("asNEAT/nodes/outNode",
   function(__exports__) {
     "use strict";
     
-    var Node = require('asNEAT/nodes/node')['default'],
+    var asNEAT = require('asNEAT/asNEAT')['default'],
+        Node = require('asNEAT/nodes/node')['default'],
         name = "OutNode";
     
     var OutNode = function(parameters) {
@@ -2189,6 +2190,14 @@ define("asNEAT/nodes/outNode",
       // force outNode to have an id of 0 so multiple
       // unlike networks can still be crossed
       this.id = 0;
+    
+      if (!asNEAT.context.supported)
+        return;
+    
+      var localGain = asNEAT.context.createGain();
+      localGain.gain.value = 1.0;
+      localGain.connect(asNEAT.globalGain);
+      this.node = localGain;
     };
     
     OutNode.prototype = Object.create(Node.prototype);
@@ -2201,14 +2210,6 @@ define("asNEAT/nodes/outNode",
     };
     
     OutNode.prototype.refresh = function(contextPair) {
-      // Only refresh once
-      if (this.node)
-        return;
-    
-      var localGain = contextPair.context.createGain();
-      localGain.gain.value = 1.0;
-      localGain.connect(contextPair.globalGain);
-      this.node = localGain;
     };
     
     OutNode.prototype.offlineRefresh = function(contextPair) {
