@@ -37,7 +37,7 @@ define("asNEAT/asNEAT",
     
       if (offlineContext.supported) {
         offlineGlobalGain = offlineContext.createGain();
-        offlineGlobalGain.gain.value = ns.globalGain.value;
+        offlineGlobalGain.gain.value = ns.globalGain.gain.value;
         offlineGlobalGain.connect(offlineContext.destination);
       }
     
