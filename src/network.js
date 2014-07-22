@@ -148,7 +148,7 @@ Network.prototype.crossWith = function(otherNetwork) {
 };
 
 /**
-  @param afterPrepHandler Called after all the nodes are refreshed and connected
+  @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
     but before they are played.
 */
 Network.prototype.play = function(afterPrepHandler) {
@@ -166,6 +166,8 @@ Network.prototype.play = function(afterPrepHandler) {
 
 /**
   Plays the network until the return handler is called
+  @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
+    but before they are played.
   @return function stop
 **/
 Network.prototype.playHold = function(afterPrepHandler) {
@@ -189,6 +191,8 @@ Network.prototype.playHold = function(afterPrepHandler) {
 
 /**
   @param callback function(AudioBuffer)
+  @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
+    but before they are played.
 */
 Network.prototype.offlinePlay = function(callback, afterPrepHandler) {
   var contextPair = asNEAT.createOfflineContextAndGain();
@@ -208,6 +212,8 @@ Network.prototype.offlinePlay = function(callback, afterPrepHandler) {
 };
 
 /**
+  @param afterPrepHandler Called after all the nodes are refreshed and connected
+    but before they are played.
   @param contextPair {context, globalGain}
   @param refreshHandlerName string
   @param connectHandlerName string
