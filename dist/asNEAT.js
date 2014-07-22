@@ -1,4 +1,4 @@
-/* asNEAT 0.2.0 2014-07-21 */
+/* asNEAT 0.2.0 2014-07-22 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -363,7 +363,7 @@ define("asNEAT/network",
     };
     
     /**
-      @param afterPrepHandler Called after all the nodes are refreshed and connected
+      @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
         but before they are played.
     */
     Network.prototype.play = function(afterPrepHandler) {
@@ -381,6 +381,8 @@ define("asNEAT/network",
     
     /**
       Plays the network until the return handler is called
+      @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
+        but before they are played.
       @return function stop
     **/
     Network.prototype.playHold = function(afterPrepHandler) {
@@ -404,6 +406,8 @@ define("asNEAT/network",
     
     /**
       @param callback function(AudioBuffer)
+      @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
+        but before they are played.
     */
     Network.prototype.offlinePlay = function(callback, afterPrepHandler) {
       var contextPair = asNEAT.createOfflineContextAndGain();
@@ -423,6 +427,8 @@ define("asNEAT/network",
     };
     
     /**
+      @param afterPrepHandler Called after all the nodes are refreshed and connected
+        but before they are played.
       @param contextPair {context, globalGain}
       @param refreshHandlerName string
       @param connectHandlerName string
@@ -2195,6 +2201,10 @@ define("asNEAT/nodes/outNode",
     };
     
     OutNode.prototype.refresh = function(contextPair) {
+      // Only refresh once
+      if (this.node)
+        return;
+    
       var localGain = contextPair.context.createGain();
       localGain.gain.value = 1.0;
       localGain.connect(contextPair.globalGain);

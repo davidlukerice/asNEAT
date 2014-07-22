@@ -20,6 +20,10 @@ OutNode.prototype.clone = function() {
 };
 
 OutNode.prototype.refresh = function(contextPair) {
+  // Only refresh once
+  if (this.node)
+    return;
+
   var localGain = contextPair.context.createGain();
   localGain.gain.value = 1.0;
   localGain.connect(contextPair.globalGain);
