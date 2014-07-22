@@ -1,9 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    asNEAT = require('asNEAT/asNEAT')['default'],
-    context = asNEAT.context,
-    offlineContext = asNEAT.offlineContext,
     name = "DelayNode";
 
 var DelayNode = function(parameters) {
@@ -38,16 +35,16 @@ DelayNode.prototype.clone = function() {
 };
 
 // Refreshes the cached node to be played again
-DelayNode.prototype.refresh = function() {
-  refresh.call(this, context);
+DelayNode.prototype.refresh = function(contextPair) {
+  refresh.call(this, contextPair);
 };
 
-DelayNode.prototype.offlineRefresh = function() {
-  refresh.call(this, offlineContext, "offline");
+DelayNode.prototype.offlineRefresh = function(contextPair) {
+  refresh.call(this, contextPair, "offline");
 };
 
-function refresh(context, prefix) {
-  var delayNode = context.createDelay();
+function refresh(contextPair, prefix) {
+  var delayNode = contextPair.context.createDelay();
   delayNode.delayTime.value = this.delayTime;
   var nodeName = prefix ? (prefix+'Node') : 'node';
   this[nodeName] = delayNode;

@@ -185,34 +185,44 @@ Network.prototype.playHold = function() {
   @param callback function(AudioBuffer)
 */
 Network.prototype.offlinePlay = function(callback) {
-  playPrep.call(this, "offlineRefresh", "offlineConnect");
+  var contextPair = asNEAT.createOfflineContextAndGain();
+  playPrep.call(this, contextPair, "offlineRefresh", "offlineConnect");
   // play the offline oscillators
   _.forEach(this.nodes, function(node) {
     if (node.offlinePlay)
       node.offlinePlay();
   });
 
-  offlineContext.oncomplete = function(e) {
+  contextPair.context.oncomplete = function(e) {
     if (typeof callback === "function")
       callback(e.renderedBuffer);
   };
   // TODO: Change to promise once implemented in browsers
-  offlineContext.startRendering();
+  contextPair.context.startRendering();
 };
 
-function playPrep(refreshHandlerName, connectHandlerName) {
+/**
+  @param contextPair {context, globalGain}
+  @param refreshHandlerName string
+  @param connectHandlerName string
+*/
+function playPrep(contextPair, refreshHandlerName, connectHandlerName) {
+  contextPair = contextPair || {
+    context: asNEAT.context,
+    globalGain: asNEAT.globalGain
+  };
   refreshHandlerName = refreshHandlerName || "refresh";
   connectHandlerName = connectHandlerName || "connect";
 
   // refresh all the nodes since each can only play 
   // once (note: changing in the current webAudio draft)
   _.forEach(this.nodes, function(node) {
-    node[refreshHandlerName]();
+    node[refreshHandlerName](contextPair);
   });
 
   // setup all the connections
   _.forEach(this.connections, function(connection) {
-    connection[connectHandlerName]();
+    connection[connectHandlerName](contextPair);
   });
 }
 

@@ -1,9 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    asNEAT = require('asNEAT/asNEAT')['default'],
-    context = asNEAT.context,
-    offlineContext = asNEAT.offlineContext,
     name = "FeedbackDelayNode";
 
 var FeedbackDelayNode = function(parameters) {
@@ -48,25 +45,24 @@ FeedbackDelayNode.prototype.clone = function() {
   });
 };
 
-// Refreshes the cached node to be played again
-FeedbackDelayNode.prototype.refresh = function() {
-  refresh.call(this, context);
+FeedbackDelayNode.prototype.refresh = function(contextPair) {
+  refresh.call(this, contextPair);
 };
 
-FeedbackDelayNode.prototype.offlineRefresh = function() {
-  refresh.call(this, offlineContext, "offline");
+FeedbackDelayNode.prototype.offlineRefresh = function(contextPair) {
+  refresh.call(this, contextPair, "offline");
 };
 
-function refresh(context, prefix) {
+function refresh(contextPair, prefix) {
   // base passthrough gain
-  var passthroughGain = context.createGain();
+  var passthroughGain = contextPair.context.createGain();
   passthroughGain.gain.value = 1.0;
 
-  var delayNode = context.createDelay();
+  var delayNode = contextPair.context.createDelay();
   delayNode.delayTime.value = this.delayTime;
 
   // add an additional gain node for 'delay' feedback
-  var feedbackGainNode = context.createGain();
+  var feedbackGainNode = contextPair.context.createGain();
   feedbackGainNode.gain.value = this.feedbackRatio;
 
   passthroughGain.connect(delayNode);

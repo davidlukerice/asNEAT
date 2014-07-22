@@ -57,14 +57,14 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     discreteMutation: this.discreteMutation
   });
 };
-Connection.prototype.connect = function() {
-  connect.call(this, context);
+Connection.prototype.connect = function(contextPair) {
+  connect.call(this, contextPair);
 };
-Connection.prototype.offlineConnect = function() {
-  connect.call(this, offlineContext, "offline");
+Connection.prototype.offlineConnect = function(contextPair) {
+  connect.call(this, contextPair, "offline");
 };
 
-function connect(context, accessorPrefix) {
+function connect(contextPair, accessorPrefix) {
   if (!this.enabled) return;
 
   accessorPrefix = accessorPrefix || "";
@@ -72,7 +72,7 @@ function connect(context, accessorPrefix) {
 
   // The gainNode is what carries the connection's 
   // weight attribute
-  this.gainNode = context.createGain();
+  this.gainNode = contextPair.context.createGain();
   this.gainNode.gain.value = this.weight;
   this.sourceNode[accessor].connect(this.gainNode);
 

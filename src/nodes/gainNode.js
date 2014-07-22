@@ -1,9 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    asNEAT = require('asNEAT/asNEAT')['default'],
-    context = asNEAT.context,
-    offlineContext = asNEAT.offlineContext,
     name = "GainNode",
     gainMin = 0.5,
     gainMax = 1.5;
@@ -52,16 +49,16 @@ GainNode.prototype.clone = function() {
 
 
 // Refreshes the cached node to be played again
-GainNode.prototype.refresh = function() {
-  refresh.call(this, context);
+GainNode.prototype.refresh = function(contextPair) {
+  refresh.call(this, contextPair);
 };
 
-GainNode.prototype.offlineRefresh = function() {
-  refresh.call(this, offlineContext, "offline");
+GainNode.prototype.offlineRefresh = function(contextPair) {
+  refresh.call(this, contextPair, "offline");
 };
 
-function refresh(context, prefix) {
-  var node = context.createGain();
+function refresh(contextPair, prefix) {
+  var node = contextPair.context.createGain();
   node.gain.value = this.gain;
   var nodeName = prefix ? (prefix+'Node') : 'node';
   this[nodeName] = node;

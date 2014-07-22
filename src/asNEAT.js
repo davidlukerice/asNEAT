@@ -11,9 +11,6 @@ if (typeof ns.context.supported === 'undefined')
 window.OfflineAudioContext = window.OfflineAudioContext ||
   window.webkitOfflineAudioContext ||
   function() {this.supported = false;};
-ns.offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100);
-if (typeof ns.offlineContext.supported === 'undefined')
-  ns.offlineContext.supported = true;
 
 // only create the gain if context is found
 // (helps on tests)
@@ -23,11 +20,27 @@ if (ns.context.supported) {
   ns.globalGain.connect(ns.context.destination);
 }
 
-if (ns.offlineContext.supported) {
-  ns.offlineGlobalGain = ns.offlineContext.createGain();
-  ns.offlineGlobalGain.gain.value = 0.5;
-  ns.offlineGlobalGain.connect(ns.offlineContext.destination);
-}
+/**
+  Get a new usable offlineContext since you can only
+  render a single time for each one (aka, can't reuse)
+*/
+ns.createOfflineContextAndGain = function() {
+  var offlineContext = new window.OfflineAudioContext(2, 10 * 44100, 44100),
+      offlineGlobalGain;
+  if (typeof offlineContext.supported === 'undefined')
+    offlineContext.supported = true;
+
+  if (offlineContext.supported) {
+    offlineGlobalGain = offlineContext.createGain();
+    offlineGlobalGain.gain.value = ns.globalGain.value;
+    offlineGlobalGain.connect(offlineContext.destination);
+  }
+
+  return {
+    context: offlineContext,
+    globalGain: offlineGlobalGain
+  };
+};
 
 // All the registered usable nodes
 // TODO: Give weights for selection in mutation?

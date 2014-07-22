@@ -1,9 +1,7 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    asNEAT = require('asNEAT/asNEAT')['default'],
-    context = asNEAT.context,
-    offlineContext = asNEAT.offlineContext,
+    context = require('asNEAT/asNEAT')['default'].context,
     name = "OscillatorNode",
     utils = {},
     A0 = 27.5,
@@ -98,19 +96,19 @@ OscillatorNode.prototype.clone = function() {
 };
 
 // Refreshes the cached node to be played again
-OscillatorNode.prototype.refresh = function() {
-  refresh.call(this, context);
+OscillatorNode.prototype.refresh = function(contextPair) {
+  refresh.call(this, contextPair);
 };
 
-OscillatorNode.prototype.offlineRefresh = function() {
-  refresh.call(this, offlineContext, "offline");
+OscillatorNode.prototype.offlineRefresh = function(contextPair) {
+  refresh.call(this, contextPair, "offline");
 };
 
-function refresh(context, prefix) {
-  var oscillator = context.createOscillator();
+function refresh(contextPair, prefix) {
+  var oscillator = contextPair.context.createOscillator();
   oscillator.type = this.type;
   oscillator.frequency.value = this.frequency;
-  var gainNode = context.createGain();
+  var gainNode = contextPair.context.createGain();
   oscillator.connect(gainNode);
 
   var oscName = prefix ? (prefix + 'OscNode') : 'oscNode';

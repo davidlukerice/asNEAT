@@ -1,9 +1,6 @@
 
 var Utils = require('asNEAT/utils')['default'],
     Node = require('asNEAT/nodes/node')['default'],
-    asNEAT = require('asNEAT/asNEAT')['default'],
-    context = asNEAT.context,
-    offlineContext = asNEAT.offlineContext,
     name = "PannerNode";
 
 var PannerNode = function(parameters) {
@@ -57,16 +54,16 @@ PannerNode.prototype.clone = function() {
 };
 
 // Refreshes the cached node to be played again
-PannerNode.prototype.refresh = function() {
-  refresh.call(this, context);
+PannerNode.prototype.refresh = function(contextPair) {
+  refresh.call(this, contextPair);
 };
 
-PannerNode.prototype.offlineRefresh = function() {
-  refresh.call(this, offlineContext, "offline");
+PannerNode.prototype.offlineRefresh = function(contextPair) {
+  refresh.call(this, contextPair, "offline");
 };
 
-function refresh(context, prefix) {
-  var node = context.createPanner();
+function refresh(contextPair, prefix) {
+  var node = contextPair.context.createPanner();
   node.setPosition(this.x, this.y, this.z);
   //node.setVelocity
   //node.setOrientation

@@ -52,15 +52,17 @@ Node.prototype.clone = function() {
 
 /**
   Refreshes any web audio context nodes
+  @param contextPair {context, globalGain}
 */
-Node.prototype.refresh = function() {
+Node.prototype.refresh = function(contextPair) {
   throw "refresh not implemented";
 };
 
 /**
   Refreshes any web audio offline nodes
+  @param contextPair {context, globalGain}
 */
-Node.prototype.offlineRefresh = function() {
+Node.prototype.offlineRefresh = function(contextPair) {
   throw "offline refresh not implemented";
 };
 
