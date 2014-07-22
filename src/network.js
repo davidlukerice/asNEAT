@@ -146,9 +146,14 @@ Network.prototype.crossWith = function(otherNetwork) {
 
   return newNetwork;
 };
-Network.prototype.play = function() {
+
+/**
+  @param afterPrepHandler Called after all the nodes are refreshed and connected
+    but before they are played.
+*/
+Network.prototype.play = function(afterPrepHandler) {
   var context = asNEAT.context;
-  playPrep.call(this);
+  playPrep.call(this, afterPrepHandler);
 
   // play the oscillators
   _.forEach(this.nodes, function(node) {
@@ -163,9 +168,9 @@ Network.prototype.play = function() {
   Plays the network until the return handler is called
   @return function stop
 **/
-Network.prototype.playHold = function() {
+Network.prototype.playHold = function(afterPrepHandler) {
   var context = asNEAT.context;
-  playPrep.call(this);
+  playPrep.call(this, afterPrepHandler);
 
   var stopHandlers = [];
 
@@ -185,9 +190,9 @@ Network.prototype.playHold = function() {
 /**
   @param callback function(AudioBuffer)
 */
-Network.prototype.offlinePlay = function(callback) {
+Network.prototype.offlinePlay = function(callback, afterPrepHandler) {
   var contextPair = asNEAT.createOfflineContextAndGain();
-  playPrep.call(this, contextPair, "offlineRefresh", "offlineConnect");
+  playPrep.call(this, afterPrepHandler, contextPair, "offlineRefresh", "offlineConnect");
   // play the offline oscillators
   _.forEach(this.nodes, function(node) {
     if (node.offlinePlay)
@@ -207,7 +212,7 @@ Network.prototype.offlinePlay = function(callback) {
   @param refreshHandlerName string
   @param connectHandlerName string
 */
-function playPrep(contextPair, refreshHandlerName, connectHandlerName) {
+function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHandlerName) {
   contextPair = contextPair || {
     context: asNEAT.context,
     globalGain: asNEAT.globalGain
@@ -225,6 +230,9 @@ function playPrep(contextPair, refreshHandlerName, connectHandlerName) {
   _.forEach(this.connections, function(connection) {
     connection[connectHandlerName](contextPair);
   });
+
+  if (typeof afterPrepHandler === "function")
+    afterPrepHandler();
 }
 
 /**
