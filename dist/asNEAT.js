@@ -1,4 +1,4 @@
-/* asNEAT 0.3.0 2014-08-09 */
+/* asNEAT 0.3.1 2014-08-20 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -24,6 +24,14 @@ define("asNEAT/asNEAT",
       ns.globalGain.gain.value = 0.5;
       ns.globalGain.connect(ns.context.destination);
     }
+    
+    // set by network constructor since asNEAT needs to be created
+    ns.globalOutNode = null;
+    ns.resetGlobalOutNode = function() {
+      if (ns.globalOutNode)
+        ns.globalOutNode.resetLocalGain();
+    };
+    ns.resetGlobalOutNode();
     
     /**
       Get a new usable offlineContext since you can only
@@ -54,9 +62,9 @@ define("asNEAT/asNEAT",
       'filterNode',
       'delayNode',
       'feedbackDelayNode',
-      
+    
       //'pannerNode' // Implemented, but doesn't do much without other mutations
-      
+    
       'compressorNode',
       'convolverNode'
     
@@ -222,8 +230,9 @@ define("asNEAT/network",
         asNEAT = require('asNEAT/asNEAT')['default'],
         nodeTypes = asNEAT.nodeTypes,
         log = Utils.log,
-        name = "Network",
-        globalOutNode = new OutNode();
+        name = "Network";
+    
+    asNEAT.globalOutNode = new OutNode();
     
     var Network = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
@@ -235,7 +244,7 @@ define("asNEAT/network",
         // Create a basic onscillator without any offset to start
         var osc = NoteOscillatorNode.random();
         osc.noteOffset = 0;
-        this.nodes.push(globalOutNode);
+        this.nodes.push(asNEAT.globalOutNode);
         this.nodes.push(osc);
       }
       if (this.connections.length===0) {
@@ -441,7 +450,7 @@ define("asNEAT/network",
       refreshHandlerName = refreshHandlerName || "refresh";
       connectHandlerName = connectHandlerName || "connect";
     
-      // refresh all the nodes since each can only play 
+      // refresh all the nodes since each can only play
       // once (note: changing in the current webAudio draft)
       _.forEach(this.nodes, function(node) {
         node[refreshHandlerName](contextPair);
@@ -474,7 +483,7 @@ define("asNEAT/network",
       // and copy connection id/ids (innovation number)
       var mutation = Utils.weightedSelection(mutations);
       mutation.call(this);
-      
+    
       // Clear old changed objects
       _.forEach(this.nodes, function(node) {
         node.hasChanged = false;
@@ -661,12 +670,12 @@ define("asNEAT/network",
     
         // Loop through all non output nodes
         _.forEach(this.nodes, function(sourceNode) {
-          if (sourceNode.name==="OutNode") 
+          if (sourceNode.name==="OutNode")
             return;
           // Create possible connection if it (or its inverse)
           // doesn't exist already
           _.forEach(self.nodes, function(targetNode) {
-            if (usingFM && 
+            if (usingFM &&
                 (!targetNode.connectableParameters ||
                  targetNode.connectableParameters.length === 0))
               return;
@@ -708,11 +717,11 @@ define("asNEAT/network",
                 targetNode: targetNode,
                 // less than one to decrease risk of harsh feedback
                 weight: 0.5
-              }));          
+              }));
             }
           });
         });
-          
+    
         return connections;
       };
     
@@ -2184,6 +2193,10 @@ define("asNEAT/nodes/outNode",
         Node = require('asNEAT/nodes/node')['default'],
         name = "OutNode";
     
+    /**
+      Connections
+      [otherNode] --> [outNode[node] --> outNode[secondaryNode]] --> [globalGain]
+    */
     var OutNode = function(parameters) {
       Node.call(this, parameters);
     
@@ -2194,10 +2207,16 @@ define("asNEAT/nodes/outNode",
       if (!asNEAT.context.supported)
         return;
     
-      var localGain = asNEAT.context.createGain();
-      localGain.gain.value = 1.0;
-      localGain.connect(asNEAT.globalGain);
-      this.node = localGain;
+      // Secondary gain can be used for processor nodes so they
+      // won't loose connections whenever local is refresh (happens
+      // during an asNEAT resetGlobalOutNode during a 'panic' action)
+      var secondaryNode = asNEAT.context.createGain();
+      secondaryNode.gain.value = 1.0;
+      secondaryNode.connect(asNEAT.globalGain);
+      this.secondaryNode = secondaryNode;
+    
+      // Create the internal gain
+      this.resetLocalGain();
     };
     
     OutNode.prototype = Object.create(Node.prototype);
@@ -2217,6 +2236,19 @@ define("asNEAT/nodes/outNode",
       offlineLocalGain.gain.value = 1.0;
       offlineLocalGain.connect(contextPair.globalGain);
       this.offlineNode = offlineLocalGain;
+    };
+    
+    OutNode.prototype.resetLocalGain = function() {
+      var oldGain = this.node;
+      if (oldGain) {
+        oldGain.gain.value = 0;
+        oldGain.disconnect();
+      }
+    
+      var localGain = asNEAT.context.createGain();
+      localGain.gain.value = 1.0;
+      localGain.connect(this.secondaryNode);
+      this.node = localGain;
     };
     
     OutNode.prototype.getParameters = function() {
