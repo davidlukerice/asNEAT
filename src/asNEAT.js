@@ -20,6 +20,14 @@ if (ns.context.supported) {
   ns.globalGain.connect(ns.context.destination);
 }
 
+// set by network constructor since asNEAT needs to be created
+ns.globalOutNode = null;
+ns.resetGlobalOutNode = function() {
+  if (ns.globalOutNode)
+    ns.globalOutNode.resetLocalGain();
+};
+ns.resetGlobalOutNode();
+
 /**
   Get a new usable offlineContext since you can only
   render a single time for each one (aka, can't reuse)
@@ -49,9 +57,9 @@ ns.nodeTypes = [
   'filterNode',
   'delayNode',
   'feedbackDelayNode',
-  
+
   //'pannerNode' // Implemented, but doesn't do much without other mutations
-  
+
   'compressorNode',
   'convolverNode'
 

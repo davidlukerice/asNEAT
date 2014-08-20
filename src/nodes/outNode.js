@@ -3,6 +3,10 @@ var asNEAT = require('asNEAT/asNEAT')['default'],
     Node = require('asNEAT/nodes/node')['default'],
     name = "OutNode";
 
+/**
+  Connections
+  [otherNode] --> [outNode[node] --> outNode[secondaryNode]] --> [globalGain]
+*/
 var OutNode = function(parameters) {
   Node.call(this, parameters);
 
@@ -13,10 +17,16 @@ var OutNode = function(parameters) {
   if (!asNEAT.context.supported)
     return;
 
-  var localGain = asNEAT.context.createGain();
-  localGain.gain.value = 1.0;
-  localGain.connect(asNEAT.globalGain);
-  this.node = localGain;
+  // Secondary gain can be used for processor nodes so they
+  // won't loose connections whenever local is refresh (happens
+  // during an asNEAT resetGlobalOutNode during a 'panic' action)
+  var secondaryNode = asNEAT.context.createGain();
+  secondaryNode.gain.value = 1.0;
+  secondaryNode.connect(asNEAT.globalGain);
+  this.secondaryNode = secondaryNode;
+
+  // Create the internal gain
+  this.resetLocalGain();
 };
 
 OutNode.prototype = Object.create(Node.prototype);
@@ -36,6 +46,19 @@ OutNode.prototype.offlineRefresh = function(contextPair) {
   offlineLocalGain.gain.value = 1.0;
   offlineLocalGain.connect(contextPair.globalGain);
   this.offlineNode = offlineLocalGain;
+};
+
+OutNode.prototype.resetLocalGain = function() {
+  var oldGain = this.node;
+  if (oldGain) {
+    oldGain.gain.value = 0;
+    oldGain.disconnect();
+  }
+
+  var localGain = asNEAT.context.createGain();
+  localGain.gain.value = 1.0;
+  localGain.connect(this.secondaryNode);
+  this.node = localGain;
 };
 
 OutNode.prototype.getParameters = function() {

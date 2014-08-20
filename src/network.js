@@ -7,8 +7,9 @@ var Utils = require('asNEAT/utils')['default'],
     asNEAT = require('asNEAT/asNEAT')['default'],
     nodeTypes = asNEAT.nodeTypes,
     log = Utils.log,
-    name = "Network",
-    globalOutNode = new OutNode();
+    name = "Network";
+
+asNEAT.globalOutNode = new OutNode();
 
 var Network = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
@@ -20,7 +21,7 @@ var Network = function(parameters) {
     // Create a basic onscillator without any offset to start
     var osc = NoteOscillatorNode.random();
     osc.noteOffset = 0;
-    this.nodes.push(globalOutNode);
+    this.nodes.push(asNEAT.globalOutNode);
     this.nodes.push(osc);
   }
   if (this.connections.length===0) {
@@ -226,7 +227,7 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
   refreshHandlerName = refreshHandlerName || "refresh";
   connectHandlerName = connectHandlerName || "connect";
 
-  // refresh all the nodes since each can only play 
+  // refresh all the nodes since each can only play
   // once (note: changing in the current webAudio draft)
   _.forEach(this.nodes, function(node) {
     node[refreshHandlerName](contextPair);
@@ -259,7 +260,7 @@ Network.prototype.mutate = function() {
   // and copy connection id/ids (innovation number)
   var mutation = Utils.weightedSelection(mutations);
   mutation.call(this);
-  
+
   // Clear old changed objects
   _.forEach(this.nodes, function(node) {
     node.hasChanged = false;
@@ -446,12 +447,12 @@ Network.prototype.addConnection = function() {
 
     // Loop through all non output nodes
     _.forEach(this.nodes, function(sourceNode) {
-      if (sourceNode.name==="OutNode") 
+      if (sourceNode.name==="OutNode")
         return;
       // Create possible connection if it (or its inverse)
       // doesn't exist already
       _.forEach(self.nodes, function(targetNode) {
-        if (usingFM && 
+        if (usingFM &&
             (!targetNode.connectableParameters ||
              targetNode.connectableParameters.length === 0))
           return;
@@ -493,11 +494,11 @@ Network.prototype.addConnection = function() {
             targetNode: targetNode,
             // less than one to decrease risk of harsh feedback
             weight: 0.5
-          }));          
+          }));
         }
       });
     });
-      
+
     return connections;
   };
 

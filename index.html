@@ -21,13 +21,12 @@
     <br>
 
     <button class='playClone'>play Clone</button>
-    <br>
-
     <button class="offlinePlay">Offline Play</button>
+    <button class="panic">Panic!</button>
     <br>
 
     <h2>Current Instrument toString</h2>
-    
+
     <div class="currentNetworkToString">
     </div>
 
@@ -49,9 +48,10 @@
 
       !function() {
         $(function() {
-          var log = require('asNEAT/utils')['default'].log,
+          var asNEAT = require('asNEAT/asNEAT')['default'],
+              log = require('asNEAT/utils')['default'].log,
               Network = require('asNEAT/network')['default'];
-          
+
           network = new Network();
 
           refresh();
@@ -100,6 +100,11 @@
             network.offlinePlay(function(data) {
               log('offlinePlay with data: '+JSON.stringify(data));
             });
+          });
+
+          $('button.panic').click(function() {
+            asNEAT.resetGlobalOutNode();
+            refresh();
           });
 
           function refresh() {
