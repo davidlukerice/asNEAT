@@ -23,12 +23,12 @@ if (ns.context.supported) {
 // A list of all created outNodes, so they can all be reset
 // from one place if needed (hard panic reset)
 ns.OutNodes = [];
-ns.resetGlobalOutNodes = function() {
+ns.resetOutNodes = function() {
   _.forEach(ns.OutNodes, function(outNode) {
     outNode.resetLocalGain();
   });
 };
-ns.resetGlobalOutNodes();
+ns.resetOutNodes();
 
 /**
   Get a new usable offlineContext since you can only
