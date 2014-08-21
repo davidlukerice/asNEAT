@@ -21,6 +21,7 @@
     <br>
 
     <button class='playClone'>play Clone</button>
+    <button class='playFromJson'>play create from json</button>
     <button class="offlinePlay">Offline Play</button>
     <button class="panic">Panic!</button>
     <br>
@@ -95,6 +96,9 @@
           $('button.mutateNodeParameters').click(function() {
             network.mutateNodeParameters();
             refresh();
+          });
+          $('button.playFromJson').click(function() {
+            Network.createFromJSON(network.toJSON()).play();
           });
           $('button.offlinePlay').click(function() {
             network.offlinePlay(function(data) {
