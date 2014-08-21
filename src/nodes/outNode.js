@@ -27,6 +27,9 @@ var OutNode = function(parameters) {
 
   // Create the internal gain
   this.resetLocalGain();
+
+  // register the outNode
+  asNEAT.OutNodes.push(this);
 };
 
 OutNode.prototype = Object.create(Node.prototype);

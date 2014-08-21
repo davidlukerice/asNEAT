@@ -622,15 +622,9 @@ Network.createFromJSON = function(json) {
   _.forEach(obj.nodes, function(json) {
     var nodeParams = JSON.parse(json),
         type = Utils.lowerCaseFirstLetter(nodeParams.name),
-        newNode;
-    // if an outNode, use the globalOutNode
-    if (type === 'outNode') {
-      newNode = asNEAT.globalOutNode;
-    } else {
-      var Node = require('asNEAT/nodes/'+type)['default'];
-      newNode = new Node(nodeParams);
-    }
-    createdNodes.push(newNode);
+        Node = require('asNEAT/nodes/'+type)['default'],
+        createdNode = new Node(nodeParams);
+    createdNodes.push(createdNode);
   });
   _.forEach(obj.connections, function(json) {
     var connectionParams = JSON.parse(json),

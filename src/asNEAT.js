@@ -20,13 +20,15 @@ if (ns.context.supported) {
   ns.globalGain.connect(ns.context.destination);
 }
 
-// set by network constructor since asNEAT needs to be created
-ns.globalOutNode = null;
-ns.resetGlobalOutNode = function() {
-  if (ns.globalOutNode)
-    ns.globalOutNode.resetLocalGain();
+// A list of all created outNodes, so they can all be reset
+// from one place if needed (hard panic reset)
+ns.OutNodes = [];
+ns.resetGlobalOutNodes = function() {
+  _.forEach(ns.OutNodes, function(outNode) {
+    outNode.resetLocalGain();
+  });
 };
-ns.resetGlobalOutNode();
+ns.resetGlobalOutNodes();
 
 /**
   Get a new usable offlineContext since you can only
