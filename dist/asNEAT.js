@@ -25,13 +25,15 @@ define("asNEAT/asNEAT",
       ns.globalGain.connect(ns.context.destination);
     }
     
-    // set by network constructor since asNEAT needs to be created
-    ns.globalOutNode = null;
-    ns.resetGlobalOutNode = function() {
-      if (ns.globalOutNode)
-        ns.globalOutNode.resetLocalGain();
+    // A list of all created outNodes, so they can all be reset
+    // from one place if needed (hard panic reset)
+    ns.OutNodes = [];
+    ns.resetGlobalOutNodes = function() {
+      _.forEach(ns.OutNodes, function(outNode) {
+        outNode.resetLocalGain();
+      });
     };
-    ns.resetGlobalOutNode();
+    ns.resetGlobalOutNodes();
     
     /**
       Get a new usable offlineContext since you can only
@@ -845,15 +847,9 @@ define("asNEAT/network",
       _.forEach(obj.nodes, function(json) {
         var nodeParams = JSON.parse(json),
             type = Utils.lowerCaseFirstLetter(nodeParams.name),
-            newNode;
-        // if an outNode, use the globalOutNode
-        if (type === 'outNode') {
-          newNode = asNEAT.globalOutNode;
-        } else {
-          var Node = require('asNEAT/nodes/'+type)['default'];
-          newNode = new Node(nodeParams);
-        }
-        createdNodes.push(newNode);
+            Node = require('asNEAT/nodes/'+type)['default'],
+            createdNode = new Node(nodeParams);
+        createdNodes.push(createdNode);
       });
       _.forEach(obj.connections, function(json) {
         var connectionParams = JSON.parse(json),
@@ -2223,6 +2219,9 @@ define("asNEAT/nodes/outNode",
     
       // Create the internal gain
       this.resetLocalGain();
+    
+      // register the outNode
+      asNEAT.OutNodes.push(this);
     };
     
     OutNode.prototype = Object.create(Node.prototype);
