@@ -1,4 +1,4 @@
-/* asNEAT 0.3.1 2014-08-20 */
+/* asNEAT 0.3.2 2014-08-20 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -28,12 +28,12 @@ define("asNEAT/asNEAT",
     // A list of all created outNodes, so they can all be reset
     // from one place if needed (hard panic reset)
     ns.OutNodes = [];
-    ns.resetGlobalOutNodes = function() {
+    ns.resetOutNodes = function() {
       _.forEach(ns.OutNodes, function(outNode) {
         outNode.resetLocalGain();
       });
     };
-    ns.resetGlobalOutNodes();
+    ns.resetOutNodes();
     
     /**
       Get a new usable offlineContext since you can only
