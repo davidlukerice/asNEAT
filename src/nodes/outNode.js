@@ -33,9 +33,7 @@ OutNode.prototype = Object.create(Node.prototype);
 OutNode.prototype.name = name;
 OutNode.prototype.defaultParameters = {};
 OutNode.prototype.clone = function() {
-  return new OutNode({
-    id: this.id
-  });
+  return this;
 };
 
 OutNode.prototype.refresh = function(contextPair) {
