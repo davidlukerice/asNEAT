@@ -1,4 +1,4 @@
-/* asNEAT 0.3.2 2014-08-20 */
+/* asNEAT 0.3.2 2014-08-23 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -2228,7 +2228,9 @@ define("asNEAT/nodes/outNode",
     OutNode.prototype.name = name;
     OutNode.prototype.defaultParameters = {};
     OutNode.prototype.clone = function() {
-      return this;
+      return new OutNode({
+        id: this.id
+      });
     };
     
     OutNode.prototype.refresh = function(contextPair) {
