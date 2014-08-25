@@ -155,7 +155,7 @@ Utils.InterpolationType = {
   @param params See defaults
   @return {mutatedParameter, changeDescription}
  */
-Utils.mutateParameter = function(params, target) {
+Utils.mutateParameter = function(params) {
   var delta, range, newParam;
 
   _.defaults(params, {
@@ -255,14 +255,12 @@ Utils.mutateParameter = function(params, target) {
 
   Utils.log('mutating('+params.parameter+') '+params.obj);
 
-
-
   // Only change the weight by a given delta
   if (Utils.randomChance(params.mutationDeltaChance))
-    return params.mutateDelta.call(target);
+    return params.mutateDelta();
   // Use a new random weight in range
   else
-    return params.mutateRandom.call(target);
+    return params.mutateRandom();
 };
 
 /*
