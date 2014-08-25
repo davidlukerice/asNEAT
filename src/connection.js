@@ -22,7 +22,7 @@ Connection.prototype.name = name;
 Connection.prototype.defaultParameters = {
   sourceNode: null,
   targetNode: null,
-  
+
   // null if connecting to audio input of targetNode
   targetParameter: null,
   targetParameterNodeName: "node",
@@ -32,8 +32,7 @@ Connection.prototype.defaultParameters = {
 
   mutationDeltaChance: 0.8,
   mutationDelta: {min: -0.2, max: 0.2},
-  randomMutationRange: {min: 0.1, max: 1.5},
-  discreteMutation: false
+  randomMutationRange: {min: 0.1, max: 1.5}
 };
 
 /**
@@ -53,8 +52,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDelta: _.clone(this.mutationDelta),
-    randomMutationRange: _.clone(this.randomMutationRange),
-    discreteMutation: this.discreteMutation
+    randomMutationRange: _.clone(this.randomMutationRange)
   });
 };
 Connection.prototype.connect = function(contextPair) {
@@ -70,7 +68,7 @@ function connect(contextPair, accessorPrefix) {
   accessorPrefix = accessorPrefix || "";
   var accessor = accessorPrefix + (accessorPrefix ? "Node" : "node");
 
-  // The gainNode is what carries the connection's 
+  // The gainNode is what carries the connection's
   // weight attribute
   this.gainNode = contextPair.context.createGain();
   this.gainNode.gain.value = this.weight;
