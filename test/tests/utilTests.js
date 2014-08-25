@@ -82,7 +82,14 @@ test("solveLinearEqn", function() {
 });
 
 test("solveExponentialEqn", function() {
-  // TODO
+  var soln = Utils.solveExponentialEqn(0.1, 1);
+  ok(soln.c === 0.1 &&
+     Number(soln.a.toPrecision(5)) === 2.3026,
+     "(0,0.1),(1,1)");
+  soln = Utils.solveExponentialEqn(0.2, 0.9);
+  ok(soln.c === 0.2 &&
+     Number(soln.a.toPrecision(5)) === 1.5041,
+     "(0,0.2),(1,9)");
 });
 
 test("frequencyForNote", function() {
