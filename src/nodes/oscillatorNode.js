@@ -18,7 +18,7 @@ OscillatorNode.prototype.defaultParameters = {
   type: 0,
   frequency: 1000,
   detune: 0,
-  
+
   // ADSR model
   attackDuration: 0.2,
   decayDuration: 0.4,
@@ -34,7 +34,7 @@ OscillatorNode.prototype.defaultParameters = {
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 4},
-      allowInverse: false,
+      allowRandomInverse: false,
       discreteMutation: true
     },{
       name: 'frequency',
@@ -137,7 +137,7 @@ function play(context, gainNode, oscNode) {
       releaseDuration = this.releaseDuration;
   OscillatorNode.setupEnvelope(context, gainNode, oscNode,
     attackVolume, attackDuration, sustainVolume, decayDuration);
-  
+
   var timeToRelease = context.currentTime + waitTime;
   OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
 }

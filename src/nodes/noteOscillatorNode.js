@@ -21,12 +21,12 @@ NoteOscillatorNode.prototype.defaultParameters = {
   // @note This parameter isn't evolved but is useful when
   // playing a set note from either an onscreen or MIDI keyboard
   stepFromRootNote: 0,
-  
+
   // offset from note determined by root_stepFromRootNote
   noteOffset: 0,
-  
+
   detune: 0,
-  
+
   // ADSR model
   attackDuration: 0.2,
   decayDuration: 0.4,
@@ -34,7 +34,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
 
   // For single playback
   sustainDuration: 0.5,
-  
+
   attackVolume: 1.1,
   sustainVolume: 1.0,
 
@@ -45,7 +45,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 4},
-      allowInverse: false,
+      allowRandomInverse: false,
       discreteMutation: true
     },{
       name: 'noteOffset',

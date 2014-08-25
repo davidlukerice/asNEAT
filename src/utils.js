@@ -5,7 +5,7 @@ Utils.IS_DEBUG = true;
 
 Utils.log = function(msg) {
   if (!Utils.IS_DEBUG) return;
-  
+
   console.log(msg);
   if (typeof $ !== "undefined")
     $('.log').prepend('<div>'+msg+'</div>');
@@ -63,7 +63,7 @@ Utils.randomBool = function() {
   return !!Math.round(Math.random());
 };
 
-/** 
+/**
   @param xs {array} [x1, x2,...]
   @param notX An element in xs to not select
   @return A random element in xs, undefined if xs is empty
@@ -79,7 +79,7 @@ Utils.randomElementIn = function(xs, notX) {
 
 /**
  * Clamps the given number to the min or max
- * @param x 
+ * @param x
  * @param min
  * @param max
  * @return A number in [min, max]
@@ -95,7 +95,7 @@ Utils.clamp = function(x, min, max) {
 //+ Jonas Raoni Soares Silva
 //@ http://jsfromhell.com/array/shuffle [rev. #1]
 Utils.shuffle = function(v) {
-  for(var j, x, i = v.length; 
+  for(var j, x, i = v.length;
     i;
     j = parseInt(Math.random() * i),
       x = v[--i],
@@ -122,26 +122,35 @@ Utils.weightedSelection = function(xs) {
 
 /*
   Mutates the given
-  @param params
+  @param params See defaults
   @return {mutatedParameter, changeDescription}
  */
 Utils.mutateParameter = function(params, target) {
   var delta, range, newParam;
 
   _.defaults(params, {
+    // {obj} Object to mutate
     obj: null,
+    // {string} Which parameter on the obj to mutate
     parameter: 'param',
-    
+
     // Chance of mutating only by an amount in mutation delta
     // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
     mutationDeltaChance: 0.8,
+    // how little or much the parameter will change if mutating by delta
     mutationDelta: {min: -0.2, max: 0.2},
+    allowDeltaInverse: false,
 
     mutateDelta: function() {
       if (params.discreteMutation)
         delta = Utils.randomIndexIn(params.mutationDelta);
       else
         delta = Utils.randomIn(params.mutationDelta);
+
+      // 50% chance of negative
+      if (params.allowDeltaInverse && Utils.randomBool())
+        newParam*=-1;
+
       Utils.log('mutating by delta '+delta.toFixed(3));
       params.obj[params.parameter]+=delta;
 
@@ -152,7 +161,7 @@ Utils.mutateParameter = function(params, target) {
     },
 
     // note: the inverse is also possible (ex (-max, -min]) when
-    // allowInverse is true
+    // allowRandomInverse is true
     randomMutationRange: {min: 0.1, max: 1.5},
 
     mutateRandom: function() {
@@ -163,7 +172,7 @@ Utils.mutateParameter = function(params, target) {
         newParam = Utils.randomIn(range);
 
       // 50% chance of negative
-      if (params.allowInverse && Utils.randomBool())
+      if (params.allowRandomInverse && Utils.randomBool())
         newParam*=-1;
 
       Utils.log('mutating with new param '+newParam);
@@ -174,7 +183,7 @@ Utils.mutateParameter = function(params, target) {
       };
     },
 
-    allowInverse: true,
+    allowRandomInverse: true,
     // true if only integers are allowed (ie for an index), otherwise
     // uses floating point
     discreteMutation: false
@@ -182,7 +191,7 @@ Utils.mutateParameter = function(params, target) {
 
   Utils.log('mutating('+params.parameter+') '+params.obj);
 
-  
+
 
   // Only change the weight by a given delta
   if (Utils.randomChance(params.mutationDeltaChance))

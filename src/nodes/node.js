@@ -37,7 +37,7 @@ Node.prototype.defaultParameters = {
     //  // http://greweb.me/2013/08/FM-audio-api/
     //}
   ]
-}; 
+};
 
 /**
   Creates a cloned node
@@ -112,7 +112,7 @@ Node.prototype.mutate = function() {
       mutationDeltaChance: param.mutationDeltaChance,
       mutationDelta: param.mutationDelta,
       randomMutationRange: param.randomMutationRange,
-      allowInverse: param.allowInverse,
+      allowRandomInverse: param.allowRandomInverse,
       discreteMutation: param.discreteMutation
     }, this);
   }
