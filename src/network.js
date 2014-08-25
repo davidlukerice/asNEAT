@@ -43,8 +43,8 @@ Network.prototype.name = name;
 Network.prototype.defaultParameters = {
   nodes: [],
   connections: [],
-  connectionMutationRate: 0.1,
-  nodeMutationRate: 0.1,
+  connectionMutationRate: 0.2,
+  nodeMutationRate: 0.2,
   // percentage of addOscillatorMutations will
   // generate a node for fm, as opposed to strict audio output
   addOscillatorFMMutationRate: 0.5,
