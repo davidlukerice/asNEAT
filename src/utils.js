@@ -146,6 +146,10 @@ Utils.solveExponentialEqn = function(y0, y1) {
   };
 };
 
+Utils.InterpolationType = {
+  LINEAR: 'linear',
+  EXPONENTIAL: 'exponential'
+};
 /*
   Mutates the given
   @param params See defaults
@@ -160,18 +164,52 @@ Utils.mutateParameter = function(params, target) {
     // {string} Which parameter on the obj to mutate
     parameter: 'param',
 
+    // How y0, y1 will be interpolated
+    interpolationType: Utils.InterpolationType.LINEAR,
+
     // Chance of mutating only by an amount in mutation delta
     // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
     mutationDeltaChance: 0.8,
+
+    // What amount of interpolation should be used [0.0, 1.0]
+    interpolationX: 0.5,
+
     // how little or much the parameter will change if mutating by delta
-    mutationDelta: {min: -0.2, max: 0.2},
-    allowDeltaInverse: false,
+    // {y0,y1} the interpolation min max
+    mutationDelta: {min: {y0:0.05, y1:0.5}, max: {y0:0.2, y1:0.8}},
+    allowDeltaInverse: true,
 
     mutateDelta: function() {
-      if (params.discreteMutation)
-        delta = Utils.randomIndexIn(params.mutationDelta);
+      var delta, minCoef, maxCoef;
+
+      if (typeof params.mutationDelta.min.y0 !== 'undefined')
+        throw "Old mutationDelta without y0,y1 no longer supported";
+
+      // TODO: Needs some sort of testing
+
+      if (params.interpolationType === Utils.InterpolationType.LINEAR) {
+        minCoef = Utils.solveLinearEqn(params.mutationDelta.min.y0, params.mutationDelta.min.y1);
+        maxCoef = Utils.solveLinearEqn(params.mutationDelta.max.y0, params.mutationDelta.max.y1);
+        delta = {
+          min: minCoef.a * params.interpolationX + minCoef.b,
+          max: maxCoef.a * params.interpolationX + maxCoef.b
+        };
+      }
+      else if (params.interpolationType === Utils.InterpolationType.EXPONENTIAL) {
+        minCoef = Utils.solveExponentialEqn(params.mutationDelta.min.y0, params.mutationDelta.min.y1);
+        maxCoef = Utils.solveExponentialEqn(params.mutationDelta.max.y0, params.mutationDelta.max.y1);
+        delta = {
+          min: minCoef.c * Math.exp(minCoef.a * params.interpolationX),
+          max: maxCoef.c * Math.exp(maxCoef.a * params.interpolationX)
+        };
+      }
       else
-        delta = Utils.randomIn(params.mutationDelta);
+        throw "InterpolationType not supported";
+
+      if (params.discreteMutation)
+        delta = Utils.randomIndexIn(delta);
+      else
+        delta = Utils.randomIn(delta);
 
       // 50% chance of negative
       if (params.allowDeltaInverse && Utils.randomBool())
