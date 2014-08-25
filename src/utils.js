@@ -120,6 +120,32 @@ Utils.weightedSelection = function(xs) {
   return element;
 };
 
+/**
+ * Calcuates the linear eqn from x:[0, 1], with given ys
+ * @param {number} y0
+ * @param {number} y1
+ * @return {a, b} For y=ax+b
+ */
+Utils.solveLinearEqn = function(y0, y1) {
+  return {
+    a: y1-y0,
+    b: y0
+  };
+};
+
+/**
+ * Calcuates the exponential eqn from x:[0, 1], with given ys
+ * @param {number} y0
+ * @param {number} y1
+ * @return {c, a} For y=c*e^(a*x)
+ */
+Utils.solveExponentialEqn = function(y0, y1) {
+  return {
+    c: y0,
+    a: Math.log(y1 / y0)
+  };
+};
+
 /*
   Mutates the given
   @param params See defaults

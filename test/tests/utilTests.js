@@ -70,6 +70,21 @@ test("roundTo2Places", function() {
   equal(Utils.roundTo2Places(1.0049), 1.00, 'round down');
 });
 
+test("solveLinearEqn", function() {
+  var soln = Utils.solveLinearEqn(0, 1);
+  ok(soln.a === 1 && soln.b === 0, "(0,0),(1,1) y=x");
+  soln = Utils.solveLinearEqn(1, 1);
+  ok(soln.a === 0 && soln.b === 1, "(0,1),(1,1) constant");
+  soln = Utils.solveLinearEqn(0.2, 0.8);
+  ok(Number(soln.a.toPrecision(5)) === 0.6 &&
+            soln.b === 0.2,
+    "(0,0.2),(1,0.8)");
+});
+
+test("solveExponentialEqn", function() {
+  // TODO
+});
+
 test("frequencyForNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c3')), 130.81, 'c3');
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c4')), 261.63, 'c4');
