@@ -10,10 +10,9 @@ module.exports = function(grunt) {
       files: [
         'gruntfile.js',
         'src/**/*.js',
-        '!src/vendor/*.js',
-        'test/test/*.js'],
+        'test/tests/*.js'],
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: true
       }
     },
 

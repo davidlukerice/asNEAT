@@ -29,7 +29,7 @@ test("randomElementIn", function() {
   var y = {id:1};
   xs = [x, y];
   var pick = Utils.randomElementIn(xs);
-  ok(pick == xs[0] || pick == xs[1], "Picks element in xs");
+  ok(pick === xs[0] || pick === xs[1], "Picks element in xs");
   equal(Utils.randomElementIn(xs, x), y, "Doesn't pick notX");
 });
 
@@ -93,18 +93,26 @@ test("solveExponentialEqn", function() {
 });
 
 test("interpolate", function() {
-  var y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0);
+  var y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0);
   equal(y, 0, "linear y=x x=0");
-  y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0.5);
+  y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0.5);
   equal(y, 0.5, "linear y=x x=0.5");
-  y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 1);
+  y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 1);
   equal(y, 1, "linear y=x x=1");
 
-  y = interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 0);
+  y = Utils.interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 0);
   equal(y, 0.2, "exponential at 0");
-  y = interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 1);
+  y = Utils.interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 1);
   equal(y, 0.8, "exponential at 1");
 });
+
+test("mutateParameter", function() {
+  equal(1, 1, "todo");
+  //var obj = {param1: 0.0};
+  //Utils.mutateParameter({
+  //});
+});
+
 test("frequencyForNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c3')), 130.81, 'c3');
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c4')), 261.63, 'c4');
