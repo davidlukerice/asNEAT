@@ -535,7 +535,7 @@ Network.prototype.addConnection = function() {
 
 /*
   For each connection, mutate based on the given probability
-  @param forceMutation
+  @param params
 */
 Network.prototype.mutateConnectionWeights = function(params) {
   if (typeof params === 'undefined') params = {};
@@ -575,25 +575,34 @@ Network.prototype.mutateConnectionWeights = function(params) {
   return this;
 };
 
-Network.prototype.mutateNodeParameters = function(forceMutation) {
-  if (typeof(forceMutation)==='undefined') forceMutation = true;
+Network.prototype.mutateNodeParameters = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    //{bool} (default: true) Makes at least one connection mutate
+    forceMutation: true,
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5
+  });
 
-  var mutationRate = this.nodeMutationRate,
-      anyMutations = false,
+  var rate = Utils.interpolate(this.nodeMutationInterpolationType,
+                               this.nodeMutationRate,
+                               params.mutationDistance);
+
+  var anyMutations = false,
       objectsChanged = [];
   _.forEach(this.nodes, function(node) {
-    if (Utils.random() <= mutationRate) {
-      objectsChanged.push(node.mutate());
+    if (Utils.random() <= rate) {
+      objectsChanged.push(node.mutate(params.mutationDistance));
       anyMutations = true;
     }
   });
 
   // If no nodes were mutated and forcing a mutation
   // mutate a random one
-  if (!anyMutations && forceMutation) {
+  if (!anyMutations && params.forceMutation) {
     log('forcing node mutation');
     var node = Utils.randomElementIn(this.nodes);
-    objectsChanged.push(node.mutate());
+    objectsChanged.push(node.mutate(params.mutationDistance));
   }
   //{objectsChanged [], changeDescription string}
   this.lastMutation = {

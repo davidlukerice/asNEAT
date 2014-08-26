@@ -81,7 +81,7 @@ Node.prototype.toString = function() {
   Mutates at least one parameter
   @return this Node
 */
-Node.prototype.mutate = function() {
+Node.prototype.mutate = function(mutationDistance) {
   var self = this,
       chance = this.parameterMutationChance,
       parameters = this.mutatableParameters,
