@@ -92,6 +92,19 @@ test("solveExponentialEqn", function() {
      "(0,0.2),(1,9)");
 });
 
+test("interpolate", function() {
+  var y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0);
+  equal(y, 0, "linear y=x x=0");
+  y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0.5);
+  equal(y, 0.5, "linear y=x x=0.5");
+  y = interpolate(Utils.InterpolationType.LINEAR, [0, 1], 1);
+  equal(y, 1, "linear y=x x=1");
+
+  y = interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 0);
+  equal(y, 0.2, "exponential at 0");
+  y = interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 1);
+  equal(y, 0.8, "exponential at 1");
+});
 test("frequencyForNote", function() {
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c3')), 130.81, 'c3');
   equal(Utils.roundTo2Places(Utils.frequencyForNote('c4')), 261.63, 'c4');
