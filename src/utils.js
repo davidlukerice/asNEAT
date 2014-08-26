@@ -175,21 +175,22 @@ Utils.interpolate = function(interpolationType, ys, x) {
 Utils.mutateParameter = function(params) {
   var delta, range, newParam;
 
-  _.defaults(params, {
+  if (typeof params === 'undefined') params = {};
+  params = _.defaults({}, params, {
     // {obj} Object to mutate
     obj: null,
     // {string} Which parameter on the obj to mutate
     parameter: 'param',
 
     // How y0, y1 will be interpolated
-    interpolationType: Utils.InterpolationType.LINEAR,
+    mutationDeltaInterpolationType: Utils.InterpolationType.LINEAR,
 
     // Chance of mutating only by an amount in mutation delta
     // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
     mutationDeltaChance: 0.8,
 
     // What amount of interpolation should be used [0.0, 1.0]
-    interpolationX: 0.5,
+    mutationDistance: 0.5,
 
     // how little or much the parameter will change if mutating by delta
     // [].length===2 the interpolation min max
@@ -198,19 +199,19 @@ Utils.mutateParameter = function(params) {
 
     // this===params
     mutateDelta: function() {
-      var params = this.params,
+      var params = this,
           delta;
 
       if (typeof params.mutationDelta.min.y0 !== 'undefined')
         throw "Old mutationDelta without y0,y1 no longer supported";
 
       delta = {
-        min: Utils.interpolate(params.interpolationType,
+        min: Utils.interpolate(params.mutationDeltaInterpolationType,
                                params.mutationDelta.min,
-                               params.interpolationX),
-        max: Utils.interpolate(params.interpolationType,
+                               params.mutationDistance),
+        max: Utils.interpolate(params.mutationDeltaInterpolationType,
                                params.mutationDelta.max,
-                               params.interpolationX)
+                               params.mutationDistance)
       };
 
       if (params.discreteMutation)
@@ -237,7 +238,7 @@ Utils.mutateParameter = function(params) {
 
     // this===params
     mutateRandom: function() {
-      var params = this.params;
+      var params = this;
 
       range = params.randomMutationRange;
       if (params.discreteMutation)

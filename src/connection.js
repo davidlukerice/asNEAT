@@ -31,7 +31,8 @@ Connection.prototype.defaultParameters = {
   enabled: true,
 
   mutationDeltaChance: 0.8,
-  mutationDelta: {min: -0.2, max: 0.2},
+  mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  mutationDelta: {min: [0.05, 0.3], max: [0.1, 0.6]},
   randomMutationRange: {min: 0.1, max: 1.5}
 };
 
@@ -95,6 +96,8 @@ Connection.prototype.mutate = function(mutationDistance) {
   var mutationInfo = Utils.mutateParameter({
     obj: this,
     parameter: 'weight',
+    mutationDistance: mutationDistance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDelta: this.mutationDelta,
     randomMutationRange: this.randomMutationRange

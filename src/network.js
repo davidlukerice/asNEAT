@@ -255,6 +255,7 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
   @param params See defaults
 */
 Network.prototype.mutate = function(params) {
+  if (typeof params === 'undefined') params = {};
   _.defaults(params, {
     // {Number} [0.0, 1.0]
     mutationDistance: 0.5
@@ -537,6 +538,7 @@ Network.prototype.addConnection = function() {
   @param forceMutation
 */
 Network.prototype.mutateConnectionWeights = function(params) {
+  if (typeof params === 'undefined') params = {};
   _.defaults(params, {
     //{bool} (default: true) Makes at least one connection mutate
     forceMutation: true,
