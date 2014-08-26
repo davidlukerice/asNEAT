@@ -155,7 +155,7 @@ Utils.interpolate = function(interpolationType, ys, x) {
   var coefs, y;
   if (interpolationType === Utils.InterpolationType.LINEAR) {
     coefs = Utils.solveLinearEqn(ys[0], ys[1]);
-    y = coefs.a*x + coefs.b
+    y = coefs.a*x + coefs.b;
   }
   else if (interpolationType === Utils.InterpolationType.EXPONENTIAL) {
     coefs = Utils.solveExponentialEqn(ys[0], ys[1]);

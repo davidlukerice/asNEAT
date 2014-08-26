@@ -91,7 +91,7 @@ Connection.prototype.disable = function() {
   return this;
 };
 
-Connection.prototype.mutate = function() {
+Connection.prototype.mutate = function(mutationDistance) {
   var mutationInfo = Utils.mutateParameter({
     obj: this,
     parameter: 'weight',
