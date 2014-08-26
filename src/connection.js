@@ -52,6 +52,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     weight: this.weight,
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDelta: _.clone(this.mutationDelta),
     randomMutationRange: _.clone(this.randomMutationRange)
   });
