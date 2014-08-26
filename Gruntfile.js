@@ -91,7 +91,7 @@ module.exports = function(grunt) {
       },
       build: {
         files: ['src/**/*.js'],
-        tasks: ['clean', 'copy', 'transpile', 'concat', 'uglify']
+        tasks: ['build']
       }
     },
     concurrent: {
