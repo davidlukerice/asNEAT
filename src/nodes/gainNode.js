@@ -41,7 +41,6 @@ GainNode.prototype.clone = function() {
   return new GainNode({
     id: this.id,
     gain: this.gain,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

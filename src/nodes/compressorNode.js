@@ -93,7 +93,6 @@ CompressorNode.prototype.clone = function() {
     reduction: this.reduction,
     attack: this.attack,
     release: this.release,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

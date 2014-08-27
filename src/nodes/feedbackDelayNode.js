@@ -39,7 +39,6 @@ FeedbackDelayNode.prototype.clone = function() {
     id: this.id,
     delayTime: this.delayTime,
     feedbackRatio: this.feedbackRatio,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

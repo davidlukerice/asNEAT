@@ -47,7 +47,6 @@ PannerNode.prototype.clone = function() {
     x: this.x,
     y: this.y,
     z: this.z,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

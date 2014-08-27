@@ -33,7 +33,6 @@ ConvolverNode.prototype.clone = function() {
   return new ConvolverNode({
     id: this.id,
     audioBuffer: this.audioBuffer,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

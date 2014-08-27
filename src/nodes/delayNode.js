@@ -28,7 +28,6 @@ DelayNode.prototype.clone = function() {
   return new DelayNode({
     id: this.id,
     delayTime: this.delayTime,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

@@ -64,7 +64,6 @@ FilterNode.prototype.clone = function() {
     detune: this.detune,
     q: this.q,
     gain: this.gain,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

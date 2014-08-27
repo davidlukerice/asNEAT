@@ -88,7 +88,6 @@ OscillatorNode.prototype.clone = function() {
     sustainDuration: this.sustainDuration,
     attackVolume: this.attackVolume,
     sustainVolume: this.sustainVolume,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };
