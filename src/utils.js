@@ -173,7 +173,6 @@ Utils.interpolate = function(interpolationType, ys, x) {
   @return {mutatedParameter, changeDescription}
  */
 Utils.mutateParameter = function(params) {
-  var delta, range, newParam;
 
   if (typeof params === 'undefined') params = {};
   params = _.defaults({}, params, {
@@ -197,13 +196,26 @@ Utils.mutateParameter = function(params) {
     mutationDelta: {min: [0.05, 0.5], max: [0.2, 0.8]},
     allowDeltaInverse: true,
 
+    // note: the inverse is also possible (ex (-max, -min]) when
+    // allowRandomInverse is true
+    randomMutationRange: {min: 0.1, max: 1.5},
+
+    allowRandomInverse: true,
+
+    // true if only integers are allowed (ie for an index), otherwise
+    // uses floating point
+    discreteMutation: false,
+
     // this===params
     mutateDelta: function() {
       var params = this,
           delta;
 
-      if (typeof params.mutationDelta.min.y0 !== 'undefined')
-        throw "Old mutationDelta without y0,y1 no longer supported";
+      if (_.isNumber(params.mutationDelta.min) ||
+          typeof params.mutationDelta.min.y0 !== 'undefined')
+      {
+        throw "Old mutationDelta with min/max as number or {y0,y1} no longer supported";
+      }
 
       delta = {
         min: Utils.interpolate(params.mutationDeltaInterpolationType,
@@ -221,7 +233,7 @@ Utils.mutateParameter = function(params) {
 
       // 50% chance of negative
       if (params.allowDeltaInverse && Utils.randomBool())
-        newParam*=-1;
+        delta*=-1;
 
       Utils.log('mutating by delta '+delta.toFixed(3));
       params.obj[params.parameter]+=delta;
@@ -232,13 +244,11 @@ Utils.mutateParameter = function(params) {
       };
     },
 
-    // note: the inverse is also possible (ex (-max, -min]) when
-    // allowRandomInverse is true
-    randomMutationRange: {min: 0.1, max: 1.5},
-
     // this===params
     mutateRandom: function() {
-      var params = this;
+      var params = this,
+          newParam,
+          range;
 
       range = params.randomMutationRange;
       if (params.discreteMutation)
@@ -256,12 +266,7 @@ Utils.mutateParameter = function(params) {
         mutatedParameter: params.parameter,
         changeDescription: "to "+newParam
       };
-    },
-
-    allowRandomInverse: true,
-    // true if only integers are allowed (ie for an index), otherwise
-    // uses floating point
-    discreteMutation: false
+    }
   });
 
   Utils.log('mutating('+params.parameter+') '+params.obj);
