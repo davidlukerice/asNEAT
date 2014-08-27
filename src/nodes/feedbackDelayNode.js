@@ -19,16 +19,17 @@ FeedbackDelayNode.prototype.defaultParameters = {
   mutatableParameters: [
     {
       name: 'delayTime',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.5, max: 0.5},
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.1, 0.4], max: [0.4, 0.8]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.0, max: 3.0}
     },{
       name: 'feedbackRatio',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.2, max: 0.2},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.05, 0.1], max: [0.1, 0.3]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0, max: 0.6}
     }
   ]

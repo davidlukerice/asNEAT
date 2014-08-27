@@ -584,15 +584,18 @@ Network.prototype.mutateNodeParameters = function(params) {
     mutationDistance: 0.5
   });
 
-  var rate = Utils.interpolate(this.nodeMutationInterpolationType,
-                               this.nodeMutationRate,
-                               params.mutationDistance);
+  var rate = Utils.interpolate(
+    this.nodeMutationInterpolationType,
+    this.nodeMutationRate,
+    params.mutationDistance);
 
   var anyMutations = false,
       objectsChanged = [];
   _.forEach(this.nodes, function(node) {
     if (Utils.random() <= rate) {
-      objectsChanged.push(node.mutate(params.mutationDistance));
+      objectsChanged.push(node.mutate({
+        mutationDistance: params.mutationDistance
+      }));
       anyMutations = true;
     }
   });
@@ -602,7 +605,9 @@ Network.prototype.mutateNodeParameters = function(params) {
   if (!anyMutations && params.forceMutation) {
     log('forcing node mutation');
     var node = Utils.randomElementIn(this.nodes);
-    objectsChanged.push(node.mutate(params.mutationDistance));
+    objectsChanged.push(node.mutate({
+      mutationDistance: params.mutationDistance
+    }));
   }
   //{objectsChanged [], changeDescription string}
   this.lastMutation = {

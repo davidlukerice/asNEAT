@@ -25,17 +25,16 @@ FilterNode.prototype.defaultParameters = {
   mutatableParameters: [
     {
       name: 'type',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 8},
       allowRandomInverse: false,
       discreteMutation: true
     },{
       name: 'frequency',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -500, max: 500},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [10, 100], max: [300, 700]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 27.5, max: 1046.5}
     }
     // todo: other parameters

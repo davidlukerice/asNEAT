@@ -21,7 +21,8 @@ var Node = function(parameters) {
 
 Node.prototype.name = name;
 Node.prototype.defaultParameters = {
-  parameterMutationChance: 0.1,
+  parameterMutationInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  parameterMutationChance: [0.05, 0.8],
   mutatableParameters: [
   //  { see Utils.mutateParameter documentation
   //    name,
@@ -86,9 +87,14 @@ Node.prototype.toString = function() {
   Mutates at least one parameter
   @return this Node
 */
-Node.prototype.mutate = function(mutationDistance) {
+Node.prototype.mutate = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5
+  });
+
   var self = this,
-      chance = this.parameterMutationChance,
       parameters = this.mutatableParameters,
       mutated = false;
 
@@ -96,6 +102,12 @@ Node.prototype.mutate = function(mutationDistance) {
     Utils.log('no mutation parameters');
     return this;
   }
+
+  var chance = Utils.interpolate(
+    this.parameterMutationInterpolationType,
+    this.parameterMutationChance,
+    params.mutationDistance);
+
   _.forEach(this.mutatableParameters, function(param) {
     if (!Utils.randomChance(chance))
       return true;
@@ -114,8 +126,11 @@ Node.prototype.mutate = function(mutationDistance) {
     Utils.mutateParameter({
       obj: self,
       parameter: param.name,
+      mutationDeltaInterpolationType: param.mutationDeltaInterpolationType,
       mutationDeltaChance: param.mutationDeltaChance,
+      mutationDistance: params.mutationDistance,
       mutationDelta: param.mutationDelta,
+      allowDeltaInverse: param.allowDeltaInverse,
       randomMutationRange: param.randomMutationRange,
       allowRandomInverse: param.allowRandomInverse,
       discreteMutation: param.discreteMutation

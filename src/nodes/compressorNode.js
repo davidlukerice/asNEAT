@@ -40,44 +40,48 @@ CompressorNode.prototype.defaultParameters = {
   mutatableParameters: [
     {
       name: 'threshold',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [1, 10], max: [5, 15]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -50, max: 10}
     },{
       name: 'knee',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [1, 10], max: [5, 15]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 20, max: 40}
     },{
       name: 'ratio',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -1, max: 1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 8, max: 16}
     },{
       name: 'reduction',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -1, max: 1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -10, max: 0}
     },{
       name: 'attack',
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.02, max: 0.02},
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
+      allowDeltaInverse: true,
       // TODO: set global min?
       randomMutationRange: {min: 0, max: 0.1}
     },{
       name: 'release',
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.1, max: 0.1},
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
+      allowDeltaInverse: true,
       // TODO: set global min?
       randomMutationRange: {min: 0, max: 0.1}
     }

@@ -18,24 +18,24 @@ PannerNode.prototype.defaultParameters = {
   mutatableParameters: [
     {
       name: 'x',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     },{
       name: 'y',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     },{
       name: 'z',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     }
   ]

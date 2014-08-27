@@ -18,7 +18,9 @@ DelayNode.prototype.defaultParameters = {
       name: 'delayTime',
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.5, max: 0.5},
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.05, 0.5], max: [0.1, 1]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.0, max: 3.0}
     }
   ]
