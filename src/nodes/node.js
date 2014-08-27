@@ -27,7 +27,9 @@ Node.prototype.defaultParameters = {
   //  { see Utils.mutateParameter documentation
   //    name,
   //    mutationDeltaChance: chance for mutating by delta or by ranomd change,
-  //    mutationDelta: range that the parameter can be shifter by,
+  //    mutationDeltaInterpolationType: Utils.InterpolationType
+  //    mutationDelta: {min: [y0,y1], max: [y0,y1]}range that the parameter can be shifter by,
+  //    allowDeltaInverse: {bool}
   //    randomMutationRange: range parameter can be randomly changed to,
   //    discreteMutation: if mutations should be integers
   //  }
@@ -37,7 +39,8 @@ Node.prototype.defaultParameters = {
     //{
     //  name: "frequency", : must be able to osc.connect(node.name)
     //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
-    //  amplitudeScaling: {min: -2000, max: 2000} : range of allowed amplitude
+    //  deltaRange: {min: [y0, y1], max: [y0, y1]},
+    //  randomRange:  { min: <number>, max: <number>}: range of allowed amplitude
     //  modulating the parameter
     //  // TODO: Handle snapping to carrier frequency multiple?
     //  // http://greweb.me/2013/08/FM-audio-api/

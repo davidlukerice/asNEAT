@@ -32,7 +32,8 @@ GainNode.prototype.defaultParameters = {
   connectableParameters: [
     {
       name: "gain",
-      amplitudeScaling: {min: -1*gainMax, max: gainMax}
+      deltaRange: {min: [0.1, 0.3], max: [0.5, 1]},
+      randomRange: {min: gainMin, max: gainMax}
     }
   ]
 };
