@@ -37,7 +37,6 @@ CompressorNode.prototype.defaultParameters = {
   // value is 0.250, with a nominal range of 0 to 1.
   release: 0,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'threshold',

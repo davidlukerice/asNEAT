@@ -13,7 +13,6 @@ DelayNode.prototype.defaultParameters = {
   // in seconds
   delayTime: 0,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'delayTime',

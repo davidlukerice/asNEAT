@@ -3,7 +3,12 @@ var Utils = require('asNEAT/utils')['default'],
     name = "Node";
 
 var Node = function(parameters) {
-  Utils.extend(this, this.defaultParameters, parameters);
+  Utils.extend(this,
+    _.defaults(
+      this.defaultParameters,
+      Node.prototype.defaultParameters
+    ),
+    parameters);
 
   this.hasChanged = false;
 

@@ -38,7 +38,6 @@ NoteOscillatorNode.prototype.defaultParameters = {
   attackVolume: 1.1,
   sustainVolume: 1.0,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'type',

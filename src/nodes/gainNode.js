@@ -19,7 +19,6 @@ GainNode.prototype.defaultParameters = {
   // is a-rate
   gain: 1,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'gain',

@@ -16,7 +16,6 @@ FeedbackDelayNode.prototype.defaultParameters = {
   // [0,1], although >=1 is allowed... not advised
   feedbackRatio: 0.2,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'delayTime',

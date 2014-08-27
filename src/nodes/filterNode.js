@@ -22,7 +22,6 @@ FilterNode.prototype.defaultParameters = {
   q: 1,
   gain: 1,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'type',

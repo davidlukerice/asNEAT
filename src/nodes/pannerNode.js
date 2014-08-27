@@ -15,7 +15,6 @@ PannerNode.prototype.defaultParameters = {
   y: 0,
   z: 0,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'x',
