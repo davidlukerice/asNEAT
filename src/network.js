@@ -391,18 +391,16 @@ Network.prototype.addOscillator = function() {
              node.connectableParameters.length > 0;
     });
     target = Utils.randomElementIn(possibleTargets);
-    var targetParameter = Utils.randomElementIn(target.connectableParameters);
-    var ampMin = targetParameter.amplitudeScaling.min;
-    var ampMax = targetParameter.amplitudeScaling.max;
-
+    var targetParameter = Utils.randomElementIn(target.connectableParameters),
+        randomRange = targetParameter.randomRange;
     connection = new Connection({
       sourceNode: oscillator,
       targetNode: target,
       targetParameter: targetParameter.name,
       targetParameterNodeName: targetParameter.nodeName,
-      weight: Utils.randomIn(ampMin, ampMax),
-      mutationDelta: {min: ampMin/12, max: ampMin/12},
-      randomMutationRange: {min: ampMin, max: ampMax}
+      weight: Utils.randomIn(randomRange.min, randomRange.max),
+      mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+      randomMutationRange: _.cloneDeep(targetParameter.randomRange)
     });
 
     log('adding fm oscillator('+targetParameter.name+') '+oscillator.toString());
@@ -505,18 +503,17 @@ Network.prototype.addConnection = function() {
           return;
 
         if (usingFM) {
-          var targetParameter = Utils.randomElementIn(targetNode.connectableParameters);
-          var ampMin = targetParameter.amplitudeScaling.min;
-          var ampMax = targetParameter.amplitudeScaling.max;
+          var targetParameter = Utils.randomElementIn(targetNode.connectableParameters),
+              randomRange = targetParameter.randomRange;
 
           connections.push(new Connection({
             sourceNode: sourceNode,
             targetNode: targetNode,
             targetParameter: targetParameter.name,
             targetParameterNodeName: targetParameter.nodeName,
-            weight: Utils.randomIn(ampMin, ampMax),
-            mutationDelta: {min: ampMin/12, max: ampMin/12},
-            randomMutationRange: {min: ampMin, max: ampMax}
+            weight: Utils.randomIn(randomRange.min, randomRange.max),
+            mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+            randomMutationRange: _.cloneDeep(targetParameter.randomRange)
           }));
         }
         else {
