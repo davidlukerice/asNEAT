@@ -18,8 +18,16 @@ Population.prototype.defaultParameters = {
   numberOfMutationsPerGeneration: 1,
   numberOfNewParentMutations: 3,
   populationCount: 9,
-  crossoverRate: 0.3,
-  mutationRate: 1.0
+  crossoverRate: 0.1,
+  mutationRate: 1.0,
+  mutationParams: {
+    mutationDistance: 0.5,
+    splitMutationChance: 0.2,
+    addOscillatorChance: 0.1,
+    addConnectionChance: 0.2,
+    mutateConnectionWeightsChance: 0.25,
+    mutateNodeParametersChance: 0.25
+  }
 };
 
 /*
@@ -52,7 +60,7 @@ Population.prototype.GenerateNewRandomParent = function() {
   var newParent = new Network(this.networkParameters),
       i, num;
   for (i=0, num=this.numberOfNewParentMutations; i<num; ++i)
-    newParent.mutate();
+    newParent.mutate(this.mutationParams);
   return newParent;
 };
 
@@ -85,14 +93,14 @@ Population.generateFromParents = function(parents, params) {
       x = x.crossWith(y);
       isCrossed = true;
     }
-    
+
     if (Utils.randomChance(newPopulation.mutationRate)) {
       if (isCrossed)
         tempLastMutation = x.lastMutation;
 
       x = x.clone();
       for (i=0; i<numMutations; ++i)
-        x.mutate();
+        x.mutate(this.mutationParams);
 
       if (isCrossed) {
         x.lastMutation.objectsChanged = tempLastMutation.objectsChanged.concat(
