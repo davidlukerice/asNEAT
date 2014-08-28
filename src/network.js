@@ -258,16 +258,22 @@ Network.prototype.mutate = function(params) {
   if (typeof params === 'undefined') params = {};
   _.defaults(params, {
     // {Number} [0.0, 1.0]
-    mutationDistance: 0.5
+    mutationDistance: 0.5,
+
+    // Chances must add up to 1.0
+    splitMutationChance: 0.2,
+    addOscillatorChance: 0.1,
+    addConnectionChance: 0.2,
+    mutateConnectionWeightsChance: 0.25,
+    mutateNodeParametersChance: 0.25
   });
 
-  // TODO: Other mutations?
   var mutations = [
-    {weight: 0.1, element: this.splitMutation},
-    {weight: 0.1, element: this.addOscillator},
-    {weight: 0.2, element: this.addConnection},
-    {weight: 0.3, element: this.mutateConnectionWeights},
-    {weight: 0.3, element: this.mutateNodeParameters}
+    {weight: params.splitMutationChance, element: this.splitMutation},
+    {weight: params.addOscillatorChance, element: this.addOscillator},
+    {weight: params.addConnectionChance, element: this.addConnection},
+    {weight: params.mutateConnectionWeightsChance, element: this.mutateConnectionWeights},
+    {weight: params.mutateNodeParametersChance, element: this.mutateNodeParameters}
   ];
 
   var numMutations;

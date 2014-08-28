@@ -84,6 +84,19 @@ test("getNoteOscillatorNodes", function() {
     "getNoteOsc + getOsc === getOscAndNoteOsc");
 });
 
+test('mutate', function() {
+  var a = new Network();
+  a.mutate({
+    splitMutationChance: 0.0,
+    addOscillatorChance: 0.0,
+    addConnectionChance: 0.0,
+    mutateConnectionWeightsChance: 1.0,
+    mutateNodeParametersChance: 0.0,
+    mutationDistance: 0.1
+  });
+  ok(a.lastMutation.changeDescription === "Mutated connection gain", "Forces connection weight mutation");
+});
+
 test("mutations update lastMutation", function() {
   var a = new Network();
   equal(a.lastMutation, null, "starts null");
