@@ -29,7 +29,7 @@ test("randomElementIn", function() {
   var y = {id:1};
   xs = [x, y];
   var pick = Utils.randomElementIn(xs);
-  ok(pick == xs[0] || pick == xs[1], "Picks element in xs");
+  ok(pick === xs[0] || pick === xs[1], "Picks element in xs");
   equal(Utils.randomElementIn(xs, x), y, "Doesn't pick notX");
 });
 
@@ -90,6 +90,31 @@ test("solveExponentialEqn", function() {
   ok(soln.c === 0.2 &&
      Number(soln.a.toPrecision(5)) === 1.5041,
      "(0,0.2),(1,9)");
+});
+
+test("interpolate", function() {
+  var y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0);
+  equal(y, 0, "linear y=x x=0");
+  y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 0.5);
+  equal(y, 0.5, "linear y=x x=0.5");
+  y = Utils.interpolate(Utils.InterpolationType.LINEAR, [0, 1], 1);
+  equal(y, 1, "linear y=x x=1");
+
+  y = Utils.interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 0);
+  equal(y, 0.2, "exponential at 0");
+  y = Utils.interpolate(Utils.InterpolationType.EXPONENTIAL, [0.2, 0.8], 1);
+  equal(y, 0.8, "exponential at 1");
+});
+
+test("mutateParameter", function() {
+  var origValue = 1;
+  var obj = {param:origValue};
+  Utils.mutateParameter({
+    obj: obj,
+    parameter: 'param',
+    randomMutationRange: {min: 1.1, max: 1.5}
+  });
+  ok(obj.param !== origValue, "Changes value by default");
 });
 
 test("frequencyForNote", function() {

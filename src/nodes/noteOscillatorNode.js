@@ -38,46 +38,48 @@ NoteOscillatorNode.prototype.defaultParameters = {
   attackVolume: 1.1,
   sustainVolume: 1.0,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'type',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 4},
       allowRandomInverse: false,
       discreteMutation: true
     },{
       name: 'noteOffset',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -5, max: 5},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [1, 4], max: [5, 15]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -20, max: 20},
       discreteMutation: true
     },{
       name: 'attackDuration',
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.1, max: 0.1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'decayDuration',
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.1, max: 0.1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'releaseDuration',
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.1, max: 0.1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'attackVolume',
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.1, max: 0.1},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 0.5, max: 1.5}
     }
   ],
@@ -85,7 +87,8 @@ NoteOscillatorNode.prototype.defaultParameters = {
     {
       name: "frequency",
       nodeName: "oscNode",
-      amplitudeScaling: {min: -2000, max: 2000}
+      deltaRange: {min: [10, 200], max: [300, 700]},
+      randomRange: {min: -2000, max: 2000}
     }
   ]
 };
@@ -102,7 +105,6 @@ NoteOscillatorNode.prototype.clone = function() {
     sustainDuration: this.sustainDuration,
     attackVolume: this.attackVolume,
     sustainVolume: this.sustainVolume,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

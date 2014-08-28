@@ -31,7 +31,8 @@ Connection.prototype.defaultParameters = {
   enabled: true,
 
   mutationDeltaChance: 0.8,
-  mutationDelta: {min: -0.2, max: 0.2},
+  mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  mutationDelta: {min: [0.05, 0.3], max: [0.1, 0.6]},
   randomMutationRange: {min: 0.1, max: 1.5}
 };
 
@@ -51,6 +52,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     weight: this.weight,
     enabled: this.enabled,
     mutationDeltaChance: this.mutationDeltaChance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDelta: _.clone(this.mutationDelta),
     randomMutationRange: _.clone(this.randomMutationRange)
   });
@@ -91,10 +93,12 @@ Connection.prototype.disable = function() {
   return this;
 };
 
-Connection.prototype.mutate = function() {
+Connection.prototype.mutate = function(mutationDistance) {
   var mutationInfo = Utils.mutateParameter({
     obj: this,
     parameter: 'weight',
+    mutationDistance: mutationDistance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDelta: this.mutationDelta,
     randomMutationRange: this.randomMutationRange
@@ -129,7 +133,11 @@ Connection.prototype.toJSON = function() {
     targetParameter: this.targetParameter,
     targetParameterNodeName: this.targetParameterNodeName,
     weight: this.weight,
-    enabled: this.enabled
+    enabled: this.enabled,
+    mutationDeltaChance: this.mutationDeltaChance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
+    mutationDelta: this.mutationDelta,
+    randomMutationRange: this.randomMutationRange
   };
   return JSON.stringify(json);
 };

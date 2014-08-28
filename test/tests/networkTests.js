@@ -14,16 +14,16 @@ test("Same default objects/arrays not referenced by multiple networks", function
 
 test("crossWith", function() {
   var a,b,c;
-  
+
   a = new Network();
   c = a.crossWith(a);
-  ok(a.nodes.length === c.nodes.length, 
+  ok(a.nodes.length === c.nodes.length,
     "crossing with itself contains same number of nodes");
-  ok(a.connections.length === c.connections.length, 
+  ok(a.connections.length === c.connections.length,
     "crossing with itself contains same number of connections");
 
-  a = new Network(),
-  b = new Network(),
+  a = new Network();
+  b = new Network();
   c = a.crossWith(b);
   equal(c.nodes.length, a.nodes.length+b.nodes.length-1,
     "Child has same number nodes as a+b, less the shared output node");
@@ -75,13 +75,26 @@ test("getNoteOscillatorNodes", function() {
 
   equal(firstOscillator, a.getNoteOscillatorNodes()[0], "gets first oscillator");
   equal(a.getNoteOscillatorNodes().length, 1, "starts with one");
-  
+
   a.addOscillator();
   equal(a.getNoteOscillatorNodes().length +a.getOscillatorNodes().length, 2,
     "addOscillator increases to 2");
   equal(a.getNoteOscillatorNodes().length +a.getOscillatorNodes().length,
     a.getOscillatorAndNoteOscillatorNodes().length,
     "getNoteOsc + getOsc === getOscAndNoteOsc");
+});
+
+test('mutate', function() {
+  var a = new Network();
+  a.mutate({
+    splitMutationChance: 0.0,
+    addOscillatorChance: 0.0,
+    addConnectionChance: 0.0,
+    mutateConnectionWeightsChance: 1.0,
+    mutateNodeParametersChance: 0.0,
+    mutationDistance: 0.1
+  });
+  ok(a.lastMutation.changeDescription === "Mutated connection gain", "Forces connection weight mutation");
 });
 
 test("mutations update lastMutation", function() {

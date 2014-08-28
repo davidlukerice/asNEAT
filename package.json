@@ -1,7 +1,7 @@
 {
   "name": "asNEAT",
   "moduleName": "asNEAT",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
   "main": "./dist/asNEAT.min.js",
   "scripts": {
@@ -38,6 +38,7 @@
     "grunt-contrib-uglify": "~0.5.1",
     "grunt-contrib-watch": "~0.6.1",
     "grunt-es6-module-transpiler": "~0.6.0",
-    "grunt": "~0.4.5"
+    "grunt": "~0.4.5",
+    "grunt-sloc": "~0.5.2"
   }
 }

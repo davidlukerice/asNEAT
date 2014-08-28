@@ -3,7 +3,12 @@ var Utils = require('asNEAT/utils')['default'],
     name = "Node";
 
 var Node = function(parameters) {
-  Utils.extend(this, this.defaultParameters, parameters);
+  Utils.extend(this,
+    _.defaults(
+      this.defaultParameters,
+      Node.prototype.defaultParameters
+    ),
+    parameters);
 
   this.hasChanged = false;
 
@@ -16,12 +21,15 @@ var Node = function(parameters) {
 
 Node.prototype.name = name;
 Node.prototype.defaultParameters = {
-  parameterMutationChance: 0.1,
+  parameterMutationInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  parameterMutationChance: [0.05, 0.8],
   mutatableParameters: [
   //  { see Utils.mutateParameter documentation
   //    name,
   //    mutationDeltaChance: chance for mutating by delta or by ranomd change,
-  //    mutationDelta: range that the parameter can be shifter by,
+  //    mutationDeltaInterpolationType: Utils.InterpolationType
+  //    mutationDelta: {min: [y0,y1], max: [y0,y1]}range that the parameter can be shifter by,
+  //    allowDeltaInverse: {bool}
   //    randomMutationRange: range parameter can be randomly changed to,
   //    discreteMutation: if mutations should be integers
   //  }
@@ -31,7 +39,8 @@ Node.prototype.defaultParameters = {
     //{
     //  name: "frequency", : must be able to osc.connect(node.name)
     //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
-    //  amplitudeScaling: {min: -2000, max: 2000} : range of allowed amplitude
+    //  deltaRange: {min: [y0, y1], max: [y0, y1]},
+    //  randomRange:  { min: <number>, max: <number>}: range of allowed amplitude
     //  modulating the parameter
     //  // TODO: Handle snapping to carrier frequency multiple?
     //  // http://greweb.me/2013/08/FM-audio-api/
@@ -81,9 +90,14 @@ Node.prototype.toString = function() {
   Mutates at least one parameter
   @return this Node
 */
-Node.prototype.mutate = function() {
+Node.prototype.mutate = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5
+  });
+
   var self = this,
-      chance = this.parameterMutationChance,
       parameters = this.mutatableParameters,
       mutated = false;
 
@@ -91,6 +105,12 @@ Node.prototype.mutate = function() {
     Utils.log('no mutation parameters');
     return this;
   }
+
+  var chance = Utils.interpolate(
+    this.parameterMutationInterpolationType,
+    this.parameterMutationChance,
+    params.mutationDistance);
+
   _.forEach(this.mutatableParameters, function(param) {
     if (!Utils.randomChance(chance))
       return true;
@@ -109,12 +129,15 @@ Node.prototype.mutate = function() {
     Utils.mutateParameter({
       obj: self,
       parameter: param.name,
+      mutationDeltaInterpolationType: param.mutationDeltaInterpolationType,
       mutationDeltaChance: param.mutationDeltaChance,
+      mutationDistance: params.mutationDistance,
       mutationDelta: param.mutationDelta,
+      allowDeltaInverse: param.allowDeltaInverse,
       randomMutationRange: param.randomMutationRange,
       allowRandomInverse: param.allowRandomInverse,
       discreteMutation: param.discreteMutation
-    }, this);
+    });
   }
 };
 

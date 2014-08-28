@@ -43,8 +43,13 @@ Network.prototype.name = name;
 Network.prototype.defaultParameters = {
   nodes: [],
   connections: [],
-  connectionMutationRate: 0.2,
-  nodeMutationRate: 0.2,
+
+  connectionMutationInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  connectionMutationRate: [0.05, 0.8],
+
+  nodeMutationInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+  nodeMutationRate: [0.05, 0.8],
+
   // percentage of addOscillatorMutations will
   // generate a node for fm, as opposed to strict audio output
   addOscillatorFMMutationRate: 0.5,
@@ -75,8 +80,10 @@ Network.prototype.clone = function() {
   return new Network({
     nodes: clonedNodes,
     connections: clonedConnections,
-    connectionMutationRate: this.connectionMutationRate,
-    nodeMutationRate: this.nodeMutationRate
+    connectionMutationInterpolationType: this.connectionMutationInterpolationType,
+    connectionMutationRate: _.clone(this.connectionMutationRate),
+    nodeMutationInterpolationType: this.nodeMutationInterpolationType,
+    nodeMutationRate: _.clone(this.nodeMutationRate)
   });
 };
 /**
@@ -245,21 +252,34 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
 /**
   Randomly mutates the network based on weighted probabilities.
   @note Each one updates lastMutation
+  @param params See defaults
 */
-Network.prototype.mutate = function() {
-  // TODO: Other mutations?
+Network.prototype.mutate = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5,
+
+    // Chances must add up to 1.0
+    splitMutationChance: 0.2,
+    addOscillatorChance: 0.1,
+    addConnectionChance: 0.2,
+    mutateConnectionWeightsChance: 0.25,
+    mutateNodeParametersChance: 0.25
+  });
+
   var mutations = [
-    {weight: 0.2, element: this.splitMutation},
-    {weight: 0.2, element: this.addOscillator},
-    {weight: 0.2, element: this.addConnection},
-    {weight: 0.2, element: this.mutateConnectionWeights},
-    {weight: 0.2, element: this.mutateNodeParameters}
+    {weight: params.splitMutationChance, element: this.splitMutation},
+    {weight: params.addOscillatorChance, element: this.addOscillator},
+    {weight: params.addConnectionChance, element: this.addConnection},
+    {weight: params.mutateConnectionWeightsChance, element: this.mutateConnectionWeights},
+    {weight: params.mutateNodeParametersChance, element: this.mutateNodeParameters}
   ];
 
-  // TODO: Check current generation for similar structural mutation
-  // and copy connection id/ids (innovation number)
-  var mutation = Utils.weightedSelection(mutations);
-  mutation.call(this);
+  var numMutations;
+  if (params.mutationDistance < 0.5) numMutations = 1;
+  else if (params.mutationDistance < 0.8) numMutations = 2;
+  else numMutations = 3;
 
   // Clear old changed objects
   _.forEach(this.nodes, function(node) {
@@ -269,6 +289,23 @@ Network.prototype.mutate = function() {
     connection.hasChanged = false;
   });
 
+  // Keep track of lastMutation
+  var lastMutation;
+  for (var i = 0; i < numMutations; ++i) {
+    // TODO: Check current generation for similar structural mutation
+    // and copy connection id/ids (innovation number)
+    var mutation = Utils.weightedSelection(mutations);
+    mutation.call(this, params);
+    if (lastMutation) {
+      lastMutation.objectsChanged = lastMutation.objectsChanged.concat(
+        this.lastMutation.objectsChanged);
+      lastMutation.changeDescription +=', '+this.lastMutation.changeDescription;
+    }
+    else
+      lastMutation = this.lastMutation;
+  }
+
+  this.lastMutation = lastMutation;
   updateObjectsInMutation(this.lastMutation);
 
   return this;
@@ -360,18 +397,16 @@ Network.prototype.addOscillator = function() {
              node.connectableParameters.length > 0;
     });
     target = Utils.randomElementIn(possibleTargets);
-    var targetParameter = Utils.randomElementIn(target.connectableParameters);
-    var ampMin = targetParameter.amplitudeScaling.min;
-    var ampMax = targetParameter.amplitudeScaling.max;
-
+    var targetParameter = Utils.randomElementIn(target.connectableParameters),
+        randomRange = targetParameter.randomRange;
     connection = new Connection({
       sourceNode: oscillator,
       targetNode: target,
       targetParameter: targetParameter.name,
       targetParameterNodeName: targetParameter.nodeName,
-      weight: Utils.randomIn(ampMin, ampMax),
-      mutationDelta: {min: ampMin/12, max: ampMin/12},
-      randomMutationRange: {min: ampMin, max: ampMax}
+      weight: Utils.randomIn(randomRange.min, randomRange.max),
+      mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+      randomMutationRange: _.cloneDeep(targetParameter.randomRange)
     });
 
     log('adding fm oscillator('+targetParameter.name+') '+oscillator.toString());
@@ -441,7 +476,7 @@ Network.prototype.addConnection = function() {
     //       perfomance hit when adding new nodes, but don't have to O(n^2) for adding a new connection.
     //       Would have to regenerate on copy though
 
-    // TODO: allow multiple connections to different parameters between same nodes for FM synthesis
+    // TODO: allow multiple connections to different parameters between same nodes for FM synthesis?
     var self = this,
         connections = [];
 
@@ -474,18 +509,17 @@ Network.prototype.addConnection = function() {
           return;
 
         if (usingFM) {
-          var targetParameter = Utils.randomElementIn(targetNode.connectableParameters);
-          var ampMin = targetParameter.amplitudeScaling.min;
-          var ampMax = targetParameter.amplitudeScaling.max;
+          var targetParameter = Utils.randomElementIn(targetNode.connectableParameters),
+              randomRange = targetParameter.randomRange;
 
           connections.push(new Connection({
             sourceNode: sourceNode,
             targetNode: targetNode,
             targetParameter: targetParameter.name,
             targetParameterNodeName: targetParameter.nodeName,
-            weight: Utils.randomIn(ampMin, ampMax),
-            mutationDelta: {min: ampMin/12, max: ampMin/12},
-            randomMutationRange: {min: ampMin, max: ampMax}
+            weight: Utils.randomIn(randomRange.min, randomRange.max),
+            mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+            randomMutationRange: _.cloneDeep(targetParameter.randomRange)
           }));
         }
         else {
@@ -504,27 +538,35 @@ Network.prototype.addConnection = function() {
 
 /*
   For each connection, mutate based on the given probability
-  @param forceMutation {bool} (default: true) Makes at least one connection mutate
+  @param params
 */
-Network.prototype.mutateConnectionWeights = function(forceMutation) {
-  if (typeof(forceMutation)==='undefined') forceMutation = true;
+Network.prototype.mutateConnectionWeights = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    //{bool} (default: true) Makes at least one connection mutate
+    forceMutation: true,
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5
+  });
 
-  var mutationRate = this.connectionMutationRate,
-      anyMutations = false,
-      objectsChanged = [];
+  var rate = Utils.interpolate(this.connectionMutationInterpolationType,
+                               this.connectionMutationRate,
+                               params.mutationDistance);
+  var objectsChanged = [],
+      anyMutations = false;
   _.forEach(this.connections, function(conn) {
-    if (Utils.random() <= mutationRate) {
-      objectsChanged.push(conn.mutate());
+    if (Utils.random() <= rate) {
+      objectsChanged.push(conn.mutate(params.mutationDistance));
       anyMutations = true;
     }
   });
 
   // If no connections were mutated and forcing a mutation
   // mutate a random one
-  if (!anyMutations && forceMutation) {
+  if (!anyMutations && params.forceMutation) {
     log('forcing weight mutation');
     var conn = Utils.randomElementIn(this.connections);
-    objectsChanged.push(conn.mutate());
+    objectsChanged.push(conn.mutate(params.mutationDistance));
   }
 
   //{objectsChanged [], changeDescription string}
@@ -536,25 +578,39 @@ Network.prototype.mutateConnectionWeights = function(forceMutation) {
   return this;
 };
 
-Network.prototype.mutateNodeParameters = function(forceMutation) {
-  if (typeof(forceMutation)==='undefined') forceMutation = true;
+Network.prototype.mutateNodeParameters = function(params) {
+  if (typeof params === 'undefined') params = {};
+  _.defaults(params, {
+    //{bool} (default: true) Makes at least one connection mutate
+    forceMutation: true,
+    // {Number} [0.0, 1.0]
+    mutationDistance: 0.5
+  });
 
-  var mutationRate = this.nodeMutationRate,
-      anyMutations = false,
+  var rate = Utils.interpolate(
+    this.nodeMutationInterpolationType,
+    this.nodeMutationRate,
+    params.mutationDistance);
+
+  var anyMutations = false,
       objectsChanged = [];
   _.forEach(this.nodes, function(node) {
-    if (Utils.random() <= mutationRate) {
-      objectsChanged.push(node.mutate());
+    if (Utils.random() <= rate) {
+      objectsChanged.push(node.mutate({
+        mutationDistance: params.mutationDistance
+      }));
       anyMutations = true;
     }
   });
 
   // If no nodes were mutated and forcing a mutation
   // mutate a random one
-  if (!anyMutations && forceMutation) {
+  if (!anyMutations && params.forceMutation) {
     log('forcing node mutation');
     var node = Utils.randomElementIn(this.nodes);
-    objectsChanged.push(node.mutate());
+    objectsChanged.push(node.mutate({
+      mutationDistance: params.mutationDistance
+    }));
   }
   //{objectsChanged [], changeDescription string}
   this.lastMutation = {

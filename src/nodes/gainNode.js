@@ -19,21 +19,21 @@ GainNode.prototype.defaultParameters = {
   // is a-rate
   gain: 1,
 
-  parameterMutationChance: 0.1,
   mutatableParameters: [
     {
       name: 'gain',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -0.2, max: 0.2},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [0.02, 0.1], max: [0.2, 0.4]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: -1, max: 1}
     }
   ],
   connectableParameters: [
     {
       name: "gain",
-      amplitudeScaling: {min: -1*gainMax, max: gainMax}
+      deltaRange: {min: [0.1, 0.3], max: [0.5, 1]},
+      randomRange: {min: gainMin, max: gainMax}
     }
   ]
 };
@@ -42,7 +42,6 @@ GainNode.prototype.clone = function() {
   return new GainNode({
     id: this.id,
     gain: this.gain,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

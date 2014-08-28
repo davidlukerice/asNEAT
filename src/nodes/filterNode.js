@@ -22,39 +22,33 @@ FilterNode.prototype.defaultParameters = {
   q: 1,
   gain: 1,
 
-  parameterMutationChance: 0.1,
-  mutatableParameters: [
-    {
+  mutatableParameters: [{
       name: 'type',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0,
       randomMutationRange: {min: 0, max: 8},
       allowRandomInverse: false,
       discreteMutation: true
     },{
       name: 'frequency',
-      // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
-      mutationDelta: {min: -500, max: 500},
-      // TODO: set global min?
+      mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
+      mutationDelta: {min: [10, 100], max: [300, 700]},
+      allowDeltaInverse: true,
       randomMutationRange: {min: 27.5, max: 1046.5}
-    }
-    // todo: other parameters
-  ],
-  connectableParameters: [
-    {
+  }],
+  connectableParameters: [{
       name: "frequency",
-      amplitudeScaling: {min: freqMin, max: freqMax}
-    },
-    {
+      deltaRange: {min: [10, 100], max: [300, 700]},
+      randomRange: {min: freqMin, max: freqMax}
+    },{
       name: "Q",
-      amplitudeScaling: {min: qMin, max: qMin}
-    },
-    {
+      deltaRange: {min: [0.0001, 1], max: [3, 10]},
+      randomRange: {min: qMin, max: qMax}
+    },{
       name: "gain",
-      amplitudeScaling: {min: gainMin, max: gainMax}
-    }
-  ]
+      deltaRange: {min: [0.1, 1], max: [2, 6]},
+      randomRange: {min: gainMin, max: gainMax}
+  }]
 };
 
 FilterNode.prototype.clone = function() {
@@ -65,7 +59,6 @@ FilterNode.prototype.clone = function() {
     detune: this.detune,
     q: this.q,
     gain: this.gain,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };

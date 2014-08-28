@@ -110,9 +110,16 @@ Utils.shuffle = function(v) {
 Utils.weightedSelection = function(xs) {
   var r = Math.random(),
       sum = 0, element;
+
+  var totalSum = _.reduce(xs, function(sum, x) {
+    return sum+x.weight;
+  }, 0);
+  if (totalSum !== 1.0)
+    throw "xs' weights don't add up to 1.0";
+
   _.forEach(xs, function(x) {
     sum+=x.weight;
-    if (r <= sum) {
+    if (r <= sum && x.weight !== 0) {
       element = x.element;
       return false;
     }
@@ -146,86 +153,136 @@ Utils.solveExponentialEqn = function(y0, y1) {
   };
 };
 
+Utils.InterpolationType = {
+  LINEAR: 'linear',
+  EXPONENTIAL: 'exponential'
+};
+
+Utils.interpolate = function(interpolationType, ys, x) {
+  var coefs, y;
+  if (interpolationType === Utils.InterpolationType.LINEAR) {
+    coefs = Utils.solveLinearEqn(ys[0], ys[1]);
+    y = coefs.a*x + coefs.b;
+  }
+  else if (interpolationType === Utils.InterpolationType.EXPONENTIAL) {
+    coefs = Utils.solveExponentialEqn(ys[0], ys[1]);
+    y = coefs.c * Math.exp(coefs.a*x);
+  }
+  else
+    throw "InterpolationType not supported";
+
+  return y;
+};
+
 /*
   Mutates the given
   @param params See defaults
   @return {mutatedParameter, changeDescription}
  */
-Utils.mutateParameter = function(params, target) {
-  var delta, range, newParam;
+Utils.mutateParameter = function(params) {
 
-  _.defaults(params, {
+  if (typeof params === 'undefined') params = {};
+  params = _.defaults({}, params, {
     // {obj} Object to mutate
     obj: null,
     // {string} Which parameter on the obj to mutate
     parameter: 'param',
 
+    // How y0, y1 will be interpolated
+    mutationDeltaInterpolationType: Utils.InterpolationType.LINEAR,
+
     // Chance of mutating only by an amount in mutation delta
     // (ie. weight+=mutationDelta), otherwise (weight=mutationRange)
     mutationDeltaChance: 0.8,
+
+    // What amount of interpolation should be used [0.0, 1.0]
+    mutationDistance: 0.5,
+
     // how little or much the parameter will change if mutating by delta
-    mutationDelta: {min: -0.2, max: 0.2},
-    allowDeltaInverse: false,
-
-    mutateDelta: function() {
-      if (params.discreteMutation)
-        delta = Utils.randomIndexIn(params.mutationDelta);
-      else
-        delta = Utils.randomIn(params.mutationDelta);
-
-      // 50% chance of negative
-      if (params.allowDeltaInverse && Utils.randomBool())
-        newParam*=-1;
-
-      Utils.log('mutating by delta '+delta.toFixed(3));
-      params.obj[params.parameter]+=delta;
-
-      return {
-        mutatedParameter: params.parameter,
-        changeDescription: "by delta "+delta.toFixed(3)
-      };
-    },
+    // [].length===2 the interpolation min max
+    mutationDelta: {min: [0.05, 0.5], max: [0.2, 0.8]},
+    allowDeltaInverse: true,
 
     // note: the inverse is also possible (ex (-max, -min]) when
     // allowRandomInverse is true
     randomMutationRange: {min: 0.1, max: 1.5},
 
-    mutateRandom: function() {
-      range = params.randomMutationRange;
-      if (params.discreteMutation)
-        newParam = Utils.randomIndexIn(range);
-      else
-        newParam = Utils.randomIn(range);
-
-      // 50% chance of negative
-      if (params.allowRandomInverse && Utils.randomBool())
-        newParam*=-1;
-
-      Utils.log('mutating with new param '+newParam);
-      params.obj[params.parameter] = newParam;
-      return {
-        mutatedParameter: params.parameter,
-        changeDescription: "to "+newParam
-      };
-    },
-
     allowRandomInverse: true,
+
     // true if only integers are allowed (ie for an index), otherwise
     // uses floating point
-    discreteMutation: false
+    discreteMutation: false,
+
+    mutateDelta: mutateDelta,
+    mutateRandom: mutateRandom
   });
 
   Utils.log('mutating('+params.parameter+') '+params.obj);
 
-
-
   // Only change the weight by a given delta
   if (Utils.randomChance(params.mutationDeltaChance))
-    return params.mutateDelta.call(target);
+    return params.mutateDelta(params);
   // Use a new random weight in range
   else
-    return params.mutateRandom.call(target);
+    return params.mutateRandom(params);
 };
+// this===params
+function mutateDelta(params) {
+  var delta;
+
+  if (_.isNumber(params.mutationDelta.min) ||
+      typeof params.mutationDelta.min.y0 !== 'undefined')
+  {
+    throw "Old mutationDelta with min/max as number or {y0,y1} no longer supported";
+  }
+
+  delta = {
+    min: Utils.interpolate(params.mutationDeltaInterpolationType,
+                           params.mutationDelta.min,
+                           params.mutationDistance),
+    max: Utils.interpolate(params.mutationDeltaInterpolationType,
+                           params.mutationDelta.max,
+                           params.mutationDistance)
+  };
+
+  if (params.discreteMutation)
+    delta = Utils.randomIndexIn(delta);
+  else
+    delta = Utils.randomIn(delta);
+
+  // 50% chance of negative
+  if (params.allowDeltaInverse && Utils.randomBool())
+    delta*=-1;
+
+  Utils.log('mutating by delta '+delta.toFixed(3));
+  params.obj[params.parameter]+=delta;
+
+  return {
+    mutatedParameter: params.parameter,
+    changeDescription: "by delta "+delta.toFixed(3)
+  };
+}
+function mutateRandom(params) {
+  var newParam, range;
+
+  range = params.randomMutationRange;
+  if (params.discreteMutation)
+    newParam = Utils.randomIndexIn(range);
+  else
+    newParam = Utils.randomIn(range);
+
+  // 50% chance of negative
+  if (params.allowRandomInverse && Utils.randomBool())
+    newParam*=-1;
+
+  Utils.log('mutating with new param '+newParam);
+  params.obj[params.parameter] = newParam;
+  return {
+    mutatedParameter: params.parameter,
+    changeDescription: "to "+newParam
+  };
+}
+
 
 /*
   Generates a reversible unique number from two numbers

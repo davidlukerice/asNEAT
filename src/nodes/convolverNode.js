@@ -18,7 +18,7 @@ var ConvolverNode = function(parameters) {
         right[i] = Math.random() * 2 - 1;
     }
 
-    this.audioBuffer = noiseBuffer;    
+    this.audioBuffer = noiseBuffer;
   }
 
 };
@@ -26,15 +26,13 @@ var ConvolverNode = function(parameters) {
 ConvolverNode.prototype = Object.create(Node.prototype);
 ConvolverNode.prototype.name = name;
 ConvolverNode.prototype.defaultParameters = {
-  audioBuffer: null,
-  parameterMutationChance: 0.1
+  audioBuffer: null
 };
 
 ConvolverNode.prototype.clone = function() {
   return new ConvolverNode({
     id: this.id,
     audioBuffer: this.audioBuffer,
-    parameterMutationChance: this.parameterMutationChance,
     mutatableParameters: _.cloneDeep(this.mutatableParameters)
   });
 };
