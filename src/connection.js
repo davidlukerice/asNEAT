@@ -133,7 +133,11 @@ Connection.prototype.toJSON = function() {
     targetParameter: this.targetParameter,
     targetParameterNodeName: this.targetParameterNodeName,
     weight: this.weight,
-    enabled: this.enabled
+    enabled: this.enabled,
+    mutationDeltaChance: this.mutationDeltaChance,
+    mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
+    mutationDelta: this.mutationDelta,
+    randomMutationRange: this.randomMutationRange
   };
   return JSON.stringify(json);
 };
