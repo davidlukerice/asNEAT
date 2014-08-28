@@ -206,78 +206,76 @@ Utils.mutateParameter = function(params) {
     // uses floating point
     discreteMutation: false,
 
-    // this===params
-    mutateDelta: function() {
-      var params = this,
-          delta;
-
-      if (_.isNumber(params.mutationDelta.min) ||
-          typeof params.mutationDelta.min.y0 !== 'undefined')
-      {
-        throw "Old mutationDelta with min/max as number or {y0,y1} no longer supported";
-      }
-
-      delta = {
-        min: Utils.interpolate(params.mutationDeltaInterpolationType,
-                               params.mutationDelta.min,
-                               params.mutationDistance),
-        max: Utils.interpolate(params.mutationDeltaInterpolationType,
-                               params.mutationDelta.max,
-                               params.mutationDistance)
-      };
-
-      if (params.discreteMutation)
-        delta = Utils.randomIndexIn(delta);
-      else
-        delta = Utils.randomIn(delta);
-
-      // 50% chance of negative
-      if (params.allowDeltaInverse && Utils.randomBool())
-        delta*=-1;
-
-      Utils.log('mutating by delta '+delta.toFixed(3));
-      params.obj[params.parameter]+=delta;
-
-      return {
-        mutatedParameter: params.parameter,
-        changeDescription: "by delta "+delta.toFixed(3)
-      };
-    },
-
-    // this===params
-    mutateRandom: function() {
-      var params = this,
-          newParam,
-          range;
-
-      range = params.randomMutationRange;
-      if (params.discreteMutation)
-        newParam = Utils.randomIndexIn(range);
-      else
-        newParam = Utils.randomIn(range);
-
-      // 50% chance of negative
-      if (params.allowRandomInverse && Utils.randomBool())
-        newParam*=-1;
-
-      Utils.log('mutating with new param '+newParam);
-      params.obj[params.parameter] = newParam;
-      return {
-        mutatedParameter: params.parameter,
-        changeDescription: "to "+newParam
-      };
-    }
+    mutateDelta: mutateDelta,
+    mutateRandom: mutateRandom
   });
 
   Utils.log('mutating('+params.parameter+') '+params.obj);
 
   // Only change the weight by a given delta
   if (Utils.randomChance(params.mutationDeltaChance))
-    return params.mutateDelta.call(params);
+    return params.mutateDelta(params);
   // Use a new random weight in range
   else
-    return params.mutateRandom.call(params);
+    return params.mutateRandom(params);
 };
+// this===params
+function mutateDelta(params) {
+  var delta;
+
+  if (_.isNumber(params.mutationDelta.min) ||
+      typeof params.mutationDelta.min.y0 !== 'undefined')
+  {
+    throw "Old mutationDelta with min/max as number or {y0,y1} no longer supported";
+  }
+
+  delta = {
+    min: Utils.interpolate(params.mutationDeltaInterpolationType,
+                           params.mutationDelta.min,
+                           params.mutationDistance),
+    max: Utils.interpolate(params.mutationDeltaInterpolationType,
+                           params.mutationDelta.max,
+                           params.mutationDistance)
+  };
+
+  if (params.discreteMutation)
+    delta = Utils.randomIndexIn(delta);
+  else
+    delta = Utils.randomIn(delta);
+
+  // 50% chance of negative
+  if (params.allowDeltaInverse && Utils.randomBool())
+    delta*=-1;
+
+  Utils.log('mutating by delta '+delta.toFixed(3));
+  params.obj[params.parameter]+=delta;
+
+  return {
+    mutatedParameter: params.parameter,
+    changeDescription: "by delta "+delta.toFixed(3)
+  };
+}
+function mutateRandom(params) {
+  var newParam, range;
+
+  range = params.randomMutationRange;
+  if (params.discreteMutation)
+    newParam = Utils.randomIndexIn(range);
+  else
+    newParam = Utils.randomIn(range);
+
+  // 50% chance of negative
+  if (params.allowRandomInverse && Utils.randomBool())
+    newParam*=-1;
+
+  Utils.log('mutating with new param '+newParam);
+  params.obj[params.parameter] = newParam;
+  return {
+    mutatedParameter: params.parameter,
+    changeDescription: "to "+newParam
+  };
+}
+
 
 /*
   Generates a reversible unique number from two numbers

@@ -107,10 +107,14 @@ test("interpolate", function() {
 });
 
 test("mutateParameter", function() {
-  equal(1, 1, "todo");
-  //var obj = {param1: 0.0};
-  //Utils.mutateParameter({
-  //});
+  var origValue = 1;
+  var obj = {param:origValue};
+  Utils.mutateParameter({
+    obj: obj,
+    parameter: 'param',
+    randomMutationRange: {min: 1.1, max: 1.5}
+  });
+  ok(obj.param !== origValue, "Changes value by default");
 });
 
 test("frequencyForNote", function() {
