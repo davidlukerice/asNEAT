@@ -110,9 +110,16 @@ Utils.shuffle = function(v) {
 Utils.weightedSelection = function(xs) {
   var r = Math.random(),
       sum = 0, element;
+
+  var totalSum = _.reduce(xs, function(sum, x) {
+    return sum+x.weight;
+  }, 0);
+  if (totalSum !== 1.0)
+    throw "xs' weights don't add up to 1.0";
+
   _.forEach(xs, function(x) {
     sum+=x.weight;
-    if (r <= sum) {
+    if (r <= sum && x.weight !== 0) {
       element = x.element;
       return false;
     }
