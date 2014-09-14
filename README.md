@@ -1,4 +1,4 @@
-asNEATjs
+asNEATjs - Audio Synthesis - NeuroEvolution of Augmenting Topologies
 ========
 
-Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API
+An instrument evolution and audio synthesis library built on top of the Web Audio API.
