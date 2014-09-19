@@ -44,6 +44,9 @@ Network.prototype.defaultParameters = {
   nodes: [],
   connections: [],
 
+  // The generation of this network (incremented in Population)
+  generation: 0,
+
   connectionMutationInterpolationType: Utils.InterpolationType.EXPONENTIAL,
   connectionMutationRate: [0.05, 0.8],
 
@@ -80,6 +83,7 @@ Network.prototype.clone = function() {
   return new Network({
     nodes: clonedNodes,
     connections: clonedConnections,
+    generation: this.generation,
     connectionMutationInterpolationType: this.connectionMutationInterpolationType,
     connectionMutationRate: _.clone(this.connectionMutationRate),
     nodeMutationInterpolationType: this.nodeMutationInterpolationType,
@@ -144,6 +148,7 @@ Network.prototype.crossWith = function(otherNetwork) {
   newNetwork = new Network({
     nodes: nodes,
     connections: connections,
+    generation: Math.max(this.generation, otherNetwork.generation)
   });
   newNetwork.lastMutation = {
     // TODO: Highlight changed objects? maybe add in blue for first parent, red for other?
@@ -643,7 +648,8 @@ Network.prototype.getOscillatorAndNoteOscillatorNodes = function() {
 };
 
 Network.prototype.toString = function() {
-  var str = "Nodes:<br>";
+  var str = this.id+' gen('+this.generation+')<br>';
+  str+="Nodes:<br>";
   _.forEach(this.nodes, function(ele) {
     str+=ele.toString()+"<br>";
   });
@@ -659,6 +665,7 @@ Network.prototype.toString = function() {
 Network.prototype.toJSON = function() {
   var json = {
     id: this.id,
+    generation: this.generation,
     nodes: [],
     connections: []
   };

@@ -110,6 +110,7 @@ Population.generateFromParents = function(parents, params) {
       }
     }
 
+    ++x.generation;
     newPopulation.networks.push(x);
   }
   return newPopulation;
