@@ -100,7 +100,7 @@ Population.generateFromParents = function(parents, params) {
 
       x = x.clone();
       for (i=0; i<numMutations; ++i)
-        x.mutate(params.mutationParams);
+        x.mutate(newPopulation.mutationParams);
 
       if (isCrossed) {
         x.lastMutation.objectsChanged = tempLastMutation.objectsChanged.concat(
