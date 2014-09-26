@@ -699,6 +699,7 @@ Network.prototype.toJSON = function() {
   var json = {
     id: this.id,
     generation: this.generation,
+    evolutionHistory: this.evolutionHistory,
     nodes: [],
     connections: []
   };

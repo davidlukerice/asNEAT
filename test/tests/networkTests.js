@@ -161,5 +161,7 @@ test('evolutionHistory', function() {
   equal(c.evolutionHistory[c.evolutionHistory.length-1], 'crossover', 'crossover logs correctly');
   equal(c.evolutionHistory.length, 8, 'crossover combines history');
 
-  equal(c.clone().evolutionHistory.length, 8, 'clone retains history');
+  equal(c.clone().evolutionHistory.length, 8, 'clone preserves history');
+
+  equal(Network.createFromJSON(c.toJSON()).evolutionHistory.length, 8, 'JSON preserves history');
 });
