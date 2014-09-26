@@ -1,4 +1,4 @@
-/* asNEAT 0.4.2 2014-09-25 */
+/* asNEAT 0.4.3 2014-09-25 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
