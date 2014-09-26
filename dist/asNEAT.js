@@ -391,7 +391,7 @@ define("asNEAT/network",
         changeDescription: "Crossed instruments "+this.id+" & "+otherNetwork.id
       };
       updateObjectsInMutation(newNetwork.lastMutation);
-      newNetwork.addToEvolutionHistory(this.EvolutionTypes.CROSSOVER);
+      newNetwork.addToEvolutionHistory(EvolutionTypes.CROSSOVER);
 
       return newNetwork;
     };
@@ -494,7 +494,7 @@ define("asNEAT/network",
      * The various types of mutations listed in evolutionHistory
      * @type {{SPLIT_MUTATION: string, ADD_OSCILLATOR: string, ADD_CONNECTION: string, MUTATE_CONNECTION_WEIGHTS: string, MUTATE_NODE_PARAMETERS: string, CROSSOVER: string, BRANCH: string}}
      */
-    Network.prototype.EvolutionTypes = {
+    var EvolutionTypes = {
         SPLIT_MUTATION: 'splitMutation',
         ADD_OSCILLATOR: 'addOscillator',
         ADD_CONNECTION: 'addConnection',
@@ -503,6 +503,7 @@ define("asNEAT/network",
         CROSSOVER: 'crossover',
         BRANCH: 'branch'
     };
+    Network.EvolutionTypes = EvolutionTypes;
 
     /**
      * Helper method for adding to the Network's evolutionHistory
@@ -640,7 +641,7 @@ define("asNEAT/network",
         changeDescription: "Split Connection"
       };
 
-      this.addToEvolutionHistory(this.EvolutionTypes.SPLIT_MUTATION);
+      this.addToEvolutionHistory(EvolutionTypes.SPLIT_MUTATION);
       return this;
     };
 
@@ -706,7 +707,7 @@ define("asNEAT/network",
         changeDescription: "Added Oscillator"
       };
 
-      this.addToEvolutionHistory(this.EvolutionTypes.ADD_OSCILLATOR);
+      this.addToEvolutionHistory(EvolutionTypes.ADD_OSCILLATOR);
       return this;
     };
 
@@ -734,7 +735,7 @@ define("asNEAT/network",
         changeDescription: "Added Connection"
       };
 
-      this.addToEvolutionHistory(this.EvolutionTypes.ADD_CONNECTION);
+      this.addToEvolutionHistory(EvolutionTypes.ADD_CONNECTION);
       return this;
     };
       Network.prototype.getPossibleNewConnections = function(usingFM) {
@@ -841,7 +842,7 @@ define("asNEAT/network",
         changeDescription: "Mutated connection gain"
       };
 
-      this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_CONNECTION_WEIGHTS);
+      this.addToEvolutionHistory(EvolutionTypes.MUTATE_CONNECTION_WEIGHTS);
       return this;
     };
 
@@ -885,7 +886,7 @@ define("asNEAT/network",
         changeDescription: "Mutated Node Parameters"
       };
 
-      this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_NODE_PARAMETERS);
+      this.addToEvolutionHistory(EvolutionTypes.MUTATE_NODE_PARAMETERS);
       return this;
     };
 

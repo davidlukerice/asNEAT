@@ -160,7 +160,7 @@ Network.prototype.crossWith = function(otherNetwork) {
     changeDescription: "Crossed instruments "+this.id+" & "+otherNetwork.id
   };
   updateObjectsInMutation(newNetwork.lastMutation);
-  newNetwork.addToEvolutionHistory(this.EvolutionTypes.CROSSOVER);
+  newNetwork.addToEvolutionHistory(EvolutionTypes.CROSSOVER);
 
   return newNetwork;
 };
@@ -263,7 +263,7 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
  * The various types of mutations listed in evolutionHistory
  * @type {{SPLIT_MUTATION: string, ADD_OSCILLATOR: string, ADD_CONNECTION: string, MUTATE_CONNECTION_WEIGHTS: string, MUTATE_NODE_PARAMETERS: string, CROSSOVER: string, BRANCH: string}}
  */
-Network.prototype.EvolutionTypes = {
+var EvolutionTypes = {
     SPLIT_MUTATION: 'splitMutation',
     ADD_OSCILLATOR: 'addOscillator',
     ADD_CONNECTION: 'addConnection',
@@ -272,6 +272,7 @@ Network.prototype.EvolutionTypes = {
     CROSSOVER: 'crossover',
     BRANCH: 'branch'
 };
+Network.EvolutionTypes = EvolutionTypes;
 
 /**
  * Helper method for adding to the Network's evolutionHistory
@@ -409,7 +410,7 @@ Network.prototype.splitMutation = function() {
     changeDescription: "Split Connection"
   };
 
-  this.addToEvolutionHistory(this.EvolutionTypes.SPLIT_MUTATION);
+  this.addToEvolutionHistory(EvolutionTypes.SPLIT_MUTATION);
   return this;
 };
 
@@ -475,7 +476,7 @@ Network.prototype.addOscillator = function() {
     changeDescription: "Added Oscillator"
   };
 
-  this.addToEvolutionHistory(this.EvolutionTypes.ADD_OSCILLATOR);
+  this.addToEvolutionHistory(EvolutionTypes.ADD_OSCILLATOR);
   return this;
 };
 
@@ -503,7 +504,7 @@ Network.prototype.addConnection = function() {
     changeDescription: "Added Connection"
   };
 
-  this.addToEvolutionHistory(this.EvolutionTypes.ADD_CONNECTION);
+  this.addToEvolutionHistory(EvolutionTypes.ADD_CONNECTION);
   return this;
 };
   Network.prototype.getPossibleNewConnections = function(usingFM) {
@@ -610,7 +611,7 @@ Network.prototype.mutateConnectionWeights = function(params) {
     changeDescription: "Mutated connection gain"
   };
 
-  this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_CONNECTION_WEIGHTS);
+  this.addToEvolutionHistory(EvolutionTypes.MUTATE_CONNECTION_WEIGHTS);
   return this;
 };
 
@@ -654,7 +655,7 @@ Network.prototype.mutateNodeParameters = function(params) {
     changeDescription: "Mutated Node Parameters"
   };
 
-  this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_NODE_PARAMETERS);
+  this.addToEvolutionHistory(EvolutionTypes.MUTATE_NODE_PARAMETERS);
   return this;
 };
 
