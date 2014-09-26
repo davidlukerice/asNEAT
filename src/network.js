@@ -264,13 +264,13 @@ function playPrep(afterPrepHandler, contextPair, refreshHandlerName, connectHand
  * @type {{SPLIT_MUTATION: string, ADD_OSCILLATOR: string, ADD_CONNECTION: string, MUTATE_CONNECTION_WEIGHTS: string, MUTATE_NODE_PARAMETERS: string, CROSSOVER: string, BRANCH: string}}
  */
 var EvolutionTypes = {
-    SPLIT_MUTATION: 'splitMutation',
-    ADD_OSCILLATOR: 'addOscillator',
-    ADD_CONNECTION: 'addConnection',
-    MUTATE_CONNECTION_WEIGHTS: 'mutateConnectionWeights',
-    MUTATE_NODE_PARAMETERS: 'mutateNodeParameters',
-    CROSSOVER: 'crossover',
-    BRANCH: 'branch'
+    SPLIT_MUTATION: 'sm',
+    ADD_OSCILLATOR: 'ao',
+    ADD_CONNECTION: 'ac',
+    MUTATE_CONNECTION_WEIGHTS: 'mcw',
+    MUTATE_NODE_PARAMETERS: 'mnp',
+    CROSSOVER: 'co',
+    BRANCH: 'b'
 };
 Network.EvolutionTypes = EvolutionTypes;
 
