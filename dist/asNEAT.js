@@ -1,4 +1,4 @@
-/* asNEAT 0.4.2 2014-09-20 */
+/* asNEAT 0.4.2 2014-09-25 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -290,7 +290,9 @@ define("asNEAT/network",
 
       // Percentage of addConnectionMutation will generate a connection
       // for fm, as opposed to a strict audio connection
-      addConnectionFMMutationRate: 0.5
+      addConnectionFMMutationRate: 0.5,
+
+      evolutionHistory: []
     };
     /*
       Creates a deep clone of this network
@@ -318,7 +320,8 @@ define("asNEAT/network",
         connectionMutationInterpolationType: this.connectionMutationInterpolationType,
         connectionMutationRate: _.clone(this.connectionMutationRate),
         nodeMutationInterpolationType: this.nodeMutationInterpolationType,
-        nodeMutationRate: _.clone(this.nodeMutationRate)
+        nodeMutationRate: _.clone(this.nodeMutationRate),
+        evolutionHistory: _.clone(this.evolutionHistory)
       });
     };
     /**
@@ -379,7 +382,8 @@ define("asNEAT/network",
       newNetwork = new Network({
         nodes: nodes,
         connections: connections,
-        generation: Math.max(this.generation, otherNetwork.generation)
+        generation: Math.max(this.generation, otherNetwork.generation),
+        evolutionHistory: this.evolutionHistory.concat(otherNetwork.evolutionHistory)
       });
       newNetwork.lastMutation = {
         // TODO: Highlight changed objects? maybe add in blue for first parent, red for other?
@@ -387,6 +391,7 @@ define("asNEAT/network",
         changeDescription: "Crossed instruments "+this.id+" & "+otherNetwork.id
       };
       updateObjectsInMutation(newNetwork.lastMutation);
+      newNetwork.addToEvolutionHistory(this.EvolutionTypes.CROSSOVER);
 
       return newNetwork;
     };
@@ -484,6 +489,28 @@ define("asNEAT/network",
       if (typeof afterPrepHandler === "function")
         afterPrepHandler(contextPair);
     }
+
+    /**
+     * The various types of mutations listed in evolutionHistory
+     * @type {{SPLIT_MUTATION: string, ADD_OSCILLATOR: string, ADD_CONNECTION: string, MUTATE_CONNECTION_WEIGHTS: string, MUTATE_NODE_PARAMETERS: string, CROSSOVER: string, BRANCH: string}}
+     */
+    Network.prototype.EvolutionTypes = {
+        SPLIT_MUTATION: 'splitMutation',
+        ADD_OSCILLATOR: 'addOscillator',
+        ADD_CONNECTION: 'addConnection',
+        MUTATE_CONNECTION_WEIGHTS: 'mutateConnectionWeights',
+        MUTATE_NODE_PARAMETERS: 'mutateNodeParameters',
+        CROSSOVER: 'crossover',
+        BRANCH: 'branch'
+    };
+
+    /**
+     * Helper method for adding to the Network's evolutionHistory
+     * @param evolutionType
+     */
+    Network.prototype.addToEvolutionHistory = function(evolutionType) {
+        this.evolutionHistory.push(evolutionType);
+    };
 
     /**
       Randomly mutates the network based on weighted probabilities.
@@ -613,6 +640,7 @@ define("asNEAT/network",
         changeDescription: "Split Connection"
       };
 
+      this.addToEvolutionHistory(this.EvolutionTypes.SPLIT_MUTATION);
       return this;
     };
 
@@ -678,6 +706,7 @@ define("asNEAT/network",
         changeDescription: "Added Oscillator"
       };
 
+      this.addToEvolutionHistory(this.EvolutionTypes.ADD_OSCILLATOR);
       return this;
     };
 
@@ -705,6 +734,7 @@ define("asNEAT/network",
         changeDescription: "Added Connection"
       };
 
+      this.addToEvolutionHistory(this.EvolutionTypes.ADD_CONNECTION);
       return this;
     };
       Network.prototype.getPossibleNewConnections = function(usingFM) {
@@ -811,6 +841,7 @@ define("asNEAT/network",
         changeDescription: "Mutated connection gain"
       };
 
+      this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_CONNECTION_WEIGHTS);
       return this;
     };
 
@@ -854,6 +885,7 @@ define("asNEAT/network",
         changeDescription: "Mutated Node Parameters"
       };
 
+      this.addToEvolutionHistory(this.EvolutionTypes.MUTATE_NODE_PARAMETERS);
       return this;
     };
 
