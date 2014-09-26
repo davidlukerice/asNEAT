@@ -136,5 +136,30 @@ test("createFromJSON", function() {
       inOriginal = inOriginal && _.find(a.connections, {id:connection.id});
   });
   ok(inOriginal, "every connection found in original");
+});
 
+test('evolutionHistory', function() {
+  var a = new Network();
+  equal(a.evolutionHistory.length, 0, 'Instrument starts with no history');
+  a.splitMutation();
+  equal(a.evolutionHistory.length, 1, 'History increases by one');
+  equal(a.evolutionHistory[a.evolutionHistory.length-1], 'splitMutation', 'splitMutation logs correctly');
+  a.addOscillator();
+  equal(a.evolutionHistory[a.evolutionHistory.length-1], 'addOscillator', 'addOscillator logs correctly');
+  a.addConnection();
+  equal(a.evolutionHistory[a.evolutionHistory.length-1], 'addConnection', 'addConnection logs correctly');
+  a.mutateConnectionWeights();
+  equal(a.evolutionHistory[a.evolutionHistory.length-1], 'mutateConnectionWeights', 'mutateConnectionWeights logs correctly');
+  a.mutateNodeParameters();
+  equal(a.evolutionHistory[a.evolutionHistory.length-1], 'mutateNodeParameters', 'mutateNodeParameters logs correctly');
+
+  var b = new Network();
+  equal(b.evolutionHistory.length, 0, 'New instruments don\'t copy old history');
+  b.splitMutation();
+  b.splitMutation();
+  var c = a.crossWith(b);
+  equal(c.evolutionHistory[c.evolutionHistory.length-1], 'crossover', 'crossover logs correctly');
+  equal(c.evolutionHistory.length, 8, 'crossover combines history');
+
+  equal(c.clone().evolutionHistory.length, 8, 'clone retains history');
 });
