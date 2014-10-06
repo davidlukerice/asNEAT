@@ -457,7 +457,7 @@ Network.prototype.addOscillator = function() {
     connection = new Connection({
       sourceNode: oscillator,
       targetNode: target,
-      weight: 0.5
+      weight: Utils.randomIn(0.1, 1.0)
     });
 
     log('adding audio oscillator '+oscillator.toString());

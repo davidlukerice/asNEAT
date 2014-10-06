@@ -1,4 +1,4 @@
-/* asNEAT 0.4.3 2014-09-25 */
+/* asNEAT 0.4.3 2014-10-05 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -495,13 +495,13 @@ define("asNEAT/network",
      * @type {{SPLIT_MUTATION: string, ADD_OSCILLATOR: string, ADD_CONNECTION: string, MUTATE_CONNECTION_WEIGHTS: string, MUTATE_NODE_PARAMETERS: string, CROSSOVER: string, BRANCH: string}}
      */
     var EvolutionTypes = {
-        SPLIT_MUTATION: 'splitMutation',
-        ADD_OSCILLATOR: 'addOscillator',
-        ADD_CONNECTION: 'addConnection',
-        MUTATE_CONNECTION_WEIGHTS: 'mutateConnectionWeights',
-        MUTATE_NODE_PARAMETERS: 'mutateNodeParameters',
-        CROSSOVER: 'crossover',
-        BRANCH: 'branch'
+        SPLIT_MUTATION: 'sm',
+        ADD_OSCILLATOR: 'ao',
+        ADD_CONNECTION: 'ac',
+        MUTATE_CONNECTION_WEIGHTS: 'mcw',
+        MUTATE_NODE_PARAMETERS: 'mnp',
+        CROSSOVER: 'co',
+        BRANCH: 'b'
     };
     Network.EvolutionTypes = EvolutionTypes;
 
@@ -688,7 +688,7 @@ define("asNEAT/network",
         connection = new Connection({
           sourceNode: oscillator,
           targetNode: target,
-          weight: 0.5
+          weight: Utils.randomIn(0.1, 1.0)
         });
 
         log('adding audio oscillator '+oscillator.toString());
