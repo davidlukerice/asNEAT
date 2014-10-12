@@ -33,21 +33,25 @@ FilterNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [10, 100], max: [300, 700]},
+      mutationDeltaAllowableRange: {min: freqMin, max: freqMax},
       allowDeltaInverse: true,
-      randomMutationRange: {min: 27.5, max: 1046.5}
+      randomMutationRange: {min: freqMin, max: freqMax}
   }],
   connectableParameters: [{
       name: "frequency",
       deltaRange: {min: [10, 100], max: [300, 700]},
-      randomRange: {min: freqMin, max: freqMax}
+      randomRange: {min: freqMin, max: freqMax},
+      mutationDeltaAllowableRange: {min: freqMin, max: freqMax},
     },{
       name: "Q",
       deltaRange: {min: [0.0001, 1], max: [3, 10]},
-      randomRange: {min: qMin, max: qMax}
+      randomRange: {min: qMin, max: qMax},
+      mutationDeltaAllowableRange: {min: qMin, max: qMax},
     },{
       name: "gain",
       deltaRange: {min: [0.1, 1], max: [2, 6]},
-      randomRange: {min: gainMin, max: gainMax}
+      randomRange: {min: gainMin, max: gainMax},
+      mutationDeltaAllowableRange: {min: gainMin, max: gainMax},
   }]
 };
 

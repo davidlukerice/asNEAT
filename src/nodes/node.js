@@ -41,6 +41,7 @@ Node.prototype.defaultParameters = {
     //  name: "frequency", : must be able to osc.connect(node.name)
     //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
     //  deltaRange: {min: [y0, y1], max: [y0, y1]},
+    //  mutationDeltaAllowableRange: {min, max},
     //  randomRange:  { min: <number>, max: <number>}: range of allowed amplitude
     //  modulating the parameter
     //  // TODO: Handle snapping to carrier frequency multiple?

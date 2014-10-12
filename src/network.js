@@ -555,6 +555,7 @@ Network.prototype.addConnection = function() {
             targetParameterNodeName: targetParameter.nodeName,
             weight: Utils.randomIn(randomRange.min, randomRange.max),
             mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+            mutationDeltaAllowableRange: _.cloneDeep(targetParameter.mutationDeltaAllowableRange),
             randomMutationRange: _.cloneDeep(targetParameter.randomRange)
           }));
         }

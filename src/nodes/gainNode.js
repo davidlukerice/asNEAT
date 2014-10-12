@@ -26,15 +26,17 @@ GainNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.02, 0.1], max: [0.2, 0.4]},
       allowDeltaInverse: true,
-      mutationDeltaAllowableRange: {min: -1, max: 1},
-      randomMutationRange: {min: -1, max: 1}
+      mutationDeltaAllowableRange: {min: -1*gainMax, max: gainMax},
+      randomMutationRange: {min: gainMin, max: gainMax},
+      allowRandomInverse:true
     }
   ],
   connectableParameters: [
     {
       name: "gain",
       deltaRange: {min: [0.1, 0.3], max: [0.5, 1]},
-      randomRange: {min: gainMin, max: gainMax}
+      randomRange: {min: gainMin, max: gainMax},
+      mutationDeltaAllowableRange: {min: 0.1, max: gainMax},
     }
   ]
 };

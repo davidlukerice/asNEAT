@@ -93,6 +93,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
       name: "frequency",
       nodeName: "oscNode",
       deltaRange: {min: [10, 200], max: [300, 700]},
+      mutationDeltaAllowableRange: {min: -2000, max: 2000},
       randomRange: {min: -2000, max: 2000}
     }
   ]
