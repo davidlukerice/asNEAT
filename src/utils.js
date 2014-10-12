@@ -175,7 +175,7 @@ Utils.interpolate = function(interpolationType, ys, x) {
 };
 
 /*
-  Mutates the given
+  Mutates a specific field based on the given params
   @param params See defaults
   @return {mutatedParameter, changeDescription}
  */
@@ -202,6 +202,11 @@ Utils.mutateParameter = function(params) {
     // [].length===2 the interpolation min max
     mutationDelta: {min: [0.05, 0.5], max: [0.2, 0.8]},
     allowDeltaInverse: true,
+
+    // Optional range to clamp a mutated parameter to.
+    // ex: if {min: 0.0, max: 1.0}, than the parameter will never mutate below min
+    // or above max
+    mutationDeltaAllowableRange: null,
 
     // note: the inverse is also possible (ex (-max, -min]) when
     // allowRandomInverse is true
@@ -256,6 +261,15 @@ function mutateDelta(params) {
 
   Utils.log('mutating by delta '+delta.toFixed(3));
   params.obj[params.parameter]+=delta;
+
+  if (params.mutationDeltaAllowableRange) {
+    var val = params.obj[params.parameter];
+    params.obj[params.parameter] = Utils.clamp(
+      params.obj[params.parameter],
+      params.mutationDeltaAllowableRange.min,
+      params.mutationDeltaAllowableRange.max
+    );
+  }
 
   return {
     mutatedParameter: params.parameter,

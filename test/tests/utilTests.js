@@ -115,6 +115,23 @@ test("mutateParameter", function() {
     randomMutationRange: {min: 1.1, max: 1.5}
   });
   ok(obj.param !== origValue, "Changes value by default");
+
+  obj = {param:-1};
+  var mutationParams = {
+    obj: obj,
+    parameter: 'param',
+    mutationDeltaChance: 1.0,
+    mutationDelta: {min:[0, 0], max: [0,0]},
+    mutationDeltaAllowableRange: {min: 0, max:1}
+  };
+  Utils.mutateParameter(mutationParams);
+  equal(obj.param, 0, "mutationDeltaAllowablRange clamps min");
+  obj.param = 2;
+  Utils.mutateParameter(mutationParams);
+  equal(obj.param, 1, "mutationDeltaAllowableRange clamps max");
+  obj.param = 0.5;
+  Utils.mutateParameter(mutationParams);
+  equal(obj.param, 0.5, "mutationDeltaAllowableRange allows value in range");
 });
 
 test("frequencyForNote", function() {
