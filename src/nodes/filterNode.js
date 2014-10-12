@@ -25,7 +25,7 @@ FilterNode.prototype.defaultParameters = {
   mutatableParameters: [{
       name: 'type',
       mutationDeltaChance: 0,
-      randomMutationRange: {min: 0, max: 8},
+      randomMutationRange: {min: 0, max: 7},
       allowRandomInverse: false,
       discreteMutation: true
     },{
