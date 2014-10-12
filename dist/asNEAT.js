@@ -1,4 +1,4 @@
-/* asNEAT 0.4.4 2014-10-11 */
+/* asNEAT 0.4.5 2014-10-11 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -87,7 +87,6 @@ define("asNEAT/connection",
         offlineContext = asNEAT.offlineContext,
         name = "Connection";
 
-    // TODO: Different kinds of connections?
     var Connection = function(parameters) {
       Utils.extend(this, this.defaultParameters, parameters);
       this.gainNode = null;
@@ -114,7 +113,9 @@ define("asNEAT/connection",
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.05, 0.3], max: [0.1, 0.6]},
-      randomMutationRange: {min: 0.1, max: 1.5}
+      mutationDeltaAllowableRange: {min: -1, max: 1},
+      randomMutationRange: {min: 0.1, max: 1.0},
+      allowRandomInverse: true
     };
 
     /**
@@ -135,6 +136,7 @@ define("asNEAT/connection",
         mutationDeltaChance: this.mutationDeltaChance,
         mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
         mutationDelta: _.clone(this.mutationDelta),
+        mutationDeltaAllowableRange: _.clone(this.mutationDeltaAllowableRange),
         randomMutationRange: _.clone(this.randomMutationRange)
       });
     };
@@ -182,6 +184,7 @@ define("asNEAT/connection",
         mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
         mutationDeltaChance: this.mutationDeltaChance,
         mutationDelta: this.mutationDelta,
+        mutationDeltaAllowableRange: this.mutationDeltaAllowableRange,
         randomMutationRange: this.randomMutationRange
       });
       return this;
@@ -218,6 +221,7 @@ define("asNEAT/connection",
         mutationDeltaChance: this.mutationDeltaChance,
         mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
         mutationDelta: this.mutationDelta,
+        mutationDeltaAllowableRange: this.mutationDeltaAllowableRange,
         randomMutationRange: this.randomMutationRange
       };
       return JSON.stringify(json);
@@ -786,6 +790,7 @@ define("asNEAT/network",
                 targetParameterNodeName: targetParameter.nodeName,
                 weight: Utils.randomIn(randomRange.min, randomRange.max),
                 mutationDelta: _.cloneDeep(targetParameter.deltaRange),
+                mutationDeltaAllowableRange: _.cloneDeep(targetParameter.mutationDeltaAllowableRange),
                 randomMutationRange: _.cloneDeep(targetParameter.randomRange)
               }));
             }
@@ -1025,13 +1030,15 @@ define("asNEAT/nodes/compressorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [1, 10], max: [5, 15]},
+          mutationDeltaAllowableRange: {min: -50, max: 0},
           allowDeltaInverse: true,
-          randomMutationRange: {min: -50, max: 10}
+          randomMutationRange: {min: -50, max: 0}
         },{
           name: 'knee',
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [1, 10], max: [5, 15]},
+          mutationDeltaAllowableRange: {min: 0, max: 40},
           allowDeltaInverse: true,
           randomMutationRange: {min: 20, max: 40}
         },{
@@ -1039,6 +1046,7 @@ define("asNEAT/nodes/compressorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+          mutationDeltaAllowableRange: {min: 1, max: 20},
           allowDeltaInverse: true,
           randomMutationRange: {min: 8, max: 16}
         },{
@@ -1046,6 +1054,7 @@ define("asNEAT/nodes/compressorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+          mutationDeltaAllowableRange: {min: -20, max: 20},
           allowDeltaInverse: true,
           randomMutationRange: {min: -10, max: 0}
         },{
@@ -1053,10 +1062,10 @@ define("asNEAT/nodes/compressorNode",
           // doesn't make sense to change type by a delta
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
-          mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
+          mutationDelta: {min: [0.005, 0.05], max: [0.1, 0.2]},
+          mutationDeltaAllowableRange: {min: 0, max: 1},
           allowDeltaInverse: true,
-          // TODO: set global min?
-          randomMutationRange: {min: 0, max: 0.1}
+          randomMutationRange: {min: 0, max: 0.5}
         },{
           name: 'release',
           // doesn't make sense to change type by a delta
@@ -1064,7 +1073,7 @@ define("asNEAT/nodes/compressorNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
           allowDeltaInverse: true,
-          // TODO: set global min?
+          mutationDeltaAllowableRange: {min: 0, max: 1},
           randomMutationRange: {min: 0, max: 0.1}
         }
       ]
@@ -1254,6 +1263,7 @@ define("asNEAT/nodes/delayNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.05, 0.5], max: [0.1, 1]},
+          mutationDeltaAllowableRange: {min: 0, max: 3},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.0, max: 3.0}
         }
@@ -1334,12 +1344,14 @@ define("asNEAT/nodes/feedbackDelayNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.1, 0.4], max: [0.4, 0.8]},
           allowDeltaInverse: true,
+          mutationDeltaAllowableRange: {min: 0, max: 3},
           randomMutationRange: {min: 0.0, max: 3.0}
         },{
           name: 'feedbackRatio',
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.05, 0.1], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: -1, max: 1},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0, max: 0.6}
         }
@@ -1439,7 +1451,7 @@ define("asNEAT/nodes/filterNode",
       mutatableParameters: [{
           name: 'type',
           mutationDeltaChance: 0,
-          randomMutationRange: {min: 0, max: 8},
+          randomMutationRange: {min: 0, max: 7},
           allowRandomInverse: false,
           discreteMutation: true
         },{
@@ -1447,21 +1459,25 @@ define("asNEAT/nodes/filterNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [10, 100], max: [300, 700]},
+          mutationDeltaAllowableRange: {min: freqMin, max: freqMax},
           allowDeltaInverse: true,
-          randomMutationRange: {min: 27.5, max: 1046.5}
+          randomMutationRange: {min: freqMin, max: freqMax}
       }],
       connectableParameters: [{
           name: "frequency",
           deltaRange: {min: [10, 100], max: [300, 700]},
-          randomRange: {min: freqMin, max: freqMax}
+          randomRange: {min: freqMin, max: freqMax},
+          mutationDeltaAllowableRange: {min: freqMin, max: freqMax},
         },{
           name: "Q",
           deltaRange: {min: [0.0001, 1], max: [3, 10]},
-          randomRange: {min: qMin, max: qMax}
+          randomRange: {min: qMin, max: qMax},
+          mutationDeltaAllowableRange: {min: qMin, max: qMax},
         },{
           name: "gain",
           deltaRange: {min: [0.1, 1], max: [2, 6]},
-          randomRange: {min: gainMin, max: gainMax}
+          randomRange: {min: gainMin, max: gainMax},
+          mutationDeltaAllowableRange: {min: gainMin, max: gainMax},
       }]
     };
 
@@ -1583,14 +1599,17 @@ define("asNEAT/nodes/gainNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.02, 0.1], max: [0.2, 0.4]},
           allowDeltaInverse: true,
-          randomMutationRange: {min: -1, max: 1}
+          mutationDeltaAllowableRange: {min: -1*gainMax, max: gainMax},
+          randomMutationRange: {min: gainMin, max: gainMax},
+          allowRandomInverse:true
         }
       ],
       connectableParameters: [
         {
           name: "gain",
           deltaRange: {min: [0.1, 0.3], max: [0.5, 1]},
-          randomRange: {min: gainMin, max: gainMax}
+          randomRange: {min: gainMin, max: gainMax},
+          mutationDeltaAllowableRange: {min: 0.1, max: gainMax},
         }
       ]
     };
@@ -1683,7 +1702,8 @@ define("asNEAT/nodes/node",
       //    mutationDeltaChance: chance for mutating by delta or by ranomd change,
       //    mutationDeltaInterpolationType: Utils.InterpolationType
       //    mutationDelta: {min: [y0,y1], max: [y0,y1]}range that the parameter can be shifter by,
-      //    allowDeltaInverse: {bool}
+      //    allowDeltaInverse: {bool},
+      //    mutationDeltaAllowableRange: {min, max},
       //    randomMutationRange: range parameter can be randomly changed to,
       //    discreteMutation: if mutations should be integers
       //  }
@@ -1694,6 +1714,7 @@ define("asNEAT/nodes/node",
         //  name: "frequency", : must be able to osc.connect(node.name)
         //  nodeName: "oscNode" : if the parameter is anything other than 'node' for the object
         //  deltaRange: {min: [y0, y1], max: [y0, y1]},
+        //  mutationDeltaAllowableRange: {min, max},
         //  randomRange:  { min: <number>, max: <number>}: range of allowed amplitude
         //  modulating the parameter
         //  // TODO: Handle snapping to carrier frequency multiple?
@@ -1709,9 +1730,6 @@ define("asNEAT/nodes/node",
     Node.prototype.clone = function() {
       throw "clone not implemented";
     };
-
-
-    // TODO: Merge refresh and offline refresh?
 
     /**
       Refreshes any web audio context nodes
@@ -1790,6 +1808,7 @@ define("asNEAT/nodes/node",
           allowDeltaInverse: param.allowDeltaInverse,
           randomMutationRange: param.randomMutationRange,
           allowRandomInverse: param.allowRandomInverse,
+          mutationDeltaAllowableRange: param.mutationDeltaAllowableRange,
           discreteMutation: param.discreteMutation
         });
       }
@@ -1867,6 +1886,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [1, 4], max: [5, 15]},
           allowDeltaInverse: true,
+          mutationDeltaAllowableRange: {min: -20, max: 20},
           randomMutationRange: {min: -20, max: 20},
           discreteMutation: true
         },{
@@ -1875,6 +1895,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
           allowDeltaInverse: true,
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
           name: 'decayDuration',
@@ -1882,6 +1903,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
           allowDeltaInverse: true,
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
           name: 'releaseDuration',
@@ -1889,12 +1911,14 @@ define("asNEAT/nodes/noteOscillatorNode",
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
           allowDeltaInverse: true,
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
           name: 'attackVolume',
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: 0.5, max: 1.5},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.5, max: 1.5}
         }
@@ -1904,6 +1928,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           name: "frequency",
           nodeName: "oscNode",
           deltaRange: {min: [10, 200], max: [300, 700]},
+          mutationDeltaAllowableRange: {min: -2000, max: 2000},
           randomRange: {min: -2000, max: 2000}
         }
       ]
@@ -2091,6 +2116,7 @@ define("asNEAT/nodes/oscillatorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [10, 200], max: [50, 800]},
+          mutationDeltaAllowableRange: {min: C6*-1, max: C6},
           allowDeltaInverse: true,
           randomMutationRange: {min: A0, max: C6}
         },{
@@ -2098,6 +2124,7 @@ define("asNEAT/nodes/oscillatorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
@@ -2105,6 +2132,7 @@ define("asNEAT/nodes/oscillatorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
@@ -2112,6 +2140,7 @@ define("asNEAT/nodes/oscillatorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.01, max: 1.0}
         },{
@@ -2119,6 +2148,7 @@ define("asNEAT/nodes/oscillatorNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+          mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
           allowDeltaInverse: true,
           randomMutationRange: {min: 0.5, max: 1.5}
         }
@@ -2128,6 +2158,7 @@ define("asNEAT/nodes/oscillatorNode",
           name: "frequency",
           nodeName: "oscNode",
           deltaRange: {min: [10, 200], max: [300, 700]},
+          mutationDeltaAllowableRange: {min: -2000, max: 2000},
           randomRange: {min: -2000, max: 2000}
         }
       ]
@@ -2417,6 +2448,7 @@ define("asNEAT/nodes/pannerNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.1, 2], max: [4, 8]},
+          mutationDeltaAllowableRange: {min: -5, max: 5},
           allowDeltaInverse: true,
           randomMutationRange: {min: -5, max: 5}
         },{
@@ -2424,6 +2456,7 @@ define("asNEAT/nodes/pannerNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.1, 2], max: [4, 8]},
+          mutationDeltaAllowableRange: {min: -5, max: 5},
           allowDeltaInverse: true,
           randomMutationRange: {min: -5, max: 5}
         },{
@@ -2431,6 +2464,7 @@ define("asNEAT/nodes/pannerNode",
           mutationDeltaChance: 0.8,
           mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
           mutationDelta: {min: [0.1, 2], max: [4, 8]},
+          mutationDeltaAllowableRange: {min: -5, max: 5},
           allowDeltaInverse: true,
           randomMutationRange: {min: -5, max: 5}
         }
@@ -2801,7 +2835,7 @@ define("asNEAT/utils",
     };
 
     /*
-      Mutates the given
+      Mutates a specific field based on the given params
       @param params See defaults
       @return {mutatedParameter, changeDescription}
      */
@@ -2828,6 +2862,11 @@ define("asNEAT/utils",
         // [].length===2 the interpolation min max
         mutationDelta: {min: [0.05, 0.5], max: [0.2, 0.8]},
         allowDeltaInverse: true,
+
+        // Optional range to clamp a mutated parameter to.
+        // ex: if {min: 0.0, max: 1.0}, than the parameter will never mutate below min
+        // or above max
+        mutationDeltaAllowableRange: null,
 
         // note: the inverse is also possible (ex (-max, -min]) when
         // allowRandomInverse is true
@@ -2882,6 +2921,15 @@ define("asNEAT/utils",
 
       Utils.log('mutating by delta '+delta.toFixed(3));
       params.obj[params.parameter]+=delta;
+
+      if (params.mutationDeltaAllowableRange) {
+        var val = params.obj[params.parameter];
+        params.obj[params.parameter] = Utils.clamp(
+          params.obj[params.parameter],
+          params.mutationDeltaAllowableRange.min,
+          params.mutationDeltaAllowableRange.max
+        );
+      }
 
       return {
         mutatedParameter: params.parameter,
