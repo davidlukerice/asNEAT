@@ -1,7 +1,7 @@
 
 var Utils = {};
 
-Utils.IS_DEBUG = true;
+Utils.IS_DEBUG = false;
 
 Utils.log = function(msg) {
   if (!Utils.IS_DEBUG) return;

@@ -1,4 +1,4 @@
-/* asNEAT 0.4.4 2014-10-07 */
+/* asNEAT 0.4.4 2014-10-11 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -2627,7 +2627,7 @@ define("asNEAT/utils",
 
     var Utils = {};
 
-    Utils.IS_DEBUG = true;
+    Utils.IS_DEBUG = false;
 
     Utils.log = function(msg) {
       if (!Utils.IS_DEBUG) return;
