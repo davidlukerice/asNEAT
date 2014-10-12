@@ -21,6 +21,7 @@ PannerNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      mutationDeltaAllowableRange: {min: -5, max: 5},
       allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     },{
@@ -28,6 +29,7 @@ PannerNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      mutationDeltaAllowableRange: {min: -5, max: 5},
       allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     },{
@@ -35,6 +37,7 @@ PannerNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.1, 2], max: [4, 8]},
+      mutationDeltaAllowableRange: {min: -5, max: 5},
       allowDeltaInverse: true,
       randomMutationRange: {min: -5, max: 5}
     }

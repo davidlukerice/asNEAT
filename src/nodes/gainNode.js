@@ -26,6 +26,7 @@ GainNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.02, 0.1], max: [0.2, 0.4]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: -1, max: 1},
       randomMutationRange: {min: -1, max: 1}
     }
   ],

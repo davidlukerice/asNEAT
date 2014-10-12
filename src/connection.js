@@ -6,7 +6,6 @@ var Utils = require('asNEAT/utils')['default'],
     offlineContext = asNEAT.offlineContext,
     name = "Connection";
 
-// TODO: Different kinds of connections?
 var Connection = function(parameters) {
   Utils.extend(this, this.defaultParameters, parameters);
   this.gainNode = null;
@@ -33,7 +32,9 @@ Connection.prototype.defaultParameters = {
   mutationDeltaChance: 0.8,
   mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
   mutationDelta: {min: [0.05, 0.3], max: [0.1, 0.6]},
-  randomMutationRange: {min: 0.1, max: 1.5}
+  mutationDeltaAllowableRange: {min: -1, max: 1},
+  randomMutationRange: {min: 0.1, max: 1.0},
+  allowRandomInverse: true
 };
 
 /**
@@ -54,6 +55,7 @@ Connection.prototype.clone = function(clonedsourceNode, clonedtargetNode) {
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDelta: _.clone(this.mutationDelta),
+    mutationDeltaAllowableRange: _.clone(this.mutationDeltaAllowableRange),
     randomMutationRange: _.clone(this.randomMutationRange)
   });
 };
@@ -101,6 +103,7 @@ Connection.prototype.mutate = function(mutationDistance) {
     mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDelta: this.mutationDelta,
+    mutationDeltaAllowableRange: this.mutationDeltaAllowableRange,
     randomMutationRange: this.randomMutationRange
   });
   return this;
@@ -137,6 +140,7 @@ Connection.prototype.toJSON = function() {
     mutationDeltaChance: this.mutationDeltaChance,
     mutationDeltaInterpolationType: this.mutationDeltaInterpolationType,
     mutationDelta: this.mutationDelta,
+    mutationDeltaAllowableRange: this.mutationDeltaAllowableRange,
     randomMutationRange: this.randomMutationRange
   };
   return JSON.stringify(json);

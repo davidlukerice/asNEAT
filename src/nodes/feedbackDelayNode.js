@@ -23,12 +23,14 @@ FeedbackDelayNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.1, 0.4], max: [0.4, 0.8]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: 0, max: 3},
       randomMutationRange: {min: 0.0, max: 3.0}
     },{
       name: 'feedbackRatio',
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.05, 0.1], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: -1, max: 1},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0, max: 0.6}
     }

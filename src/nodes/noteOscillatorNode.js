@@ -51,6 +51,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [1, 4], max: [5, 15]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: -20, max: 20},
       randomMutationRange: {min: -20, max: 20},
       discreteMutation: true
     },{
@@ -59,6 +60,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'decayDuration',
@@ -66,6 +68,7 @@ NoteOscillatorNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'releaseDuration',
@@ -73,12 +76,14 @@ NoteOscillatorNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
       allowDeltaInverse: true,
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
       name: 'attackVolume',
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: 0.5, max: 1.5},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.5, max: 1.5}
     }

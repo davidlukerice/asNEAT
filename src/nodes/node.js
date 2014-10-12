@@ -29,7 +29,8 @@ Node.prototype.defaultParameters = {
   //    mutationDeltaChance: chance for mutating by delta or by ranomd change,
   //    mutationDeltaInterpolationType: Utils.InterpolationType
   //    mutationDelta: {min: [y0,y1], max: [y0,y1]}range that the parameter can be shifter by,
-  //    allowDeltaInverse: {bool}
+  //    allowDeltaInverse: {bool},
+  //    mutationDeltaAllowableRange: {min, max},
   //    randomMutationRange: range parameter can be randomly changed to,
   //    discreteMutation: if mutations should be integers
   //  }
@@ -55,9 +56,6 @@ Node.prototype.defaultParameters = {
 Node.prototype.clone = function() {
   throw "clone not implemented";
 };
-
-
-// TODO: Merge refresh and offline refresh?
 
 /**
   Refreshes any web audio context nodes
@@ -136,6 +134,7 @@ Node.prototype.mutate = function(params) {
       allowDeltaInverse: param.allowDeltaInverse,
       randomMutationRange: param.randomMutationRange,
       allowRandomInverse: param.allowRandomInverse,
+      mutationDeltaAllowableRange: param.mutationDeltaAllowableRange,
       discreteMutation: param.discreteMutation
     });
   }

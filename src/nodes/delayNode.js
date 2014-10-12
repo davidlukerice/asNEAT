@@ -20,6 +20,7 @@ DelayNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.05, 0.5], max: [0.1, 1]},
+      mutationDeltaAllowableRange: {min: 0, max: 3},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.0, max: 3.0}
     }

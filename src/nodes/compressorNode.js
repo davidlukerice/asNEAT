@@ -43,13 +43,15 @@ CompressorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [1, 10], max: [5, 15]},
+      mutationDeltaAllowableRange: {min: -50, max: 0},
       allowDeltaInverse: true,
-      randomMutationRange: {min: -50, max: 10}
+      randomMutationRange: {min: -50, max: 0}
     },{
       name: 'knee',
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [1, 10], max: [5, 15]},
+      mutationDeltaAllowableRange: {min: 0, max: 40},
       allowDeltaInverse: true,
       randomMutationRange: {min: 20, max: 40}
     },{
@@ -57,6 +59,7 @@ CompressorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+      mutationDeltaAllowableRange: {min: 1, max: 20},
       allowDeltaInverse: true,
       randomMutationRange: {min: 8, max: 16}
     },{
@@ -64,6 +67,7 @@ CompressorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.5], max: [1, 4]},
+      mutationDeltaAllowableRange: {min: -20, max: 20},
       allowDeltaInverse: true,
       randomMutationRange: {min: -10, max: 0}
     },{
@@ -71,10 +75,10 @@ CompressorNode.prototype.defaultParameters = {
       // doesn't make sense to change type by a delta
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
-      mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
+      mutationDelta: {min: [0.005, 0.05], max: [0.1, 0.2]},
+      mutationDeltaAllowableRange: {min: 0, max: 1},
       allowDeltaInverse: true,
-      // TODO: set global min?
-      randomMutationRange: {min: 0, max: 0.1}
+      randomMutationRange: {min: 0, max: 0.5}
     },{
       name: 'release',
       // doesn't make sense to change type by a delta
@@ -82,7 +86,7 @@ CompressorNode.prototype.defaultParameters = {
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.005, 0.02], max: [0.01, 0.05]},
       allowDeltaInverse: true,
-      // TODO: set global min?
+      mutationDeltaAllowableRange: {min: 0, max: 1},
       randomMutationRange: {min: 0, max: 0.1}
     }
   ]

@@ -39,6 +39,7 @@ OscillatorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [10, 200], max: [50, 800]},
+      mutationDeltaAllowableRange: {min: C6*-1, max: C6},
       allowDeltaInverse: true,
       randomMutationRange: {min: A0, max: C6}
     },{
@@ -46,6 +47,7 @@ OscillatorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
@@ -53,6 +55,7 @@ OscillatorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
@@ -60,6 +63,7 @@ OscillatorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.01, max: 1.0}
     },{
@@ -67,6 +71,7 @@ OscillatorNode.prototype.defaultParameters = {
       mutationDeltaChance: 0.8,
       mutationDeltaInterpolationType: Utils.InterpolationType.EXPONENTIAL,
       mutationDelta: {min: [0.01, 0.05], max: [0.1, 0.3]},
+      mutationDeltaAllowableRange: {min: 0.01, max: 1.0},
       allowDeltaInverse: true,
       randomMutationRange: {min: 0.5, max: 1.5}
     }
