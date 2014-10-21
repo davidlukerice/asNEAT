@@ -1,5 +1,15 @@
 module("Network Tests");
-var Network = require('asNEAT/network')['default'];
+var asNEAT = require('asNEAT/asNEAT')['default'],
+    Connection = require('asNEAT/connection')['default'],
+    CompressorNode = require('asNEAT/nodes/compressorNode')['default'],
+    ConvolverNode = require('asNEAT/nodes/convolverNode')['default'],
+    DelayNode = require('asNEAT/nodes/delayNode')['default'],
+    FeedbackDelayNode = require('asNEAT/nodes/feedbackDelayNode')['default'],
+    FilterNode = require('asNEAT/nodes/filterNode')['default'],
+    GainNode = require('asNEAT/nodes/gainNode')['default'],
+    NoteOscillatorNode = require('asNEAT/nodes/noteOscillatorNode')['default'],
+    OscillatorNode = require('asNEAT/nodes/oscillatorNode')['default'],
+    Network = require('asNEAT/network')['default'];
 
 test('network', function() {
   var a = new Network();
@@ -136,6 +146,62 @@ test("createFromJSON", function() {
       inOriginal = inOriginal && _.find(a.connections, {id:connection.id});
   });
   ok(inOriginal, "every connection found in original");
+
+  // Manually test each node type
+  var osc = NoteOscillatorNode.random();
+  osc.noteOffset = 0;
+
+  var compressorNode = CompressorNode.random(),
+      convolverNode = ConvolverNode.random(),
+      delayNode = DelayNode.random(),
+      feedbackDelayNode = FeedbackDelayNode.random(),
+      filterNode = FilterNode.random(),
+      gainNode = GainNode.random(),
+      oscillatorNode = OscillatorNode.random(),
+      osc2 = NoteOscillatorNode.random();
+  osc2.noteOffset = 2;
+  var nodes = [
+    asNEAT.globalOutNode,
+    osc,
+    compressorNode,
+    convolverNode,
+    delayNode,
+    feedbackDelayNode,
+    filterNode,
+    gainNode,
+    oscillatorNode,
+    osc2
+  ];
+  var connections = [
+    new Connection({ sourceNode: nodes[1], targetNode: nodes[0], weight: 0.5, enabled: false}),
+    new Connection({ sourceNode: nodes[1], targetNode: nodes[2], weight: 0.1}),
+    new Connection({ sourceNode: nodes[2], targetNode: nodes[3], weight: 1.0}),
+    new Connection({ sourceNode: nodes[4], targetNode: nodes[5], weight: 1.0}),
+    new Connection({ sourceNode: nodes[5], targetNode: nodes[6], weight: 1.0}),
+    new Connection({ sourceNode: nodes[6], targetNode: nodes[7], weight: 1.0}),
+    new Connection({ sourceNode: nodes[7], targetNode: nodes[0], weight: 1.0}),
+    new Connection({ sourceNode: nodes[8], targetNode: nodes[1], weight: 1.0,
+      targetParameter: 'frequency', targetParameterNodeName: 'oscNode'}),
+    new Connection({ sourceNode: nodes[9], targetNode: nodes[0], weight: 1.0}),
+  ];
+  a = new Network({
+    nodes: nodes,
+    connections: connections
+  });
+  b = Network.createFromJSON(a.toJSON());
+  // Compare nodes
+  (function compare(a, b, i) {
+    if (i===0) {
+      return;
+    }
+    _.forEach(a, function(value, key) {
+      if (typeof value === 'object') {
+        compare(a[key], b[key], i-1);
+        return;
+      }
+      equal(a[key], b[key], 'matching '+key+' = '+value);
+    });
+  })(a,b,3);
 });
 
 test('evolutionHistory', function() {
