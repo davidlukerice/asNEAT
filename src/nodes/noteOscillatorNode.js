@@ -218,6 +218,7 @@ NoteOscillatorNode.random = function() {
       attackDuration = Utils.randomIn(0.01, 1.0),
       decayDuration = Utils.randomIn(0.01, 1.0),
       releaseDuration = Utils.randomIn(0.01, 1.0),
+      sustainDuration = Utils.randomIn(0.1, 1.0),
       attackVolume = Utils.randomIn(0.5, 1.5);
 
   // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
@@ -230,6 +231,7 @@ NoteOscillatorNode.random = function() {
     attackDuration: attackDuration,
     decayDuration: decayDuration,
     releaseDuration: releaseDuration,
+    sustainDuration: sustainDuration,
     attackVolume: attackVolume
   });
 };

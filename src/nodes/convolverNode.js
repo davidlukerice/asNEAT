@@ -55,6 +55,8 @@ function refresh(contextPair, prefix) {
 }
 
 ConvolverNode.prototype.getParameters = function() {
+  // TODO: How to serialize the audioBuffer? Will be different each
+  // time it's created
   return {
     name: name,
     id: this.id
