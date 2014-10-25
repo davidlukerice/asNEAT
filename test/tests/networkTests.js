@@ -188,6 +188,7 @@ test("createFromJSON", function() {
     nodes: nodes,
     connections: connections
   });
+  a.nodes[0].hasChanged = false;
   b = Network.createFromJSON(a.toJSON());
   // Compare nodes
   (function compare(a, b, i) {
