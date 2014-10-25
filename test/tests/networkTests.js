@@ -203,6 +203,7 @@ test("createFromJSON", function() {
       equal(a[key], b[key], 'matching '+key+' = '+value);
     });
   })(a,b,3);
+  equal(a.toJSON(), b.toJSON(), 'from JSON creates same JSON as original');
 });
 
 test('evolutionHistory', function() {
