@@ -9,6 +9,9 @@ var Utils = require('asNEAT/utils')['default'],
 
 var OscillatorNode = function(parameters) {
   Node.call(this, parameters);
+  if (typeof this.type === 'string') {
+    this.type = OscillatorNode.TYPES.indexFor(this.type);
+  }
 };
 
 OscillatorNode.prototype = Object.create(Node.prototype);
@@ -114,7 +117,7 @@ OscillatorNode.prototype.offlineRefresh = function(contextPair) {
 
 function refresh(contextPair, prefix) {
   var oscillator = contextPair.context.createOscillator();
-  oscillator.type = this.type;
+  oscillator.type = OscillatorNode.TYPES[this.type];
   oscillator.frequency.value = this.frequency;
   var gainNode = contextPair.context.createGain();
   oscillator.connect(gainNode);
@@ -208,6 +211,9 @@ OscillatorNode.TYPES = [
 OscillatorNode.TYPES.nameFor = function(type) {
   if (typeof type ==="string") return type;
   return OscillatorNode.TYPES[type];
+};
+OscillatorNode.TYPES.indexFor = function(type) {
+  return _.indexOf(OscillatorNode.TYPES, type);
 };
 OscillatorNode.random = function() {
   var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),

@@ -11,6 +11,9 @@ var Utils = require('asNEAT/utils')['default'],
 
 var FilterNode = function(parameters) {
   Node.call(this, parameters);
+  if (typeof this.type === 'string') {
+    this.type = FilterNode.TYPES.indexFor(this.type);
+  }
 };
 
 FilterNode.prototype = Object.create(Node.prototype);
@@ -78,7 +81,7 @@ FilterNode.prototype.offlineRefresh = function(contextPair) {
 
 function refresh(contextPair, prefix) {
   var node = contextPair.context.createBiquadFilter();
-  node.type = this.type;
+  node.type = FilterNode.TYPES[this.type];
   node.frequency.value = this.frequency;
   node.detune.value = this.detune;
   node.Q.value = this.q;
@@ -117,6 +120,9 @@ FilterNode.TYPES = [
 FilterNode.TYPES.nameFor = function(type) {
   if (typeof type ==="string") return type;
   return FilterNode.TYPES[type];
+};
+FilterNode.TYPES.indexFor = function(type) {
+  return _.indexOf(FilterNode.TYPES, type);
 };
 FilterNode.random = function() {
   var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),

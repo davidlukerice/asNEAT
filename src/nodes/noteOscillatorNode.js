@@ -8,6 +8,9 @@ var Utils = require('asNEAT/utils')['default'],
 */
 var NoteOscillatorNode = function(parameters) {
   Node.call(this, parameters);
+  if (typeof this.type === 'string') {
+    this.type = OscillatorNode.TYPES.indexFor(this.type);
+  }
 };
 
 NoteOscillatorNode.prototype = Object.create(Node.prototype);
@@ -124,7 +127,7 @@ NoteOscillatorNode.prototype.offlineRefresh = function(contextPair) {
 
 function refresh(contextPair, prefix) {
   var oscillator = contextPair.context.createOscillator();
-  oscillator.type = this.type;
+  oscillator.type = OscillatorNode.TYPES[this.type];
   oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
       this.stepFromRootNote + this.noteOffset);
   var gainNode = contextPair.context.createGain();
