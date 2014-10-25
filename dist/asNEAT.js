@@ -1,4 +1,4 @@
-/* asNEAT 0.4.5 2014-10-11 */
+/* asNEAT 0.4.6 2014-10-25 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -1218,6 +1218,8 @@ define("asNEAT/nodes/convolverNode",
     }
 
     ConvolverNode.prototype.getParameters = function() {
+      // TODO: How to serialize the audioBuffer? Will be different each
+      // time it's created
       return {
         name: name,
         id: this.id
@@ -1437,6 +1439,9 @@ define("asNEAT/nodes/filterNode",
 
     var FilterNode = function(parameters) {
       Node.call(this, parameters);
+      if (typeof this.type === 'string') {
+        this.type = FilterNode.TYPES.indexFor(this.type);
+      }
     };
 
     FilterNode.prototype = Object.create(Node.prototype);
@@ -1504,7 +1509,7 @@ define("asNEAT/nodes/filterNode",
 
     function refresh(contextPair, prefix) {
       var node = contextPair.context.createBiquadFilter();
-      node.type = this.type;
+      node.type = FilterNode.TYPES[this.type];
       node.frequency.value = this.frequency;
       node.detune.value = this.detune;
       node.Q.value = this.q;
@@ -1543,6 +1548,9 @@ define("asNEAT/nodes/filterNode",
     FilterNode.TYPES.nameFor = function(type) {
       if (typeof type ==="string") return type;
       return FilterNode.TYPES[type];
+    };
+    FilterNode.TYPES.indexFor = function(type) {
+      return _.indexOf(FilterNode.TYPES, type);
     };
     FilterNode.random = function() {
       var typeI = Utils.randomIndexIn(0,FilterNode.TYPES.length),
@@ -1843,6 +1851,9 @@ define("asNEAT/nodes/noteOscillatorNode",
     */
     var NoteOscillatorNode = function(parameters) {
       Node.call(this, parameters);
+      if (typeof this.type === 'string') {
+        this.type = OscillatorNode.TYPES.indexFor(this.type);
+      }
     };
 
     NoteOscillatorNode.prototype = Object.create(Node.prototype);
@@ -1959,7 +1970,7 @@ define("asNEAT/nodes/noteOscillatorNode",
 
     function refresh(contextPair, prefix) {
       var oscillator = contextPair.context.createOscillator();
-      oscillator.type = this.type;
+      oscillator.type = OscillatorNode.TYPES[this.type];
       oscillator.frequency.value = Utils.frequencyOfStepsFromRootNote(
           this.stepFromRootNote + this.noteOffset);
       var gainNode = contextPair.context.createGain();
@@ -2053,6 +2064,7 @@ define("asNEAT/nodes/noteOscillatorNode",
           attackDuration = Utils.randomIn(0.01, 1.0),
           decayDuration = Utils.randomIn(0.01, 1.0),
           releaseDuration = Utils.randomIn(0.01, 1.0),
+          sustainDuration = Utils.randomIn(0.1, 1.0),
           attackVolume = Utils.randomIn(0.5, 1.5);
 
       // noteOffset - # of steps from the root note (default A4=440hz) on a tempered scale.
@@ -2065,6 +2077,7 @@ define("asNEAT/nodes/noteOscillatorNode",
         attackDuration: attackDuration,
         decayDuration: decayDuration,
         releaseDuration: releaseDuration,
+        sustainDuration: sustainDuration,
         attackVolume: attackVolume
       });
     };
@@ -2086,6 +2099,9 @@ define("asNEAT/nodes/oscillatorNode",
 
     var OscillatorNode = function(parameters) {
       Node.call(this, parameters);
+      if (typeof this.type === 'string') {
+        this.type = OscillatorNode.TYPES.indexFor(this.type);
+      }
     };
 
     OscillatorNode.prototype = Object.create(Node.prototype);
@@ -2191,7 +2207,7 @@ define("asNEAT/nodes/oscillatorNode",
 
     function refresh(contextPair, prefix) {
       var oscillator = contextPair.context.createOscillator();
-      oscillator.type = this.type;
+      oscillator.type = OscillatorNode.TYPES[this.type];
       oscillator.frequency.value = this.frequency;
       var gainNode = contextPair.context.createGain();
       oscillator.connect(gainNode);
@@ -2286,12 +2302,16 @@ define("asNEAT/nodes/oscillatorNode",
       if (typeof type ==="string") return type;
       return OscillatorNode.TYPES[type];
     };
+    OscillatorNode.TYPES.indexFor = function(type) {
+      return _.indexOf(OscillatorNode.TYPES, type);
+    };
     OscillatorNode.random = function() {
       var typeI = Utils.randomIndexIn(0,OscillatorNode.TYPES.length),
           freq = Utils.randomIn(A0, C6),
           attackDuration = Utils.randomIn(0.01, 1.0),
           decayDuration = Utils.randomIn(0.01, 1.0),
           releaseDuration = Utils.randomIn(0.01, 1.0),
+          sustainDuration = Utils.randomIn(0.1, 1.0),
           attackVolume = Utils.randomIn(0.5, 1.5);
 
       // From w3 spec
@@ -2305,6 +2325,7 @@ define("asNEAT/nodes/oscillatorNode",
         attackDuration: attackDuration,
         decayDuration: decayDuration,
         releaseDuration: releaseDuration,
+        sustainDuration: sustainDuration,
         attackVolume: attackVolume
       });
     };
