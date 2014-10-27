@@ -23,6 +23,11 @@
     <button class='playClone'>play Clone</button>
     <button class='playFromJson'>play create from json</button>
     <button class="offlinePlay">Offline Play</button>
+    <br>
+    <button class='new'>new</button>
+    <button class='new10'>new x10</button>
+    <button class='new30'>new x30</button>
+    <br>
     <button class="panic">Panic!</button>
     <br>
 
@@ -49,13 +54,20 @@
 
       !function() {
         $(function() {
-          var asNEAT = require('asNEAT/asNEAT')['default'],
-              log = require('asNEAT/utils')['default'].log,
-              Network = require('asNEAT/network')['default'];
 
-          network = new Network();
+          function newInstrument() {
+            var asNEAT = require('asNEAT/asNEAT')['default'],
+                log = require('asNEAT/utils')['default'].log,
+                Network = require('asNEAT/network')['default'];
 
-          refresh();
+            network = new Network()
+              .addOscillator()
+              .addOscillator()
+              .splitMutation()
+              .splitMutation();
+            refresh();
+          }
+          newInstrument();
 
           var stopFunc = null;
           $('button.play').click(function() {
@@ -109,6 +121,24 @@
           $('button.panic').click(function() {
             asNEAT.resetOutNodes();
             refresh();
+          });
+
+          $('button.new').click(function() {
+            newInstrument();
+          });
+          $('button.new10').click(function() {
+            for (var i=0; i<10; ++i) {
+              setTimeout(function() {
+                newInstrument();
+              });
+            }
+          });
+          $('button.new30').click(function() {
+            for (var i=0; i<30; ++i) {
+              setTimeout(function() {
+                newInstrument();
+              });
+            }
           });
 
           function refresh() {
