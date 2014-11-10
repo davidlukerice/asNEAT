@@ -1,4 +1,4 @@
-/* asNEAT 0.4.6 2014-10-25 */
+/* asNEAT 0.4.7 2014-11-09 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -2893,7 +2893,7 @@ define("asNEAT/utils",
         // allowRandomInverse is true
         randomMutationRange: {min: 0.1, max: 1.5},
 
-        allowRandomInverse: true,
+        allowRandomInverse: false,
 
         // true if only integers are allowed (ie for an index), otherwise
         // uses floating point
@@ -2940,7 +2940,7 @@ define("asNEAT/utils",
       if (params.allowDeltaInverse && Utils.randomBool())
         delta*=-1;
 
-      Utils.log('mutating by delta '+delta.toFixed(3));
+      Utils.log('mutating('+params.parameter+') by delta '+delta.toFixed(3)+' to '+(params.obj[params.parameter]+delta));
       params.obj[params.parameter]+=delta;
 
       if (params.mutationDeltaAllowableRange) {
@@ -2970,7 +2970,7 @@ define("asNEAT/utils",
       if (params.allowRandomInverse && Utils.randomBool())
         newParam*=-1;
 
-      Utils.log('mutating with new param '+newParam);
+      Utils.log('mutating('+params.parameter+') with new param '+newParam);
       params.obj[params.parameter] = newParam;
       return {
         mutatedParameter: params.parameter,
