@@ -1,4 +1,4 @@
-/* asNEAT 0.4.7 2014-11-09 */
+/* asNEAT 0.4.8 2015-02-08 */
 define("asNEAT/asNEAT", 
   ["exports"],
   function(__exports__) {
@@ -404,14 +404,14 @@ define("asNEAT/network",
       @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
         but before they are played.
     */
-    Network.prototype.play = function(afterPrepHandler) {
+    Network.prototype.play = function(afterPrepHandler, delayTime) {
       var context = asNEAT.context;
       playPrep.call(this, afterPrepHandler);
 
       // play the oscillators
       _.forEach(this.nodes, function(node) {
         if (node.play)
-          node.play(context);
+          node.play(context, delayTime);
       });
 
       return this;
@@ -1982,10 +1982,10 @@ define("asNEAT/nodes/noteOscillatorNode",
       this[nodeName] = gainNode;
     }
 
-    NoteOscillatorNode.prototype.play = function(context) {
+    NoteOscillatorNode.prototype.play = function(context, delayTime) {
       var gainNode = this.node,
           oscNode = this.oscNode;
-      play.call(this, context, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode, delayTime);
     };
 
     NoteOscillatorNode.prototype.offlinePlay = function(context) {
@@ -1994,7 +1994,7 @@ define("asNEAT/nodes/noteOscillatorNode",
       play.call(this, context, gainNode, oscNode);
     };
 
-    function play(context, gainNode, oscNode) {
+    function play(context, gainNode, oscNode, delayTime) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           attackVolume = this.attackVolume,
@@ -2002,11 +2002,13 @@ define("asNEAT/nodes/noteOscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
+      if (typeof delayTime === 'undefined') delayTime = 0;
       OscillatorNode.setupEnvelope(context, gainNode, oscNode,
-        attackVolume, attackDuration, sustainVolume, decayDuration);
+        attackVolume, attackDuration, sustainVolume, decayDuration, delayTime);
 
       var timeToRelease = context.currentTime + waitTime;
-      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
+      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode,
+        releaseDuration, delayTime);
     }
 
     /**
@@ -2218,10 +2220,10 @@ define("asNEAT/nodes/oscillatorNode",
       this[nodeName] = gainNode;
     }
 
-    OscillatorNode.prototype.play = function(context) {
+    OscillatorNode.prototype.play = function(context, delayTime) {
       var gainNode = this.node,
           oscNode = this.oscNode;
-      play.call(this, context, gainNode, oscNode);
+      play.call(this, context, gainNode, oscNode, delayTime);
     };
     OscillatorNode.prototype.offlinePlay = function(context) {
       var gainNode = this.offlineNode,
@@ -2229,7 +2231,7 @@ define("asNEAT/nodes/oscillatorNode",
       play.call(this, context, gainNode, oscNode);
     };
 
-    function play(context, gainNode, oscNode) {
+    function play(context, gainNode, oscNode, delayTime) {
       var self = this,
           waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
           attackVolume = this.attackVolume,
@@ -2237,11 +2239,13 @@ define("asNEAT/nodes/oscillatorNode",
           sustainVolume = this.sustainVolume,
           decayDuration = this.decayDuration,
           releaseDuration = this.releaseDuration;
+      if (typeof delayTime === 'undefined') delayTime = 0;
       OscillatorNode.setupEnvelope(context, gainNode, oscNode,
-        attackVolume, attackDuration, sustainVolume, decayDuration);
+        attackVolume, attackDuration, sustainVolume, decayDuration, delayTime);
 
       var timeToRelease = context.currentTime + waitTime;
-      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
+      OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode,
+        releaseDuration, delayTime);
     }
 
     /**
@@ -2331,14 +2335,18 @@ define("asNEAT/nodes/oscillatorNode",
     };
 
     // All params passed in in case the calling oscillator has changed its parameters before releasing the osc
-    OscillatorNode.setupEnvelope = function(context, gainNode, oscNode, attackVolume, attackDuration, sustainVolume, decayDuration) {
+    OscillatorNode.setupEnvelope = function(
+      context, gainNode, oscNode, attackVolume, attackDuration,
+      sustainVolume, decayDuration, delayTime)
+    {
       var time = context.currentTime;
+      if (typeof delayTime === 'undefined') delayTime = 0;
       gainNode.gain.cancelScheduledValues(time);
       gainNode.gain.value = 1.0;
-      gainNode.gain.setValueAtTime(0, time);
-      gainNode.gain.linearRampToValueAtTime(attackVolume, time + attackDuration);
-      gainNode.gain.linearRampToValueAtTime(sustainVolume, time + attackDuration + decayDuration);
-      oscNode.start(0);
+      gainNode.gain.setValueAtTime(0, delayTime + time);
+      gainNode.gain.linearRampToValueAtTime(attackVolume, delayTime + time + attackDuration);
+      gainNode.gain.linearRampToValueAtTime(sustainVolume, delayTime + time + attackDuration + decayDuration);
+      oscNode.start(delayTime + time);
     };
 
     /**
@@ -2348,14 +2356,18 @@ define("asNEAT/nodes/oscillatorNode",
       @param oscNode
       @param releaseDuration
     */
-    OscillatorNode.setupRelease = function(context, releaseTime, gainNode, oscNode, releaseDuration) {
+    OscillatorNode.setupRelease = function(
+      context, releaseTime, gainNode, oscNode,
+      releaseDuration, delayTime)
+    {
       var currentTime = context.currentTime;
-      if (releaseTime <= currentTime)
+      if (typeof delayTime === 'undefined') delayTime = 0;
+      if (delayTime + releaseTime <= currentTime)
         gainNode.gain.cancelScheduledValues(0);
 
-      gainNode.gain.setValueAtTime(gainNode.gain.value, releaseTime);
-      gainNode.gain.linearRampToValueAtTime(0, releaseTime + releaseDuration);
-      oscNode.stop(releaseTime + releaseDuration);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, delayTime + releaseTime);
+      gainNode.gain.linearRampToValueAtTime(0, delayTime + releaseTime + releaseDuration);
+      oscNode.stop(delayTime + releaseTime + releaseDuration);
     };
 
     __exports__["default"] = OscillatorNode;

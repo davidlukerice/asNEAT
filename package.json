@@ -1,7 +1,7 @@
 {
   "name": "asNEAT",
   "moduleName": "asNEAT",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Audio Synthesis - NeuroEvolution of Augmenting Topologies built on the Web Audio API",
   "main": "./dist/asNEAT.min.js",
   "scripts": {
