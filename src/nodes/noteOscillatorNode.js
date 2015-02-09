@@ -139,10 +139,10 @@ function refresh(contextPair, prefix) {
   this[nodeName] = gainNode;
 }
 
-NoteOscillatorNode.prototype.play = function(context) {
+NoteOscillatorNode.prototype.play = function(context, delayTime) {
   var gainNode = this.node,
       oscNode = this.oscNode;
-  play.call(this, context, gainNode, oscNode);
+  play.call(this, context, gainNode, oscNode, delayTime);
 };
 
 NoteOscillatorNode.prototype.offlinePlay = function(context) {
@@ -151,7 +151,7 @@ NoteOscillatorNode.prototype.offlinePlay = function(context) {
   play.call(this, context, gainNode, oscNode);
 };
 
-function play(context, gainNode, oscNode) {
+function play(context, gainNode, oscNode, delayTime) {
   var self = this,
       waitTime = this.attackDuration + this.decayDuration + this.sustainDuration,
       attackVolume = this.attackVolume,
@@ -159,11 +159,13 @@ function play(context, gainNode, oscNode) {
       sustainVolume = this.sustainVolume,
       decayDuration = this.decayDuration,
       releaseDuration = this.releaseDuration;
+  if (typeof delayTime === 'undefined') delayTime = 0;
   OscillatorNode.setupEnvelope(context, gainNode, oscNode,
-    attackVolume, attackDuration, sustainVolume, decayDuration);
+    attackVolume, attackDuration, sustainVolume, decayDuration, delayTime);
 
   var timeToRelease = context.currentTime + waitTime;
-  OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode, releaseDuration);
+  OscillatorNode.setupRelease(context, timeToRelease, gainNode, oscNode,
+    releaseDuration, delayTime);
 }
 
 /**

@@ -12,6 +12,7 @@
     <h2>Controls</h2>
     <button class='play'>play</button>
     <button class='playHold'>playHold</button>
+    <button class="playAfterDelay">Play After 1s delay</buton>
     <button class="randomMutate">Random Mutate</button>
     <button class="splitMutate">split Mutate</button>
     <button class="addOscillator">add Oscillator</button>
@@ -72,6 +73,9 @@
           var stopFunc = null;
           $('button.play').click(function() {
             network.play();
+          });
+          $('button.playAfterDelay').click(function() {
+            network.play(function(){}, 1);
           });
           $('button.playHold').on('mousedown',function() {
             if (stopFunc != null)

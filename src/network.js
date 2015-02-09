@@ -169,14 +169,14 @@ Network.prototype.crossWith = function(otherNetwork) {
   @param afterPrepHandler (optional) Called after all the nodes are refreshed and connected
     but before they are played.
 */
-Network.prototype.play = function(afterPrepHandler) {
+Network.prototype.play = function(afterPrepHandler, delayTime) {
   var context = asNEAT.context;
   playPrep.call(this, afterPrepHandler);
 
   // play the oscillators
   _.forEach(this.nodes, function(node) {
     if (node.play)
-      node.play(context);
+      node.play(context, delayTime);
   });
 
   return this;
